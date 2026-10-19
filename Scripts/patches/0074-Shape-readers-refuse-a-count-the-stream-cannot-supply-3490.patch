@@ -1,0 +1,988 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Data - The shape readers refuse a count the stream cannot supply, and a
+ reference outside its table
+
+The text and binary shape readers (BRepTools_ShapeSet, GeomTools_CurveSet, Curve2dSet and
+SurfaceSet, Poly, BinTools_ShapeSet, CurveSet, Curve2dSet, SurfaceSet, LocationSet and
+ShapeReader) size an array from a count the file declares, before the first element has been
+read, and trust the count. The library is built with No_Exception, so the range checks of
+NCollection_Array1, NCollection_Array2 and NCollection_IndexedMap are gone, and a damaged count
+is not refused anywhere:
+ - a negative count sizes an array backwards: a B-spline curve, surface or polygon with a pole,
+   knot or node count of -1 (a '-' where a digit was) faulted in the constructor of the array, of
+   Poly_Triangulation or of Poly_Polygon3D. In 76,479 single byte replacements of the text
+   corpus 22 faulted this way after BRepTools::Read had been made to stop at a failed stream.
+ - a count past the end of the stream sizes an array of that many elements (2^31 - 1 poles is a
+   50 GB array) and then runs its loop to the end, though the stream failed at the first element.
+ - the two counts of a pole grid are each fine and their product overflows an int: a Bezier or
+   B-spline surface of 65536 by 65536 poles.
+ - a triangle names the nodes of its triangulation by index, and none is checked against the
+   triangulation, nor is a polygon on a triangulation against the nodes that triangulation has.
+
+A reference from an edge or a face to a table is not checked in the places that name a polygon
+or a triangulation: BRepTools_ShapeSet for a face that holds only a triangulation
+(myTriangulations.FindKey(s)), BinTools_ShapeSet for the Polygon3D, PolygonOnTriangulation and
+Triangulation of an edge and a face (myPolygons3D(c), myNodes(pt), myTriangulations.FindKey(t)),
+BinTools_CurveSet, Curve2dSet and SurfaceSet for a curve and a surface, BinTools_LocationSet for
+a location and BinTools_ShapeSet::ReadSubs for a sub-shape, none of which carry the range check
+GeomTools_*Set and TopTools_LocationSet already have.
+
+One rule: a count is refused when it is negative, or when the characters or bytes the stream
+still holds cannot hold it, before any array is sized from it. Standard_IStreamHasItems(stream,
+count, minimum size of an item) in Standard_IStream.hxx answers it. It refuses a negative count
+and a failed stream; allows a count of 4096 or less without a look, since the reader stops at the
+first element that is missing; measures a larger one against the rest of the stream (tellg and
+seekg, restored); and, for a stream that cannot be measured, allows up to 2^24. A well-formed
+file is read as before: the minimum is a lower bound (one character and a separator for a text
+number, the size of the type for a binary one).
+
+Failure is reported the way each reader already reports it: a failed stream and a null result
+from the text readers (the table is left as it was, which the next table then finds failed),
+Standard_Failure from the binary ones. A reference outside its table is skipped, as the text
+readers already skip a Polygon3D and a PolygonOnTriangulation that the table does not hold; a
+sub-shape or a location outside the binary table is refused, as TopTools_ShapeSet::Read already
+refuses it. A triangle with a node the triangulation does not have, and a polygon with a node the
+triangulation it is attached to does not have, are refused.
+
+Tracked as SecondMouseAU/OCCTSwift#3490, follow-up to #3487, #3489 and the patch that stops the
+text readers at a failed stream.
+
+---
+diff --git a/src/FoundationClasses/TKMath/Poly/Poly.cxx b/src/FoundationClasses/TKMath/Poly/Poly.cxx
+--- a/src/FoundationClasses/TKMath/Poly/Poly.cxx
++++ b/src/FoundationClasses/TKMath/Poly/Poly.cxx
+@@ -368,6 +368,12 @@ occ::handle<Poly_Triangulation> Poly::ReadTriangulation(Standard_IStream& IS)
+   double d;
+   IS >> d;
+ 
++  // a count the stream cannot supply is refused before an array is sized from it
++  if (!Standard_IStreamHasItems(IS, nbNodes, 6) || !Standard_IStreamHasItems(IS, nbTriangles, 6))
++  {
++    return occ::handle<Poly_Triangulation>();
++  }
++
+   // read the 3d nodes
+   double                       x, y, z;
+   int                          i;
+@@ -377,6 +383,10 @@ occ::handle<Poly_Triangulation> Poly::ReadTriangulation(Standard_IStream& IS)
+   for (i = 1; i <= nbNodes; i++)
+   {
+     IS >> x >> y >> z;
++    if (IS.fail())
++    {
++      return occ::handle<Poly_Triangulation>();
++    }
+     Nodes(i).SetCoord(x, y, z);
+   }
+ 
+@@ -387,6 +397,10 @@ occ::handle<Poly_Triangulation> Poly::ReadTriangulation(Standard_IStream& IS)
+     for (i = 1; i <= nbNodes; i++)
+     {
+       IS >> x >> y;
++      if (IS.fail())
++      {
++        return occ::handle<Poly_Triangulation>();
++      }
+       UVNodes(i).SetCoord(x, y);
+     }
+   }
+@@ -397,6 +411,11 @@ occ::handle<Poly_Triangulation> Poly::ReadTriangulation(Standard_IStream& IS)
+   for (i = 1; i <= nbTriangles; i++)
+   {
+     IS >> n1 >> n2 >> n3;
++    // a node the triangulation does not have, or a stream that has failed
++    if (IS.fail() || n1 < 1 || n1 > nbNodes || n2 < 1 || n2 > nbNodes || n3 < 1 || n3 > nbNodes)
++    {
++      return occ::handle<Poly_Triangulation>();
++    }
+     Triangles(i).Set(n1, n2, n3);
+   }
+ 
+@@ -442,6 +461,12 @@ occ::handle<Poly_Polygon3D> Poly::ReadPolygon3D(Standard_IStream& IS)
+   double d;
+   IS >> d;
+ 
++  // a count the stream cannot supply is refused before an array is sized from it
++  if (!Standard_IStreamHasItems(IS, nbNodes, 6))
++  {
++    return occ::handle<Poly_Polygon3D>();
++  }
++
+   // read the nodes
+   double                     x, y, z;
+   int                        i;
+@@ -450,6 +475,10 @@ occ::handle<Poly_Polygon3D> Poly::ReadPolygon3D(Standard_IStream& IS)
+   for (i = 1; i <= nbNodes; i++)
+   {
+     IS >> x >> y >> z;
++    if (IS.fail())
++    {
++      return occ::handle<Poly_Polygon3D>();
++    }
+     Nodes(i).SetCoord(x, y, z);
+   }
+ 
+@@ -459,6 +488,10 @@ occ::handle<Poly_Polygon3D> Poly::ReadPolygon3D(Standard_IStream& IS)
+     for (i = 1; i <= nbNodes; i++)
+     {
+       IS >> Param(i);
++      if (IS.fail())
++      {
++        return occ::handle<Poly_Polygon3D>();
++      }
+     }
+   }
+ 
+@@ -500,6 +533,12 @@ occ::handle<Poly_Polygon2D> Poly::ReadPolygon2D(Standard_IStream& IS)
+   double d;
+   IS >> d;
+ 
++  // a count the stream cannot supply is refused before an array is sized from it
++  if (!Standard_IStreamHasItems(IS, nbNodes, 4))
++  {
++    return occ::handle<Poly_Polygon2D>();
++  }
++
+   // read the nodes
+   double                       x, y;
+   int                          i;
+@@ -508,6 +547,10 @@ occ::handle<Poly_Polygon2D> Poly::ReadPolygon2D(Standard_IStream& IS)
+   for (i = 1; i <= nbNodes; i++)
+   {
+     IS >> x >> y;
++    if (IS.fail())
++    {
++      return occ::handle<Poly_Polygon2D>();
++    }
+     Nodes(i).SetCoord(x, y);
+   }
+ 
+diff --git a/src/FoundationClasses/TKernel/Standard/Standard_IStream.hxx b/src/FoundationClasses/TKernel/Standard/Standard_IStream.hxx
+--- a/src/FoundationClasses/TKernel/Standard/Standard_IStream.hxx
++++ b/src/FoundationClasses/TKernel/Standard/Standard_IStream.hxx
+@@ -25,4 +25,45 @@
+ 
+ typedef std::istream Standard_IStream;
+ 
++//! Tells whether a stream can still supply a count of items it has just declared.
++//! A count that is negative, or a failed stream, is refused. A count of 4096 or less is allowed,
++//! since a reader that checks the stream after each item stops on the first one that is missing.
++//! A larger count is allowed when the characters left in the stream, theMinChars to an item
++//! (separator included), can hold it; a stream that cannot be measured (not seekable) allows up
++//! to 2^24 items. The state and the position of the stream are unchanged.
++inline bool Standard_IStreamHasItems(Standard_IStream& theIS,
++                                     const long long   theCount,
++                                     const int         theMinChars)
++{
++  if (theCount < 0 || theIS.fail())
++  {
++    return false;
++  }
++  if (theCount <= 4096)
++  {
++    return true;
++  }
++  if (theIS.eof())
++  {
++    return false;
++  }
++  const std::ios::iostate aState = theIS.rdstate();
++  const std::streampos    aPos   = theIS.tellg();
++  bool                    isOk   = theCount <= (1 << 24);
++  if (aPos != std::streampos(-1))
++  {
++    theIS.seekg(0, std::ios::end);
++    const std::streampos anEnd = theIS.tellg();
++    if (anEnd != std::streampos(-1))
++    {
++      // the last item needs no separator
++      isOk = theCount <= (std::streamoff(anEnd - aPos) + 1) / theMinChars;
++    }
++    theIS.clear();
++    theIS.seekg(aPos);
++  }
++  theIS.clear(aState);
++  return isOk;
++}
++
+ #endif
+diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx
+--- a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx
++++ b/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx
+@@ -788,6 +788,25 @@ void BRepTools_ShapeSet::WriteGeometry(const TopoDS_Shape& S, Standard_OStream&
+ 
+ //=================================================================================================
+ 
++//! Tells whether a polygon's nodes are all nodes of the triangulation it is attached to.
++static bool IsPolygonOfTriangulation(const occ::handle<Poly_PolygonOnTriangulation>& thePolygon,
++                                     const occ::handle<Poly_Triangulation>& theTriangulation)
++{
++  if (thePolygon.IsNull() || theTriangulation.IsNull())
++  {
++    return false;
++  }
++  const NCollection_Array1<int>& aNodes = thePolygon->Nodes();
++  for (int aNodeIter = aNodes.Lower(); aNodeIter <= aNodes.Upper(); ++aNodeIter)
++  {
++    if (aNodes.Value(aNodeIter) < 1 || aNodes.Value(aNodeIter) > theTriangulation->NbNodes())
++    {
++      return false;
++    }
++  }
++  return true;
++}
++
+ static GeomAbs_Shape ReadRegularity(Standard_IStream& IS)
+ {
+   char buffer[255];
+@@ -1121,7 +1140,13 @@ void BRepTools_ShapeSet::ReadGeometry(const TopAbs_ShapeEnum T,
+               if (closed)
+               {
+                 if (t > 0 && t <= myTriangulations.Extent() && pt > 0 && pt <= myNodes.Extent()
+-                    && pt2 > 0 && pt2 <= myNodes.Extent())
++                    && pt2 > 0 && pt2 <= myNodes.Extent()
++                    && IsPolygonOfTriangulation(
++                      occ::down_cast<Poly_PolygonOnTriangulation>(myNodes(pt)),
++                      myTriangulations.FindKey(t))
++                    && IsPolygonOfTriangulation(
++                      occ::down_cast<Poly_PolygonOnTriangulation>(myNodes(pt2)),
++                      myTriangulations.FindKey(t)))
+                 {
+                   myBuilder.UpdateEdge(E,
+                                        occ::down_cast<Poly_PolygonOnTriangulation>(myNodes(pt)),
+@@ -1132,7 +1157,10 @@ void BRepTools_ShapeSet::ReadGeometry(const TopAbs_ShapeEnum T,
+               }
+               else
+               {
+-                if (t > 0 && t <= myTriangulations.Extent() && pt > 0 && pt <= myNodes.Extent())
++                if (t > 0 && t <= myTriangulations.Extent() && pt > 0 && pt <= myNodes.Extent()
++                    && IsPolygonOfTriangulation(
++                      occ::down_cast<Poly_PolygonOnTriangulation>(myNodes(pt)),
++                      myTriangulations.FindKey(t)))
+                 {
+                   myBuilder.UpdateEdge(E,
+                                        occ::down_cast<Poly_PolygonOnTriangulation>(myNodes(pt)),
+@@ -1188,7 +1216,11 @@ void BRepTools_ShapeSet::ReadGeometry(const TopAbs_ShapeEnum T,
+       {
+         // only triangulation
+         IS >> s;
+-        myBuilder.UpdateFace(TopoDS::Face(S), myTriangulations.FindKey(s));
++        // a triangulation the file does not have is not looked up
++        if (s > 0 && s <= myTriangulations.Extent())
++        {
++          myBuilder.UpdateFace(TopoDS::Face(S), myTriangulations.FindKey(s));
++        }
+       }
+       //    else pos = IS.tellg();
+ 
+@@ -1385,11 +1417,22 @@ void BRepTools_ShapeSet::ReadPolygonOnTriangulation(Standard_IStream&
+   occ::handle<NCollection_HArray1<double>> Param;
+   occ::handle<Poly_PolygonOnTriangulation> Poly;
+   IS >> nbpol;
++  // a count the stream cannot supply: the table and the stream are left as failed
++  if (!Standard_IStreamHasItems(IS, nbpol, 8))
++  {
++    IS.setstate(std::ios::failbit);
++    return;
++  }
+   // OCC19559
+   Message_ProgressScope aPS(theProgress, "Polygons On Triangulation", nbpol);
+   for (i = 1; i <= nbpol && aPS.More() && !IS.fail(); i++, aPS.Next())
+   {
+     IS >> nbnodes;
++    if (!Standard_IStreamHasItems(IS, nbnodes, 2))
++    {
++      IS.setstate(std::ios::failbit);
++      return;
++    }
+     NCollection_Array1<int> Nodes(1, nbnodes);
+     for (j = 1; j <= nbnodes; j++)
+     {
+@@ -1410,10 +1453,19 @@ void BRepTools_ShapeSet::ReadPolygonOnTriangulation(Standard_IStream&
+         GeomTools::GetReal(IS, par);
+         Param1(j) = par;
+       }
++      // a record cut short is not added
++      if (IS.fail())
++      {
++        return;
++      }
+       Poly = new Poly_PolygonOnTriangulation(Nodes, Param1);
+     }
+     else
+     {
++      if (IS.fail())
++      {
++        return;
++      }
+       Poly = new Poly_PolygonOnTriangulation(Nodes);
+     }
+     Poly->Deflection(def);
+@@ -1552,12 +1604,23 @@ void BRepTools_ShapeSet::ReadPolygon3D(Standard_IStream&            IS,
+   }
+   occ::handle<Poly_Polygon3D> P;
+   IS >> nbpol;
++  // a count the stream cannot supply: the table and the stream are left as failed
++  if (!Standard_IStreamHasItems(IS, nbpol, 6))
++  {
++    IS.setstate(std::ios::failbit);
++    return;
++  }
+   // OCC19559
+   Message_ProgressScope aPS(theProgress, "3D Polygons", nbpol);
+   for (i = 1; i <= nbpol && aPS.More() && !IS.fail(); i++, aPS.Next())
+   {
+     IS >> nbnodes;
+     IS >> hasparameters;
++    if (!Standard_IStreamHasItems(IS, nbnodes, 6))
++    {
++      IS.setstate(std::ios::failbit);
++      return;
++    }
+     NCollection_Array1<gp_Pnt> Nodes(1, nbnodes);
+     GeomTools::GetReal(IS, d);
+     for (j = 1; j <= nbnodes; j++)
+@@ -1574,10 +1637,19 @@ void BRepTools_ShapeSet::ReadPolygon3D(Standard_IStream&            IS,
+       {
+         GeomTools::GetReal(IS, Param(p));
+       }
++      // a record cut short is not added
++      if (IS.fail())
++      {
++        return;
++      }
+       P = new Poly_Polygon3D(Nodes, Param);
+     }
+     else
+     {
++      if (IS.fail())
++      {
++        return;
++      }
+       P = new Poly_Polygon3D(Nodes);
+     }
+     P->Deflection(d);
+@@ -1811,6 +1883,12 @@ void BRepTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
+   }
+ 
+   IS >> nbtri;
++  // a count the stream cannot supply: the table and the stream are left as failed
++  if (!Standard_IStreamHasItems(IS, nbtri, 8))
++  {
++    IS.setstate(std::ios::failbit);
++    return;
++  }
+   // OCC19559
+   Message_ProgressScope aPS(theProgress, "Triangulations", nbtri);
+   for (i = 1; i <= nbtri && aPS.More() && !IS.fail(); i++, aPS.Next())
+@@ -1823,6 +1901,13 @@ void BRepTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
+     }
+     GeomTools::GetReal(IS, d);
+ 
++    // a count the stream cannot supply is refused before the triangulation is sized from it
++    if (!Standard_IStreamHasItems(IS, nbNodes, 6) || !Standard_IStreamHasItems(IS, nbTriangles, 6))
++    {
++      IS.setstate(std::ios::failbit);
++      return;
++    }
++
+     T = new Poly_Triangulation(nbNodes, nbTriangles, hasUV, hasNormals);
+ 
+     for (j = 1; j <= nbNodes; j++)
+@@ -1848,6 +1933,12 @@ void BRepTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
+     for (j = 1; j <= nbTriangles; j++)
+     {
+       IS >> n1 >> n2 >> n3;
++      // a node the triangulation does not have, or a stream that has failed
++      if (IS.fail() || n1 < 1 || n1 > nbNodes || n2 < 1 || n2 > nbNodes || n3 < 1 || n3 > nbNodes)
++      {
++        IS.setstate(std::ios::failbit);
++        return;
++      }
+       T->SetTriangle(j, Poly_Triangle(n1, n2, n3));
+     }
+ 
+@@ -1863,6 +1954,11 @@ void BRepTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
+       }
+     }
+ 
++    // a record cut short is not added
++    if (IS.fail())
++    {
++      return;
++    }
+     T->Deflection(d);
+     myTriangulations.Add(T, hasNormals);
+   }
+diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_Curve2dSet.cxx b/src/ModelingData/TKBRep/BinTools/BinTools_Curve2dSet.cxx
+--- a/src/ModelingData/TKBRep/BinTools/BinTools_Curve2dSet.cxx
++++ b/src/ModelingData/TKBRep/BinTools/BinTools_Curve2dSet.cxx
+@@ -74,6 +74,10 @@ int BinTools_Curve2dSet::Add(const occ::handle<Geom2d_Curve>& S)
+ 
+ occ::handle<Geom2d_Curve> BinTools_Curve2dSet::Curve2d(const int I) const
+ {
++  if (I <= 0 || I > myMap.Extent())
++  {
++    return occ::handle<Geom2d_Curve>();
++  }
+   return occ::down_cast<Geom2d_Curve>(myMap(I));
+ }
+ 
+@@ -470,6 +474,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom2d_BSp
+ 
+   BinTools::GetInteger(IS, nbknots);
+ 
++  // a count the stream cannot supply is refused before an array is sized from it
++  if (!Standard_IStreamHasItems(IS, nbpoles, 16) || !Standard_IStreamHasItems(IS, nbknots, 12))
++  {
++    throw Standard_Failure("BinTools_Curve2dSet: A count the stream cannot supply");
++  }
++
+   NCollection_Array1<gp_Pnt2d> poles(1, nbpoles);
+   NCollection_Array1<double>   weights(1, nbpoles);
+ 
+diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_CurveSet.cxx b/src/ModelingData/TKBRep/BinTools/BinTools_CurveSet.cxx
+--- a/src/ModelingData/TKBRep/BinTools/BinTools_CurveSet.cxx
++++ b/src/ModelingData/TKBRep/BinTools/BinTools_CurveSet.cxx
+@@ -70,7 +70,7 @@ int BinTools_CurveSet::Add(const occ::handle<Geom_Curve>& C)
+ 
+ occ::handle<Geom_Curve> BinTools_CurveSet::Curve(const int I) const
+ {
+-  if (I == 0)
++  if (I <= 0 || I > myMap.Extent())
+   {
+     occ::handle<Geom_Curve> dummy;
+     return dummy;
+@@ -480,6 +480,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_BSpli
+ 
+   BinTools::GetInteger(IS, nbknots);
+ 
++  // a count the stream cannot supply is refused before an array is sized from it
++  if (!Standard_IStreamHasItems(IS, nbpoles, 24) || !Standard_IStreamHasItems(IS, nbknots, 12))
++  {
++    throw Standard_Failure("BinTools_CurveSet: A count the stream cannot supply");
++  }
++
+   NCollection_Array1<gp_Pnt> poles(1, nbpoles);
+   NCollection_Array1<double> weights(1, nbpoles);
+ 
+diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_LocationSet.cxx b/src/ModelingData/TKBRep/BinTools/BinTools_LocationSet.cxx
+--- a/src/ModelingData/TKBRep/BinTools/BinTools_LocationSet.cxx
++++ b/src/ModelingData/TKBRep/BinTools/BinTools_LocationSet.cxx
+@@ -113,7 +113,7 @@ int BinTools_LocationSet::Add(const TopLoc_Location& L)
+ const TopLoc_Location& BinTools_LocationSet::Location(const int I) const
+ {
+   static TopLoc_Location identity;
+-  if (I == 0)
++  if (I <= 0 || I > myMap.Extent())
+   {
+     return identity;
+   }
+@@ -238,6 +238,11 @@ void BinTools_LocationSet::Read(Standard_IStream& IS)
+         while (l1 != 0)
+         {
+           BinTools::GetInteger(IS, p);
++          // a location the file made up is not in the table
++          if (l1 < 1 || l1 > myMap.Extent())
++          {
++            throw Standard_Failure("BinTools_LocationSet::Read: Not a location of the table");
++          }
+           TopLoc_Location L1 = myMap(l1);
+           L                  = L1.Powered(p) * L;
+           BinTools::GetInteger(IS, l1);
+diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_ShapeReader.cxx b/src/ModelingData/TKBRep/BinTools/BinTools_ShapeReader.cxx
+--- a/src/ModelingData/TKBRep/BinTools/BinTools_ShapeReader.cxx
++++ b/src/ModelingData/TKBRep/BinTools/BinTools_ShapeReader.cxx
+@@ -23,6 +23,25 @@
+ #include <Standard_ErrorHandler.hxx>
+ #include <TopoDS.hxx>
+ 
++//! Tells whether a polygon's nodes are all nodes of the triangulation it is attached to.
++static bool IsPolygonOfTriangulation(const occ::handle<Poly_PolygonOnTriangulation>& thePolygon,
++                                     const occ::handle<Poly_Triangulation>& theTriangulation)
++{
++  if (thePolygon.IsNull() || theTriangulation.IsNull())
++  {
++    return false;
++  }
++  const NCollection_Array1<int>& aNodes = thePolygon->Nodes();
++  for (int aNodeIter = aNodes.Lower(); aNodeIter <= aNodes.Upper(); ++aNodeIter)
++  {
++    if (aNodes.Value(aNodeIter) < 1 || aNodes.Value(aNodeIter) > theTriangulation->NbNodes())
++    {
++      return false;
++    }
++  }
++  return true;
++}
++
+ //=================================================================================================
+ 
+ BinTools_ShapeReader::BinTools_ShapeReader() = default;
+@@ -253,11 +272,16 @@ TopoDS_Shape BinTools_ShapeReader::ReadShape(BinTools_IStream& theStream)
+               }
+               occ::handle<Poly_Triangulation> aTriangulation = ReadTriangulation(theStream);
+               const TopLoc_Location*          aLoc           = ReadLocation(theStream);
++              // a polygon or a triangulation the file does not have, or nodes it does not have
+               if (aClosed)
+               {
+-                aBuilder.UpdateEdge(aE, aPoly1, aPoly2, aTriangulation, *aLoc);
++                if (IsPolygonOfTriangulation(aPoly1, aTriangulation)
++                    && IsPolygonOfTriangulation(aPoly2, aTriangulation))
++                {
++                  aBuilder.UpdateEdge(aE, aPoly1, aPoly2, aTriangulation, *aLoc);
++                }
+               }
+-              else
++              else if (IsPolygonOfTriangulation(aPoly1, aTriangulation))
+               {
+                 aBuilder.UpdateEdge(aE, aPoly1, aTriangulation, *aLoc);
+               }
+@@ -496,7 +520,13 @@ occ::handle<Poly_Polygon3D> BinTools_ShapeReader::ReadPolygon3d(BinTools_IStream
+   { // read from the stream
+     int  aNbNodes       = theStream.ReadInteger();
+     bool aHasParameters = theStream.ReadBool();
+-    aResult             = new Poly_Polygon3D(aNbNodes, aHasParameters);
++    // a count the stream cannot supply is refused before an array is sized from it
++    if (!Standard_IStreamHasItems(theStream.Stream(), aNbNodes, 24))
++    {
++      throw Standard_Failure(
++        "BinTools_ShapeReader::ReadPolygon3d: A count the stream cannot supply");
++    }
++    aResult = new Poly_Polygon3D(aNbNodes, aHasParameters);
+     aResult->Deflection(theStream.ReadReal());
+     NCollection_Array1<gp_Pnt>& aNodes = aResult->ChangeNodes();
+     for (int aNodeIter = 1; aNodeIter <= aNbNodes; ++aNodeIter)
+@@ -540,7 +570,12 @@ occ::handle<Poly_PolygonOnTriangulation> BinTools_ShapeReader::ReadPolygon(
+   else if (theStream.LastType() == BinTools_ObjectType_PolygonOnTriangulation)
+   { // read from the stream
+     int aNbNodes = theStream.ReadInteger();
+-    aResult      = new Poly_PolygonOnTriangulation(aNbNodes, false);
++    // a count the stream cannot supply is refused before an array is sized from it
++    if (!Standard_IStreamHasItems(theStream.Stream(), aNbNodes, 4))
++    {
++      throw Standard_Failure("BinTools_ShapeReader::ReadPolygon: A count the stream cannot supply");
++    }
++    aResult = new Poly_PolygonOnTriangulation(aNbNodes, false);
+     for (int aNodeIter = 1; aNodeIter <= aNbNodes; ++aNodeIter)
+     {
+       aResult->SetNode(aNodeIter, theStream.ReadInteger());
+@@ -587,7 +622,14 @@ occ::handle<Poly_Triangulation> BinTools_ShapeReader::ReadTriangulation(BinTools
+     int  aNbTriangles = theStream.ReadInteger();
+     bool aHasUV       = theStream.ReadBool();
+     bool aHasNormals  = theStream.ReadBool();
+-    aResult           = new Poly_Triangulation(aNbNodes, aNbTriangles, aHasUV, aHasNormals);
++    // a count the stream cannot supply is refused before the triangulation is sized from it
++    if (!Standard_IStreamHasItems(theStream.Stream(), aNbNodes, 24)
++        || !Standard_IStreamHasItems(theStream.Stream(), aNbTriangles, 12))
++    {
++      throw Standard_Failure(
++        "BinTools_ShapeReader::ReadTriangulation: A count the stream cannot supply");
++    }
++    aResult = new Poly_Triangulation(aNbNodes, aNbTriangles, aHasUV, aHasNormals);
+     aResult->Deflection(theStream.ReadReal());
+     for (int aNodeIter = 1; aNodeIter <= aNbNodes; ++aNodeIter)
+     {
+@@ -610,6 +652,13 @@ occ::handle<Poly_Triangulation> BinTools_ShapeReader::ReadTriangulation(BinTools
+       theStream >> aTriangle.ChangeValue(1);
+       theStream >> aTriangle.ChangeValue(2);
+       theStream >> aTriangle.ChangeValue(3);
++      // a node the triangulation does not have
++      if (aTriangle(1) < 1 || aTriangle(1) > aNbNodes || aTriangle(2) < 1 || aTriangle(2) > aNbNodes
++          || aTriangle(3) < 1 || aTriangle(3) > aNbNodes)
++      {
++        throw Standard_Failure(
++          "BinTools_ShapeReader::ReadTriangulation: Not a node of the triangulation");
++      }
+       aResult->SetTriangle(aTriIter, aTriangle);
+     }
+     if (aHasNormals)
+diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.cxx b/src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.cxx
+--- a/src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.cxx
++++ b/src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.cxx
+@@ -49,6 +49,25 @@
+ 
+ #include <cstring>
+ 
++//! Tells whether a polygon's nodes are all nodes of the triangulation it is attached to.
++static bool IsPolygonOfTriangulation(const occ::handle<Poly_PolygonOnTriangulation>& thePolygon,
++                                     const occ::handle<Poly_Triangulation>& theTriangulation)
++{
++  if (thePolygon.IsNull() || theTriangulation.IsNull())
++  {
++    return false;
++  }
++  const NCollection_Array1<int>& aNodes = thePolygon->Nodes();
++  for (int aNodeIter = aNodes.Lower(); aNodeIter <= aNodes.Upper(); ++aNodeIter)
++  {
++    if (aNodes.Value(aNodeIter) < 1 || aNodes.Value(aNodeIter) > theTriangulation->NbNodes())
++    {
++      return false;
++    }
++  }
++  return true;
++}
++
+ //=================================================================================================
+ 
+ BinTools_ShapeSet::BinTools_ShapeSet()
+@@ -536,6 +555,12 @@ void BinTools_ShapeSet::ReadSubs(TopoDS_Shape& S, Standard_IStream& IS, const in
+     anOrient = (TopAbs_Orientation)aChar;
+     int anIndx;
+     BinTools::GetInteger(IS, anIndx);
++    // an orientation or a shape the file made up is not one of the table
++    if (aChar < TopAbs_FORWARD || aChar > TopAbs_EXTERNAL || anIndx < 1 || anIndx > nbshapes
++        || nbshapes - anIndx + 1 > myShapes.Extent())
++    {
++      throw Standard_Failure("BinTools_ShapeSet::ReadSubs: Not a shape of the table");
++    }
+     S = Shape(nbshapes - anIndx + 1);
+     S.Orientation(anOrient);
+ 
+@@ -1130,7 +1155,11 @@ void BinTools_ShapeSet::ReadShape(const TopAbs_ShapeEnum T, Standard_IStream& IS
+                 BinTools::GetInteger(IS, c);
+                 BinTools::GetInteger(IS, l);
+                 //??? Bug?  myBuilder.UpdateEdge(E,myPolygons3D(c));
+-                myBuilder.UpdateEdge(E, myPolygons3D(c), Locations().Location(l));
++                // a polygon the file does not have is not looked up
++                if (c > 0 && c <= myPolygons3D.Extent())
++                {
++                  myBuilder.UpdateEdge(E, myPolygons3D(c), Locations().Location(l));
++                }
+                 break;
+ 
+               case 6: // -6- Polygon on triangulation
+@@ -1144,6 +1173,15 @@ void BinTools_ShapeSet::ReadShape(const TopAbs_ShapeEnum T, Standard_IStream& IS
+ 
+                 BinTools::GetInteger(IS, t);
+                 BinTools::GetInteger(IS, l);
++                // a polygon or a triangulation the file does not have is not looked up
++                if (t < 1 || t > myTriangulations.Extent() || pt < 1 || pt > myNodes.Extent()
++                    || (closed && (pt2 < 1 || pt2 > myNodes.Extent()))
++                    || !IsPolygonOfTriangulation(myNodes(pt), myTriangulations.FindKey(t))
++                    || (closed
++                        && !IsPolygonOfTriangulation(myNodes(pt2), myTriangulations.FindKey(t))))
++                {
++                  break;
++                }
+                 if (closed)
+                 {
+                   myBuilder.UpdateEdge(E,
+@@ -1202,7 +1240,11 @@ void BinTools_ShapeSet::ReadShape(const TopAbs_ShapeEnum T, Standard_IStream& IS
+         if (aByte == 2)
+         {
+           BinTools::GetInteger(IS, s);
+-          myBuilder.UpdateFace(TopoDS::Face(S), myTriangulations.FindKey(s));
++          // a triangulation the file does not have is not looked up
++          if (s > 0 && s <= myTriangulations.Extent())
++          {
++            myBuilder.UpdateFace(TopoDS::Face(S), myTriangulations.FindKey(s));
++          }
+         }
+       }
+       break;
+@@ -1328,6 +1370,12 @@ void BinTools_ShapeSet::ReadPolygonOnTriangulation(Standard_IStream&
+   int aNbPol = 0;
+   IS >> aNbPol;
+   IS.get(); // remove LF
++  // a count the stream cannot supply is refused before it is looped over
++  if (!Standard_IStreamHasItems(IS, aNbPol, 13))
++  {
++    throw Standard_Failure(
++      "BinTools_ShapeSet::ReadPolygonOnTriangulation: A count the stream cannot supply");
++  }
+   try
+   {
+     OCC_CATCH_SIGNALS
+@@ -1336,6 +1384,11 @@ void BinTools_ShapeSet::ReadPolygonOnTriangulation(Standard_IStream&
+     {
+       int aNbNodes = 0;
+       BinTools::GetInteger(IS, aNbNodes);
++      if (!Standard_IStreamHasItems(IS, aNbNodes, 4))
++      {
++        throw Standard_Failure(
++          "BinTools_ShapeSet::ReadPolygonOnTriangulation: A count the stream cannot supply");
++      }
+       occ::handle<Poly_PolygonOnTriangulation> aPoly =
+         new Poly_PolygonOnTriangulation(aNbNodes, false);
+       for (int aNodeIter = 1; aNodeIter <= aNbNodes; ++aNodeIter)
+@@ -1440,6 +1493,11 @@ void BinTools_ShapeSet::ReadPolygon3D(Standard_IStream& IS, const Message_Progre
+   int aNbPol = 0;
+   IS >> aNbPol;
+   IS.get(); // remove LF
++  // a count the stream cannot supply is refused before it is looped over
++  if (!Standard_IStreamHasItems(IS, aNbPol, 13))
++  {
++    throw Standard_Failure("BinTools_ShapeSet::ReadPolygon3D: A count the stream cannot supply");
++  }
+   try
+   {
+     OCC_CATCH_SIGNALS
+@@ -1453,6 +1511,11 @@ void BinTools_ShapeSet::ReadPolygon3D(Standard_IStream& IS, const Message_Progre
+       BinTools::GetBool(IS, hasParameters);
+       BinTools::GetReal(IS, aDefl);
+ 
++      if (!Standard_IStreamHasItems(IS, aNbNodes, 24))
++      {
++        throw Standard_Failure(
++          "BinTools_ShapeSet::ReadPolygon3D: A count the stream cannot supply");
++      }
+       occ::handle<Poly_Polygon3D> aPoly = new Poly_Polygon3D(aNbNodes, hasParameters);
+       aPoly->Deflection(aDefl);
+ 
+@@ -1581,6 +1644,12 @@ void BinTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
+   int aNbTriangulations = 0;
+   IS >> aNbTriangulations;
+   IS.get(); // remove LF
++  // a count the stream cannot supply is refused before it is looped over
++  if (!Standard_IStreamHasItems(IS, aNbTriangulations, 16))
++  {
++    throw Standard_Failure(
++      "BinTools_ShapeSet::ReadTriangulation: A count the stream cannot supply");
++  }
+ 
+   try
+   {
+@@ -1601,6 +1670,12 @@ void BinTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
+         BinTools::GetBool(IS, hasNormals);
+       }
+       BinTools::GetReal(IS, aDefl); // deflection
++      if (!Standard_IStreamHasItems(IS, aNbNodes, 24)
++          || !Standard_IStreamHasItems(IS, aNbTriangles, 12))
++      {
++        throw Standard_Failure(
++          "BinTools_ShapeSet::ReadTriangulation: A count the stream cannot supply");
++      }
+       occ::handle<Poly_Triangulation> aTriangulation =
+         new Poly_Triangulation(aNbNodes, aNbTriangles, hasUV, hasNormals);
+       aTriangulation->Deflection(aDefl);
+@@ -1632,6 +1707,13 @@ void BinTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
+         BinTools::GetInteger(IS, aTriNodes[0]);
+         BinTools::GetInteger(IS, aTriNodes[1]);
+         BinTools::GetInteger(IS, aTriNodes[2]);
++        // a node the triangulation does not have
++        if (aTriNodes[0] < 1 || aTriNodes[0] > aNbNodes || aTriNodes[1] < 1
++            || aTriNodes[1] > aNbNodes || aTriNodes[2] < 1 || aTriNodes[2] > aNbNodes)
++        {
++          throw Standard_Failure(
++            "BinTools_ShapeSet::ReadTriangulation: Not a node of the triangulation");
++        }
+         aTriangulation->SetTriangle(aTriIter,
+                                     Poly_Triangle(aTriNodes[0], aTriNodes[1], aTriNodes[2]));
+       }
+diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_SurfaceSet.cxx b/src/ModelingData/TKBRep/BinTools/BinTools_SurfaceSet.cxx
+--- a/src/ModelingData/TKBRep/BinTools/BinTools_SurfaceSet.cxx
++++ b/src/ModelingData/TKBRep/BinTools/BinTools_SurfaceSet.cxx
+@@ -75,6 +75,10 @@ int BinTools_SurfaceSet::Add(const occ::handle<Geom_Surface>& S)
+ 
+ occ::handle<Geom_Surface> BinTools_SurfaceSet::Surface(const int I) const
+ {
++  if (I <= 0 || I > myMap.Extent())
++  {
++    return occ::handle<Geom_Surface>();
++  }
+   return occ::down_cast<Geom_Surface>(myMap(I));
+ }
+ 
+@@ -548,6 +552,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Bezie
+   vdegree = (int)aVal;
+   //  std::cout << "\ttudegree  = " << udegree << ", vdegree = " << vdegree << std::endl;
+ 
++  // a count the stream cannot supply is refused before an array is sized from it
++  if (!Standard_IStreamHasItems(IS, (udegree + 1LL) * (vdegree + 1LL), 24))
++  {
++    throw Standard_Failure("BinTools_SurfaceSet: A count the stream cannot supply");
++  }
++
+   NCollection_Array2<gp_Pnt> poles(1, udegree + 1, 1, vdegree + 1);
+   NCollection_Array2<double> weights(1, udegree + 1, 1, vdegree + 1);
+ 
+@@ -598,6 +608,14 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_BSpli
+   BinTools::GetInteger(IS, nbuknots);
+   BinTools::GetInteger(IS, nbvknots);
+ 
++  // a count the stream cannot supply is refused before an array is sized from it
++  if (!Standard_IStreamHasItems(IS, nbupoles, 24) || !Standard_IStreamHasItems(IS, nbvpoles, 24)
++      || !Standard_IStreamHasItems(IS, (long long)nbupoles * nbvpoles, 24)
++      || !Standard_IStreamHasItems(IS, nbuknots, 12) || !Standard_IStreamHasItems(IS, nbvknots, 12))
++  {
++    throw Standard_Failure("BinTools_SurfaceSet: A count the stream cannot supply");
++  }
++
+   NCollection_Array2<gp_Pnt> poles(1, nbupoles, 1, nbvpoles);
+   NCollection_Array2<double> weights(1, nbupoles, 1, nbvpoles);
+ 
+diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx
+--- a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx
++++ b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx
+@@ -738,6 +738,13 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom2d_Bez
+   int i = 0, degree = 0;
+   IS >> degree;
+ 
++  // a count the stream cannot supply is refused before an array is sized from it
++  if (!Standard_IStreamHasItems(IS, degree + 1LL, 4))
++  {
++    IS.setstate(std::ios::failbit);
++    return IS;
++  }
++
+   NCollection_Array1<gp_Pnt2d> poles(1, degree + 1);
+   NCollection_Array1<double>   weights(1, degree + 1);
+ 
+@@ -750,6 +757,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom2d_Bez
+     }
+   }
+ 
++  // a failed stream leaves poles and weights unread
++  if (IS.fail())
++  {
++    return IS;
++  }
++
+   if (rational)
+   {
+     B = new Geom2d_BezierCurve(poles, weights);
+@@ -773,6 +786,13 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom2d_BSp
+   int i = 0, degree = 0, nbpoles = 0, nbknots = 0;
+   IS >> degree >> nbpoles >> nbknots;
+ 
++  // a count the stream cannot supply is refused before an array is sized from it
++  if (!Standard_IStreamHasItems(IS, nbpoles, 4) || !Standard_IStreamHasItems(IS, nbknots, 4))
++  {
++    IS.setstate(std::ios::failbit);
++    return IS;
++  }
++
+   NCollection_Array1<gp_Pnt2d> poles(1, nbpoles);
+   NCollection_Array1<double>   weights(1, nbpoles);
+ 
+@@ -958,6 +978,12 @@ void GeomTools_Curve2dSet::Read(Standard_IStream& IS, const Message_ProgressRang
+ 
+   int i, nbcurve;
+   IS >> nbcurve;
++  // a count the stream cannot supply: the table is left empty and the stream failed
++  if (!Standard_IStreamHasItems(IS, nbcurve, 2))
++  {
++    IS.setstate(std::ios::failbit);
++    return;
++  }
+   Message_ProgressScope aPS(theProgress, "2D Curves", nbcurve);
+   for (i = 1; i <= nbcurve && aPS.More() && !IS.fail(); i++, aPS.Next())
+   {
+diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx
+--- a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx
++++ b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx
+@@ -765,6 +765,13 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Bezie
+   int i = 0, degree = 0;
+   IS >> degree;
+ 
++  // a count the stream cannot supply is refused before an array is sized from it
++  if (!Standard_IStreamHasItems(IS, degree + 1LL, 6))
++  {
++    IS.setstate(std::ios::failbit);
++    return IS;
++  }
++
+   NCollection_Array1<gp_Pnt> poles(1, degree + 1);
+   NCollection_Array1<double> weights(1, degree + 1);
+ 
+@@ -777,6 +784,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Bezie
+     }
+   }
+ 
++  // a failed stream leaves poles and weights unread
++  if (IS.fail())
++  {
++    return IS;
++  }
++
+   if (rational)
+   {
+     B = new Geom_BezierCurve(poles, weights);
+@@ -801,6 +814,13 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_BSpli
+   int i = 0, degree = 0, nbpoles = 0, nbknots = 0;
+   IS >> degree >> nbpoles >> nbknots;
+ 
++  // a count the stream cannot supply is refused before an array is sized from it
++  if (!Standard_IStreamHasItems(IS, nbpoles, 6) || !Standard_IStreamHasItems(IS, nbknots, 4))
++  {
++    IS.setstate(std::ios::failbit);
++    return IS;
++  }
++
+   NCollection_Array1<gp_Pnt> poles(1, nbpoles);
+   NCollection_Array1<double> weights(1, nbpoles);
+ 
+@@ -987,6 +1007,12 @@ void GeomTools_CurveSet::Read(Standard_IStream& IS, const Message_ProgressRange&
+ 
+   int i, nbcurve;
+   IS >> nbcurve;
++  // a count the stream cannot supply: the table is left empty and the stream failed
++  if (!Standard_IStreamHasItems(IS, nbcurve, 2))
++  {
++    IS.setstate(std::ios::failbit);
++    return;
++  }
+   Message_ProgressScope aPS(theProgress, "3D Curves", nbcurve);
+   for (i = 1; i <= nbcurve && aPS.More() && !IS.fail(); i++, aPS.Next())
+   {
+diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx
+--- a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx
++++ b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx
+@@ -980,6 +980,14 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Bezie
+   IS >> urational >> vrational;
+   int udegree = 0, vdegree = 0;
+   IS >> udegree >> vdegree;
++  // a count the stream cannot supply is refused before an array is sized from it
++  if (!Standard_IStreamHasItems(IS, udegree + 1LL, 6)
++      || !Standard_IStreamHasItems(IS, vdegree + 1LL, 6)
++      || !Standard_IStreamHasItems(IS, (udegree + 1LL) * (vdegree + 1LL), 6))
++  {
++    IS.setstate(std::ios::failbit);
++    return IS;
++  }
+   NCollection_Array2<gp_Pnt> poles(1, udegree + 1, 1, vdegree + 1);
+   NCollection_Array2<double> weights(1, udegree + 1, 1, vdegree + 1);
+ 
+@@ -996,6 +1004,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Bezie
+     }
+   }
+ 
++  // a failed stream leaves poles and weights unread
++  if (IS.fail())
++  {
++    return IS;
++  }
++
+   if (urational || vrational)
+   {
+     S = new Geom_BezierSurface(poles, weights);
+@@ -1019,6 +1033,15 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_BSpli
+   IS >> nbupoles >> nbvpoles;
+   IS >> nbuknots >> nbvknots;
+ 
++  // a count the stream cannot supply is refused before an array is sized from it
++  if (!Standard_IStreamHasItems(IS, nbupoles, 6) || !Standard_IStreamHasItems(IS, nbvpoles, 6)
++      || !Standard_IStreamHasItems(IS, (long long)nbupoles * nbvpoles, 6)
++      || !Standard_IStreamHasItems(IS, nbuknots, 4) || !Standard_IStreamHasItems(IS, nbvknots, 4))
++  {
++    IS.setstate(std::ios::failbit);
++    return IS;
++  }
++
+   NCollection_Array2<gp_Pnt> poles(1, nbupoles, 1, nbvpoles);
+   NCollection_Array2<double> weights(1, nbupoles, 1, nbvpoles);
+ 
+@@ -1248,6 +1271,12 @@ void GeomTools_SurfaceSet::Read(Standard_IStream& IS, const Message_ProgressRang
+ 
+   int i, nbsurf;
+   IS >> nbsurf;
++  // a count the stream cannot supply: the table is left empty and the stream failed
++  if (!Standard_IStreamHasItems(IS, nbsurf, 2))
++  {
++    IS.setstate(std::ios::failbit);
++    return;
++  }
+   Message_ProgressScope aPS(theProgress, "Surfaces", nbsurf);
+   for (i = 1; i <= nbsurf && aPS.More() && !IS.fail(); i++, aPS.Next())
+   {

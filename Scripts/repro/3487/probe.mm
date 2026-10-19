@@ -327,8 +327,15 @@ static int batch(const std::string& mode, const char* listFile)
 
 int main(int argc, char** argv)
 {
-  signal(SIGSEGV, onSig);
-  signal(SIGBUS, onSig);
+  // A stack overflow has no stack to run the handler on: give it one (#3494).
+  static char altStack[1 << 16];
+  stack_t     ss = {altStack, sizeof altStack, 0};
+  sigaltstack(&ss, nullptr);
+  struct sigaction sa = {};
+  sa.sa_handler       = onSig;
+  sa.sa_flags         = SA_ONSTACK;
+  sigaction(SIGSEGV, &sa, nullptr);
+  sigaction(SIGBUS, &sa, nullptr);
   signal(SIGABRT, onSig);
   signal(SIGALRM, onSig);
   if (argc >= 3 && std::string(argv[1]) == "gen")

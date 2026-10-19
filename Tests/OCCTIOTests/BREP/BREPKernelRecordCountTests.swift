@@ -68,10 +68,11 @@ struct BREPKernelRecordCountTests {
             let lineEnd = text.range(of: "\n", range: header.upperBound..<text.endIndex),
             let count = Int(text[header.upperBound..<lineEnd.lowerBound])
         else { return nil }
-        text.replaceSubrange(header.upperBound..<lineEnd.lowerBound, with: String(count + 1))
-        guard let next = text.range(of: "\n\(order[index + 1])", range: lineEnd.upperBound..<text.endIndex)
+        guard let next = text.range(of: "\n\(order[index + 1])", range: lineEnd.lowerBound..<text.endIndex)
         else { return nil }
+        // The later edit first, so the earlier indices stay valid.
         text.insert(contentsOf: record, at: text.index(after: next.lowerBound))
+        text.replaceSubrange(header.upperBound..<lineEnd.lowerBound, with: String(count + 1))
         return text
     }
 
@@ -135,18 +136,29 @@ struct BREPKernelRecordCountTests {
         #expect(Shape.fromBREPString(text) == nil)
     }
 
-    /// A count of 2^31 - 1 was looped over to its end, on a stream that had failed at its first item.
+    /// A count of 2^31 - 1 sized a 50 GB array and was looped over, on a stream that had failed at its
+    /// first item.
+    ///
+    /// The bridge guard ends that read at the end of the file in the end, so the file is refused
+    /// either way; an unpatched kernel takes 42 s to get there, which is what the time limit
+    /// records. A reader that sizes nothing from the count refuses it in milliseconds.
     @Test(.enabled(if: BREPKernelRecordCountTests.isLocalKernel))
-    func aCountFarBeyondTheFileIsRefused() throws {
+    func aCountFarBeyondTheFileIsRefusedAtOnce() throws {
         let cases: [(Table, String, String, String)] = [
             (.curves, Record.curve3dBSpline, "7 0 0  2 3 2  ", "7 0 0  2 2147483647 2  "),
-            (.surfaces, Record.surfaceBSpline, "9 0 0 0 0 2 2 3 3 2 2 ", "9 0 0 0 0 2 2 2147483647 3 2 2 "),
+            (
+                .surfaces, Record.surfaceBSpline, "9 0 0 0 0 2 2 3 3 2 2 ",
+                "9 0 0 0 0 2 2 2147483647 3 2 2 "
+            ),
             (.polygon3D, Record.polygon3D, "5 1\n", "2147483647 1\n"),
         ]
+        let clock = ContinuousClock()
+        let start = clock.now
         for (table, record, old, new) in cases {
             let text = try #require(Self.damaged(table, record, replacing: old, with: new))
             #expect(Shape.fromBREPString(text) == nil, "\(table): \(new.prefix(24))")
         }
+        #expect(clock.now - start < .seconds(10))
     }
 
     /// A triangle names the nodes of its triangulation by index.
