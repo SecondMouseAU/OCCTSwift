@@ -1949,11 +1949,11 @@ Deserialize a shape from a BREP-format string.
 public static func fromBREPString(_ brep: String) -> Shape?
 ```
 
-- **Returns:** Deserialized shape, or `nil` if the string is invalid.
+- **Returns:** Deserialized shape, or `nil` if the string is invalid, which includes a string that ends early (every strict prefix of a written BREP is refused, #3487). A complete string with a reference to a shape or curve it does not hold is not checked by the bridge; see ``Shape/loadBREP(from:)`` in `Shape.md`.
 - **Damaged strings:** a string that is cut short, or that names a shape, location or curve basis it
   does not hold, returns `nil` once carried patch `0073` is in the kernel (the pinned asset does not
-  carry it yet). It also reads a number of 32 characters or more whole (OCCT#1560) and a string whose
-  trailing white space is gone. Not covered: a structurally inconsistent shape that is returned and
+  carry it yet). It also reads a number of 32 characters or more whole (OCCT#1560). The kernel also reads a string whose trailing
+  white space is gone, but the bridge's end-of-stream check still refuses it. Not covered: a structurally inconsistent shape that is returned and
   that `BRepCheck` then faults on.
 - **OCCT:** `OCCTShapeFromBREPString` → `BRepTools::Read` from string stream.
 - **Example:**
