@@ -157,13 +157,12 @@ struct BREPKernelRecordCountTests {
             ),
             (.polygon3D, Record.polygon3D, "5 1\n", "2147483647 1\n"),
         ]
-        let clock = ContinuousClock()
-        let start = clock.now
+        let start = Date()
         for (table, record, old, new) in cases {
             let text = try #require(Self.damaged(table, record, replacing: old, with: new))
             #expect(Shape.fromBREPString(text) == nil, "\(table): \(new.prefix(24))")
         }
-        #expect(clock.now - start < .seconds(10))
+        #expect(Date().timeIntervalSince(start) < 10)
     }
 
     /// A triangle names the nodes of its triangulation by index.

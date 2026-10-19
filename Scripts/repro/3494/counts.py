@@ -9,7 +9,7 @@ usage: counts.py <probe> <corpus-dir>... <work-dir> <mode> [--jobs N] [--thin N]
   binset      BinTools::Read, the BinTools_ShapeSet reader (*.bset)    class `bint`
   bin         BinTools_ShapeReader (*.bin)                             class `bint`
 Class `tok`: every standalone integer token of the text, replaced by each of -1, -2^31, 2^31-1,
-10^6 and 10^8 (a count, an index, a degree, a flag). Class `bint`: the four bytes at every offset
+10^6 and 10^8 (a count, an index, a degree, a flag). Class `bint`: the four bytes at every offset (every 4th beyond 8,000 bytes)
 of the binary file replaced by the same values as a little-endian int. One forked child per case
 (`probe batch`), so a fault ends only that child and a spin ends at 0.1 s of its own CPU (HANG).
 Exit 0 always: a measurement, not a gate.

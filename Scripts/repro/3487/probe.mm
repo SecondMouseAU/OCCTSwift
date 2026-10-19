@@ -329,7 +329,9 @@ int main(int argc, char** argv)
 {
   // A stack overflow has no stack to run the handler on: give it one (#3494).
   static char altStack[1 << 16];
-  stack_t     ss = {altStack, sizeof altStack, 0};
+  stack_t     ss = {};
+  ss.ss_sp       = altStack;
+  ss.ss_size     = sizeof altStack;
   sigaltstack(&ss, nullptr);
   struct sigaction sa = {};
   sa.sa_handler       = onSig;

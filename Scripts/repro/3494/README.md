@@ -15,7 +15,7 @@ count and reference, and the measured tables). It reuses the #3487 harness, `Scr
   `path` and `str`): every standalone integer token of every file replaced by each of -1, -2^31,
   2^31 - 1, 10^6 and 10^8, which is every count, index, degree and flag of every record. Class `bint`
   (binary, modes `binset` for `BinTools::Read` and `bin` for `BinTools_ShapeReader`): the four bytes
-  at every offset replaced by the same values as a little-endian int. One forked child per case, a
+  at every offset (every 4th for a file over 8,000 bytes) replaced by the same values as a little-endian int. One forked child per case, a
   fault ends only that child, a spin ends at 0.1 s of its own CPU.
 - `stage.sh <occt-src> <OCCT.xcframework> <out-dir> <patch>...`: compile the translation units the
   given patches change (or `+worktree` for the uncommitted edits of `<occt-src>`) with the shipped
