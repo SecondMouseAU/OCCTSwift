@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Crafted binary OCAF files can no longer ask the kernel for gigabytes, loop on a label's tag count or overflow a table-name buffer (#3489)
+
+Carried kernel patches `0070` to `0072`, not in the pinned asset until the next repin. Fifteen binary attribute drivers allocated `last - first + 1` elements or a declared size before checking the record held them (1 to 17 GiB from a 400 byte file, the 32-bit wasm failure of #3477), `BinObjMgt_Persistent::GetLabel` tested an overflowing `tagCount * 4` and then looped past the data, and five `BinTools` set readers extracted a table name into a 255 byte buffer with an unbounded `>>` (a 4 KB token terminated the process). Each bound is now what the record, or the buffer, holds. Label nesting 20000 deep still overflows the stack of the recursive reader and is not mitigated.
+
 ### `Shape.loadBREP` and `Shape.fromBREPString` refuse a BREP text that ends early instead of crashing (#3487)
 
 `BRepTools::Read` faulted (SIGSEGV, uncatchable) or never returned on a BREP file or string that ended early, such as one cut short by an interrupted write. `Shape.loadBREP(from:)`, `Shape.loadBREP(fromPath:)` and `Shape.fromBREPString(_:)` now throw `ImportError.importFailed` or return `nil` for every strict prefix of a written BREP, and for a file with a word of 255 bytes or more, which overflowed the reader's buffer. A file whose trailing whitespace was stripped is refused with them, since a written BREP ends in a space.

@@ -1,0 +1,262 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Application Framework - binary attribute drivers check a declared span against
+ the data left before they allocate for it
+
+The binary Paste of an array or list attribute reads a first and a last index, then allocates
+last - first + 1 elements, and only then reads the elements (and, for the numeric arrays,
+fails if the data ran out). Nothing relates the span to the record. A record of a few dozen
+bytes declaring 2^30 elements asks Standard::Allocate for 1 to 17 GiB:
+
+   IntegerArray / RealArray / ReferenceArray   Init(first, last)                 4 to 8 GiB
+   ByteArray / BooleanArray / the *List drivers a temporary NCollection_Array1   1 to 8 GiB
+   ExtStringArray                              Init(first, last) of 16 byte strings, 17 GiB
+   NamedData, DimTol, NoteBinData, GraphNode,
+   Scope, VisMaterial                          an HArray1 or buffer by a declared size
+
+A 64-bit process absorbs the request until a driver touches the pages (a ByteArray copy loop of
+2 GiB took 19 s, an ExtStringArray constructor loop 26 s). A 32-bit address space (wasm) cannot
+hold it, and a failed allocation there is the failure Standard_MMgrRaw reports for every later
+allocation of the process.
+
+Each driver now checks the declared count against the data left in the record with
+BinObjMgt_Persistent::HasItems (previous patch), using the smallest size one element can take in
+the record (an ExtendedString and an AsciiString take at least their terminator, a Boolean array
+is one bit per element), and returns false, which BinLDrivers_DocumentRetrievalDriver reports as
+a "failure reading attribute" warning and goes on. The check divides, so the count times the item
+size is never formed: nothing overflows a 32-bit size_t.
+
+Measured on the macOS slice of v4.0.0-kernel.7 with crafted files (Scripts/repro/3489 in
+SecondMouseAU/OCCTSwift): the declared-span cases that requested 1 to 17 GiB request nothing; a
+document saved with one attribute of every kind above and reopened is unchanged.
+
+Tracked as SecondMouseAU/OCCTSwift#3489, follow-up to #3486 and #3477.
+
+---
+diff --git a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_RealListDriver.cxx b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_RealListDriver.cxx
+--- a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_RealListDriver.cxx
++++ b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_RealListDriver.cxx
+@@ -59,6 +59,10 @@
+     const int aLength = aLastInd - aFirstInd + 1;
+     if (aLength > 0)
+     {
++      if (!theSource.HasItems(aLength, (int)sizeof(double)))
++      {
++        return false;
++      }
+       NCollection_Array1<double> aTargetArray(aFirstInd, aLastInd);
+       theSource.GetRealArray(&aTargetArray(aFirstInd), aLength);
+       for (aIndex = aFirstInd; aIndex <= aLastInd; aIndex++)
+diff --git a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_IntegerListDriver.cxx b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_IntegerListDriver.cxx
+--- a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_IntegerListDriver.cxx
++++ b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_IntegerListDriver.cxx
+@@ -59,6 +59,10 @@
+     const int aLength = aLastInd - aFirstInd + 1;
+     if (aLength > 0)
+     {
++      if (!theSource.HasItems(aLength, (int)sizeof(int)))
++      {
++        return false;
++      }
+       NCollection_Array1<int> aTargetArray(aFirstInd, aLastInd);
+       theSource.GetIntArray(&aTargetArray(aFirstInd), aLength);
+       for (aIndex = aFirstInd; aIndex <= aLastInd; aIndex++)
+diff --git a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_ReferenceArrayDriver.cxx b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_ReferenceArrayDriver.cxx
+--- a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_ReferenceArrayDriver.cxx
++++ b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_ReferenceArrayDriver.cxx
+@@ -54,7 +54,7 @@
+     return false;
+   }
+   const int aLength = aLastInd - aFirstInd + 1;
+-  if (aLength <= 0)
++  if (aLength <= 0 || !theSource.HasItems(aLength, 1))
+   {
+     return false;
+   }
+diff --git a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_BooleanArrayDriver.cxx b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_BooleanArrayDriver.cxx
+--- a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_BooleanArrayDriver.cxx
++++ b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_BooleanArrayDriver.cxx
+@@ -51,12 +51,13 @@
+   {
+     return false;
+   }
+-  if (aLastInd < aFirstInd)
++  const int aLength = aLastInd - aFirstInd + 1;
++  if (aLastInd < aFirstInd || aLength <= 0 || !theSource.HasItems((aLength >> 3) + 1, 1))
+   {
+     return false;
+   }
+ 
+-  NCollection_Array1<uint8_t> aTargetArray(0, (aLastInd - aFirstInd + 1) >> 3);
++  NCollection_Array1<uint8_t> aTargetArray(0, aLength >> 3);
+   theSource.GetByteArray(&aTargetArray(0), aTargetArray.Length());
+ 
+   const occ::handle<TDataStd_BooleanArray> anAtt = occ::down_cast<TDataStd_BooleanArray>(theTarget);
+diff --git a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_NamedDataDriver.cxx b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_NamedDataDriver.cxx
+--- a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_NamedDataDriver.cxx
++++ b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_NamedDataDriver.cxx
+@@ -184,6 +184,10 @@
+       }
+       if (up | low)
+       {
++        if (!theSource.HasItems(up - low + 1, (int)sizeof(int)))
++        {
++          return false;
++        }
+         occ::handle<NCollection_HArray1<int>> aTargetArray = new NCollection_HArray1<int>(low, up);
+         if (!theSource.GetIntArray(&(aTargetArray->ChangeArray1())(low), up - low + 1))
+         {
+@@ -232,6 +236,10 @@
+       }
+       if (low | up)
+       {
++        if (!theSource.HasItems(up - low + 1, (int)sizeof(double)))
++        {
++          return false;
++        }
+         occ::handle<NCollection_HArray1<double>> aTargetArray =
+           new NCollection_HArray1<double>(low, up);
+         if (!theSource.GetRealArray(&(aTargetArray->ChangeArray1())(low), up - low + 1))
+diff --git a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_ByteArrayDriver.cxx b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_ByteArrayDriver.cxx
+--- a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_ByteArrayDriver.cxx
++++ b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_ByteArrayDriver.cxx
+@@ -52,7 +52,8 @@
+   {
+     return false;
+   }
+-  if (aLastInd < aFirstInd)
++  const int aLength = aLastInd - aFirstInd + 1;
++  if (aLastInd < aFirstInd || !theSource.HasItems(aLength, 1))
+   {
+     return false;
+   }
+diff --git a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_ExtStringArrayDriver.cxx b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_ExtStringArrayDriver.cxx
+--- a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_ExtStringArrayDriver.cxx
++++ b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_ExtStringArrayDriver.cxx
+@@ -54,7 +54,7 @@
+     return false;
+   }
+   const int aLength = aLastInd - aFirstInd + 1;
+-  if (aLength <= 0)
++  if (aLength <= 0 || !theSource.HasItems(aLength, (int)sizeof(char16_t)))
+   {
+     return false;
+   }
+diff --git a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_IntegerArrayDriver.cxx b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_IntegerArrayDriver.cxx
+--- a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_IntegerArrayDriver.cxx
++++ b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_IntegerArrayDriver.cxx
+@@ -54,7 +54,7 @@
+     return false;
+   }
+   const int aLength = aLastInd - aFirstInd + 1;
+-  if (aLength <= 0)
++  if (aLength <= 0 || !theSource.HasItems(aLength, (int)sizeof(int)))
+   {
+     return false;
+   }
+diff --git a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_RealArrayDriver.cxx b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_RealArrayDriver.cxx
+--- a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_RealArrayDriver.cxx
++++ b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_RealArrayDriver.cxx
+@@ -53,7 +53,7 @@
+     return false;
+   }
+   const int aLength = aLastInd - aFirstInd + 1;
+-  if (aLength <= 0)
++  if (aLength <= 0 || !theSource.HasItems(aLength, (int)sizeof(double)))
+   {
+     return false;
+   }
+diff --git a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_BooleanListDriver.cxx b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_BooleanListDriver.cxx
+--- a/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_BooleanListDriver.cxx
++++ b/src/ApplicationFramework/TKBinL/BinMDataStd/BinMDataStd_BooleanListDriver.cxx
+@@ -61,6 +61,10 @@
+     const int aLength = aLastInd - aFirstInd + 1;
+     if (aLength > 0)
+     {
++      if (!theSource.HasItems(aLength, 1))
++      {
++        return false;
++      }
+       NCollection_Array1<uint8_t> aTargetArray(aFirstInd, aLastInd);
+       theSource.GetByteArray(&aTargetArray(aFirstInd), aLength);
+       for (aIndex = aFirstInd; aIndex <= aLastInd; aIndex++)
+diff --git a/src/ApplicationFramework/TKBinL/BinMFunction/BinMFunction_ScopeDriver.cxx b/src/ApplicationFramework/TKBinL/BinMFunction/BinMFunction_ScopeDriver.cxx
+--- a/src/ApplicationFramework/TKBinL/BinMFunction/BinMFunction_ScopeDriver.cxx
++++ b/src/ApplicationFramework/TKBinL/BinMFunction/BinMFunction_ScopeDriver.cxx
+@@ -69,6 +69,10 @@
+   NCollection_DoubleMap<int, TDF_Label>& map = S->ChangeFunctions();
+ 
+   // IDs
++  if (!theSource.HasItems(nb, (int)sizeof(int)))
++  {
++    return false;
++  }
+   NCollection_Array1<int> IDs(1, nb);
+   theSource.GetIntArray(&IDs(1), nb);
+ 
+diff --git a/src/ApplicationFramework/TKBinL/BinMFunction/BinMFunction_GraphNodeDriver.cxx b/src/ApplicationFramework/TKBinL/BinMFunction/BinMFunction_GraphNodeDriver.cxx
+--- a/src/ApplicationFramework/TKBinL/BinMFunction/BinMFunction_GraphNodeDriver.cxx
++++ b/src/ApplicationFramework/TKBinL/BinMFunction/BinMFunction_GraphNodeDriver.cxx
+@@ -66,6 +66,10 @@
+   // Previous functions
+   if (nb_previous)
+   {
++    if (!theSource.HasItems(nb_previous, (int)sizeof(int)))
++    {
++      return false;
++    }
+     NCollection_Array1<int> aTargetArray(1, nb_previous);
+     theSource.GetIntArray(&aTargetArray(1), nb_previous);
+ 
+@@ -78,6 +82,10 @@
+   // Next functions
+   if (nb_next)
+   {
++    if (!theSource.HasItems(nb_next, (int)sizeof(int)))
++    {
++      return false;
++    }
+     NCollection_Array1<int> aTargetArray(1, nb_next);
+     theSource.GetIntArray(&aTargetArray(1), nb_next);
+ 
+diff --git a/src/DataExchange/TKBinXCAF/BinMXCAFDoc/BinMXCAFDoc_NoteBinDataDriver.cxx b/src/DataExchange/TKBinXCAF/BinMXCAFDoc/BinMXCAFDoc_NoteBinDataDriver.cxx
+--- a/src/DataExchange/TKBinXCAF/BinMXCAFDoc/BinMXCAFDoc_NoteBinDataDriver.cxx
++++ b/src/DataExchange/TKBinXCAF/BinMXCAFDoc/BinMXCAFDoc_NoteBinDataDriver.cxx
+@@ -66,6 +66,10 @@
+   occ::handle<NCollection_HArray1<uint8_t>> aData;
+   if (nbSize > 0)
+   {
++    if (!theSource.HasItems(nbSize, 1))
++    {
++      return false;
++    }
+     aData.reset(new NCollection_HArray1<uint8_t>(1, nbSize));
+     theSource.GetByteArray(&aData->ChangeFirst(), nbSize);
+   }
+diff --git a/src/DataExchange/TKBinXCAF/BinMXCAFDoc/BinMXCAFDoc_DimTolDriver.cxx b/src/DataExchange/TKBinXCAF/BinMXCAFDoc/BinMXCAFDoc_DimTolDriver.cxx
+--- a/src/DataExchange/TKBinXCAF/BinMXCAFDoc/BinMXCAFDoc_DimTolDriver.cxx
++++ b/src/DataExchange/TKBinXCAF/BinMXCAFDoc/BinMXCAFDoc_DimTolDriver.cxx
+@@ -56,6 +56,10 @@
+   const int                                aLength = aLastInd - aFirstInd + 1;
+   if (aLength > 0)
+   {
++    if (!theSource.HasItems(aLength, (int)sizeof(double)))
++    {
++      return false;
++    }
+     aHArr = new NCollection_HArray1<double>(aFirstInd, aLastInd);
+ 
+     NCollection_Array1<double>& aTargetArray = aHArr->ChangeArray1();
+diff --git a/src/DataExchange/TKBinXCAF/BinMXCAFDoc/BinMXCAFDoc_VisMaterialDriver.cxx b/src/DataExchange/TKBinXCAF/BinMXCAFDoc/BinMXCAFDoc_VisMaterialDriver.cxx
+--- a/src/DataExchange/TKBinXCAF/BinMXCAFDoc/BinMXCAFDoc_VisMaterialDriver.cxx
++++ b/src/DataExchange/TKBinXCAF/BinMXCAFDoc/BinMXCAFDoc_VisMaterialDriver.cxx
+@@ -197,6 +197,10 @@
+     return;
+   }
+   theSource.GetInteger(aLength);
++  if (!theSource.HasItems(aLength, 1))
++  {
++    return;
++  }
+   occ::handle<NCollection_Buffer> aBuff =
+     new NCollection_Buffer(NCollection_BaseAllocator::CommonBaseAllocator(), aLength);
+   theSource.GetByteArray(aBuff->ChangeData(), aLength);

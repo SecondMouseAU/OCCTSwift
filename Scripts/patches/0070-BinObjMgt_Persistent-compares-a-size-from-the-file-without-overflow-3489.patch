@@ -1,0 +1,164 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Application Framework - BinObjMgt_Persistent compares a size read from the
+ file against the data left without overflowing
+
+BinObjMgt_Persistent::noMoreData(theSize) answers whether theSize bytes are left with
+Position() + theSize > mySize, and the callers form theSize as a count times an item size before
+they call it. Both are int arithmetic on values read from the file:
+
+ - GetLabel reads a tag count and tests aLen * BP_INTSIZE. A count of 2^30 makes the product
+   2^32, which wraps to 0, so the test passes. The loop then appends a tag list node per count
+   (here 2^30 of them) and walks myData past its last piece. The call does not return.
+ - GetIntArray, GetRealArray, GetShortRealArray and GetExtCharArray multiply the length by the
+   item size the same way, so a length from 2^29 on wraps to a small or negative size and the
+   test passes.
+ - Position() + theSize itself overflows for a size close to INT_MAX (GetByteArray, GetCharArray,
+   whose callers pass the length unscaled).
+
+The comparison is now theSize > mySize - Position(), a negative size is an error, and the
+multiplied callers ask a new BinObjMgt_Persistent::HasItems(theNbItems, theItemSize), which
+divides what is left by the item size instead of multiplying the count. HasItems is public, so a
+driver can check a count read from the data before it allocates memory for it (the next patch
+does that for the array and list drivers). All of them leave the reader in the error state they
+already use (IsError), which every caller already checks.
+
+Tracked as SecondMouseAU/OCCTSwift#3489, follow-up to #3486 and #3477.
+
+---
+diff --git a/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.cxx b/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.cxx
+--- a/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.cxx
++++ b/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.cxx
+@@ -786,7 +786,8 @@
+   aLen = InverseInt(aLen);
+ #endif
+   me->myOffset += BP_INTSIZE;
+-  if (noMoreData(aLen * BP_INTSIZE))
++  // aLen * BP_INTSIZE overflows for a count from a file
++  if (noMoreItems(aLen, BP_INTSIZE))
+   {
+     return *this;
+   }
+@@ -895,11 +896,12 @@
+                                                                   const int theLength) const
+ {
+   alignOffset(BP_EXTCHARSIZE, true);
+-  int aSize = theLength * BP_EXTCHARSIZE;
+-  if (noMoreData(aSize))
++  // theLength * BP_EXTCHARSIZE overflows for a length from a file
++  if (noMoreItems(theLength, BP_EXTCHARSIZE))
+   {
+     return *this;
+   }
++  const int aSize = theLength * BP_EXTCHARSIZE;
+   getArray(theArray, aSize);
+ #ifdef DO_INVERSE
+   for (int i = 0; i < theLength; i++)
+@@ -919,11 +921,12 @@
+                                                               const int theLength) const
+ {
+   alignOffset(BP_INTSIZE, true);
+-  int aSize = theLength * BP_INTSIZE;
+-  if (noMoreData(aSize))
++  // theLength * BP_INTSIZE overflows for a length from a file
++  if (noMoreItems(theLength, BP_INTSIZE))
+   {
+     return *this;
+   }
++  const int aSize = theLength * BP_INTSIZE;
+   getArray(theArray, aSize);
+ #ifdef DO_INVERSE
+   for (int i = 0; i < theLength; i++)
+@@ -943,11 +946,12 @@
+                                                                const int theLength) const
+ {
+   alignOffset(BP_INTSIZE, true);
+-  int aSize = theLength * BP_REALSIZE;
+-  if (noMoreData(aSize))
++  // theLength * BP_REALSIZE overflows for a length from a file
++  if (noMoreItems(theLength, BP_REALSIZE))
+   {
+     return *this;
+   }
++  const int aSize = theLength * BP_REALSIZE;
+   getArray(theArray, aSize);
+ #ifdef DO_INVERSE
+   for (int i = 0; i < theLength; i++)
+@@ -968,11 +972,12 @@
+   const int                  theLength) const
+ {
+   alignOffset(BP_INTSIZE, true);
+-  int aSize = theLength * BP_SHORTREALSIZE;
+-  if (noMoreData(aSize))
++  // theLength * BP_SHORTREALSIZE overflows for a length from a file
++  if (noMoreItems(theLength, BP_SHORTREALSIZE))
+   {
+     return *this;
+   }
++  const int aSize = theLength * BP_SHORTREALSIZE;
+   getArray(theArray, aSize);
+ #ifdef DO_INVERSE
+   for (int i = 0; i < theLength; i++)
+diff --git a/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.hxx b/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.hxx
+--- a/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.hxx
++++ b/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.hxx
+@@ -229,6 +229,11 @@
+ 
+   //! Tells the current position for get/put
+   int Position() const;
++
++  //! Returns true if the data left after the current position can hold theNbItems items of at
++  //! least theItemSize bytes each. Does not overflow, so it can check a count read from the data
++  //! before memory is allocated for it.
++  bool HasItems(const int theNbItems, const int theItemSize) const;
+ 
+   //! Sets the current position for get/put.
+   //! Resets an error state depending on the validity of thePos.
+@@ -320,6 +325,9 @@
+   //! from the current position in myData
+   bool noMoreData(const int theSize) const;
+ 
++  //! Checks if there is no more data for the given number of items of the given size
++  bool noMoreItems(const int theNbItems, const int theItemSize) const;
++
+   //! Puts theLength bytes from theArray
+   Standard_EXPORT void putArray(void* const theArray, const int theSize);
+ 
+diff --git a/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.lxx b/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.lxx
+--- a/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.lxx
++++ b/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.lxx
+@@ -183,10 +183,34 @@
+ 
+ inline bool BinObjMgt_Persistent::noMoreData(const int theSize) const
+ {
+-  ((BinObjMgt_Persistent*)this)->myIsError = Position() + theSize > mySize;
++  // compare the size against what is left: Position() + theSize overflows for a size from a file
++  ((BinObjMgt_Persistent*)this)->myIsError = theSize < 0 || theSize > mySize - Position();
+   return myIsError;
+ }
+ 
++//=======================================================================
++// function : noMoreItems
++// purpose  : Checks if there is no more data for the given number of items
++//           of the given size, starting from the current position in myData
++//=======================================================================
++
++inline bool BinObjMgt_Persistent::noMoreItems(const int theNbItems, const int theItemSize) const
++{
++  ((BinObjMgt_Persistent*)this)->myIsError = !HasItems(theNbItems, theItemSize);
++  return myIsError;
++}
++
++//=======================================================================
++// function : HasItems
++// purpose  : Checks if the data left can hold the given number of items
++//           of at least the given size each
++//=======================================================================
++
++inline bool BinObjMgt_Persistent::HasItems(const int theNbItems, const int theItemSize) const
++{
++  return theNbItems >= 0 && theItemSize > 0 && theNbItems <= (mySize - Position()) / theItemSize;
++}
++
+ //=================================================================================================
+ 
+ inline BinObjMgt_Persistent& BinObjMgt_Persistent::PutBoolean(const bool theValue)

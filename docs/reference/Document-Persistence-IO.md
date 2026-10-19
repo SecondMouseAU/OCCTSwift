@@ -612,13 +612,19 @@ public static func loadOCAF(from path: String) -> (document: Document?, status: 
   these sections, so no real document is refused. The table of contents after `edata` is walked too:
   an entry whose name size is exactly 512 is refused, because `BinLDrivers_DocumentSection::ReadTOC`
   writes one byte past its 512 byte buffer for it.
-- **Not covered, measured and open (#3486):** the document data after `edata`. A crafted file can
-  make an array attribute (`TDataStd_IntegerArray`, `RealArray`, `ByteArray`, `ExtStringArray`,
-  `ReferenceArray`) allocate gigabytes from its two index ints before the payload is read, make
-  `BinObjMgt_Persistent::GetLabel` loop on an overflowing tag count, nest labels deep enough to
-  overflow the stack, and point a shape-section TOC entry at text that overflows a fixed buffer in
-  `BinTools`. Each needs per-attribute knowledge, an arbitrary limit or a kernel patch; see
-  `okf/references/known-occt-bugs.md` and `Scripts/repro/3486/README.md`.
+- **Document data after `edata` (#3489):** three hazards the bridge cannot bound, because the count
+  sits inside an attribute payload only its driver reads, are fixed in the kernel by carried patches
+  `0070` to `0072`, which the pinned asset does not carry yet. A crafted file can make an array or
+  list attribute (`TDataStd_IntegerArray`, `RealArray`, `ByteArray`, `BooleanArray`, `ExtStringArray`,
+  `ReferenceArray`, the lists, `NamedData`) allocate gigabytes from its two index ints before the
+  payload is read (the 32-bit wasm failure of #3477), make `BinObjMgt_Persistent::GetLabel` loop on an
+  overflowing tag count, and point a shape-section TOC entry at a table name that overflows a 255 byte
+  buffer in `BinTools`. With the patches each is refused through the reader's own path: the attribute
+  is skipped with a `failure reading attribute` warning, or the shape section reports an error line,
+  and the document loads with status `.ok`. **Still open:** label nesting. `ReadSubTree` recurses
+  once per nested label and the limit is the thread's stack, not anything in the file (1000 levels
+  load, 20000 overflow it), so a bridge cap would be an arbitrary constant; see
+  `okf/references/known-occt-bugs.md` and `Scripts/repro/3489/README.md`.
 - **Example:**
   ```swift
   let result = Document.loadOCAF(from: "/tmp/model.cbf")
