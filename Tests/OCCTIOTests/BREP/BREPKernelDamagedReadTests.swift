@@ -17,10 +17,12 @@ import Testing
 //  - a reference the file made up: a shape index outside the table, a location outside the
 //    table, and a trimmed or offset curve whose basis did not read.
 //
-// The bridge does not stand between these tests and the reader (`fromBREPString` hands the stream to
-// `BRepTools::Read` as it is), so an unpatched kernel faults or spins in them, which is what a test
-// of this fix is for. They are gated on `OCCTSWIFT_LOCAL=1` while the pinned asset lacks `0073`;
-// `kernel-integration.yml` runs them. The gate comes off at the repin that pins it.
+// `fromBREPString` reads through a stream that throws where the text ends (the bridge guard),
+// which already refuses a cut file and an overlong word before the reader sees them. These tests
+// therefore only fail on an unpatched kernel for what the guard does not cover: a reference the
+// file made up, a number of 32 characters or more, and the loops that spin on a flag. They are
+// gated on `OCCTSWIFT_LOCAL=1` while the pinned asset lacks `0073`; `kernel-integration.yml` runs
+// them. The gate comes off at the repin that pins it.
 //
 // Every damaged file is made from a box this test writes, with an edit that is checked to have
 // changed the text, so a stale pattern cannot turn a case into a test of the undamaged file. The
@@ -168,13 +170,14 @@ struct BREPKernelDamagedReadTests {
 
     /// The root reference is the last token of the file.
     ///
-    /// A file whose trailing white space was stripped ends as the reader extracts it, and it is the
-    /// whole shape: the extraction succeeded.
+    /// The kernel reads a file whose trailing white space was stripped, since the last token still
+    /// extracts, but the bridge's end-of-stream check refuses it: a written BREP ends in a space,
+    /// and a number ended by the end of the file is the mark of a cut. Relaxing the bridge is a
+    /// separate decision, so this records the refusal.
     @Test(.enabled(if: BREPKernelDamagedReadTests.isLocalKernel))
-    func textWithoutTrailingWhiteSpaceReads() throws {
+    func textWithoutTrailingWhiteSpaceIsRefusedByTheBridge() throws {
         let text = try #require(Self.boxText())
         let stripped = String(text.reversed().drop(while: { $0.isWhitespace }).reversed())
-        let volume = try #require(Self.volume(of: stripped))
-        #expect(abs(volume - 6000) < 1e-6)
+        #expect(Shape.fromBREPString(stripped) == nil)
     }
 }
