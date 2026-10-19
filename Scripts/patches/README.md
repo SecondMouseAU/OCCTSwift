@@ -3709,7 +3709,7 @@ The classes of `Scripts/repro/3487` that `0073` was measured on, unthinned on `0
 | class | `kernel.7` (thinned) faulted / spun | `0073` faulted / spun | `0074` cases | `0074` faulted / spun |
 |---|---|---|---|---|
 | prefix | 2,006 / 414 of 3,741 | 0 / 0 of 3,741 | 28,977 | 0 / 0 |
-| count, ref, root, long, header | 370 / 72 of 1,060 | 0 / 0 of 1,060 | 4,345 | 0 / 0 |
+| count, ref, root, long, header | 356 / 72 of 1,060 | 0 / 0 of 1,060 | 4,345 | 0 / 0 |
 | byte | 69 / 21 of 355 | 22 / 0 of 76,479 (unthinned) | 76,479 | 0 / 0 |
 
 "Returned, then faulted on use" in the `0074` struct and byte runs is 92 `ref` and 407 plus 12 `byte` cases: the reader returned a shape `BRepCheck_Analyzer` faults on (a damaged coordinate, an edge whose pcurve and curve no longer meet). `0073` had 2 `byte` cases of `BRepCheck_Edge::CheckPolygonOnTriangulation` among them, a polygon with a node its triangulation lacks, which `0074` refuses at the reader.
