@@ -55,6 +55,7 @@
 #include <UnitsAPI.hxx>
 #include <UnitsAPI_SystemUnits.hxx>
 #include <BinTools.hxx>
+#include <OSD_FileSystem.hxx>
 #include <BinTools_ShapeReader.hxx>
 #include <BinTools_ShapeWriter.hxx>
 #include <Message.hxx>
@@ -67,6 +68,7 @@
 #include <UnitsMethods.hxx>
 #include <atomic>
 #include <sstream>
+#include <vector>
 #include <XCAFDoc_DocumentTool.hxx>
 #include <TDF_LabelSequence.hxx>
 #include <TDF_Label.hxx>
@@ -693,19 +695,93 @@ char* OCCTShapeToBREPString(OCCTShapeRef shape)
   }
 }
 
+// #3487: BRepTools::Read on a BREP text that ends early faults or spins. The reader extracts with
+// `IS >> buffer` into a `char buffer[255]` it never initialises, and with `IS >> val` into an int
+// it keeps; when the stream is at its end those extractions fail and leave the previous (or
+// indeterminate) value behind. TopTools_ShapeSet::Read(TopoDS_Shape&, IS, nbshapes) then indexes
+// `myShapes(nbshapes - atoi(buffer + 1) + 1)` with it, an unchecked NCollection_IndexedMap access
+// (OCCT's range check is compiled out of the pinned kernel), and the vertex and edge geometry loops
+// `do { IS >> val; ... } while (val > 0)` never end on a stale positive `val`. OCC_CATCH_SIGNALS is
+// inert here, so the fault is uncatchable.
+//
+// The stream is told to throw instead. failbit covers the extraction that fails, and eofbit the
+// one that succeeds on a token the end of the file cut short: a writer-produced BREP always ends in
+// a space ("+1 0 "), so a token that is ended by the end of the file is the sign of a cut, and it
+// is refused at the extraction, before the reader uses the value. The write order is fixed, so
+// every strict prefix of a BREP stops inside some extraction and is refused.
+//
+// This does not validate a BREP that is complete but wrong (an index past a table, a count the
+// body does not match); see Scripts/repro/3487/README.md for what that leaves. A file whose
+// trailing whitespace was stripped is refused with the truncated ones.
+//
+// The same reader overflows a second way: every `IS >> buffer` extracts a whitespace-delimited word
+// into a `char[255]` with no width limit, so a word of 255 bytes or more is a stack overflow
+// (measured as SIGABRT and SIGBUS). A writer-produced BREP has no word near that long (a number is
+// at most 25 bytes), so the stream is read through a buffer that refuses one. The buffer reads
+// ahead in 64 KiB blocks and checks each whole block, so a long word is refused whether or not the
+// reader would have got as far as it, but only within the blocks the reader pulls: a long word in
+// trailing junk past the last block it needs is never seen. That is complete for the reader's own
+// words, which is the class that overflows.
+class OcctBrepWordLimitBuf : public std::streambuf
+{
+public:
+  explicit OcctBrepWordLimitBuf(std::streambuf* theSource)
+      : mySource(theSource),
+        myChunk(65536)
+  {
+  }
+
+protected:
+  int_type underflow() override
+  {
+    if (gptr() < egptr())
+      return traits_type::to_int_type(*gptr());
+    const std::streamsize aRead = mySource->sgetn(myChunk.data(), myChunk.size());
+    if (aRead <= 0)
+      return traits_type::eof();
+    for (std::streamsize i = 0; i < aRead; i++)
+    {
+      const char aChar = myChunk[i];
+      if (aChar == ' ' || aChar == '\n' || aChar == '\t' || aChar == '\r' || aChar == '\v'
+          || aChar == '\f')
+        myWord = 0;
+      else if (++myWord > THE_MAX_WORD)
+        throw std::ios_base::failure("BREP word longer than the reader's 254 byte buffers");
+    }
+    setg(myChunk.data(), myChunk.data(), myChunk.data() + aRead);
+    return traits_type::to_int_type(*gptr());
+  }
+
+private:
+  // OCCT's `char buffer[255]` holds a word and its terminator.
+  static constexpr size_t THE_MAX_WORD = 254;
+
+  std::streambuf*   mySource;
+  std::vector<char> myChunk;
+  size_t            myWord = 0;
+};
+
+static OCCTShapeRef occtReadBREPStream(std::istream& theSource)
+{
+  OcctBrepWordLimitBuf aLimited(theSource.rdbuf());
+  std::istream         aStream(&aLimited);
+  aStream.exceptions(std::ios::failbit | std::ios::badbit | std::ios::eofbit);
+  BRep_Builder builder;
+  TopoDS_Shape shape;
+  BRepTools::Read(shape, aStream, builder);
+  if (shape.IsNull())
+    return nullptr;
+  return new OCCTShape(shape);
+}
+
 OCCTShapeRef OCCTShapeFromBREPString(const char* brepString)
 {
+  if (!brepString)
+    return nullptr;
   try
   {
     std::istringstream iss(brepString);
-    BRep_Builder       builder;
-    TopoDS_Shape       shape;
-    BRepTools::Read(shape, iss, builder);
-    if (shape.IsNull())
-      return nullptr;
-    auto* r  = new OCCTShape();
-    r->shape = shape;
-    return r;
+    return occtReadBREPStream(iss);
   }
   catch (...)
   {
@@ -721,18 +797,13 @@ OCCTShapeRef OCCTImportBREP(const char* path)
 
   try
   {
-    TopoDS_Shape shape;
-    BRep_Builder builder;
-
-    if (!BRepTools::Read(shape, path, builder))
-    {
+    // The stream OCCT's own BRepTools::Read(path) opens, read through the stream overload so the
+    // end of the file is refused rather than followed (#3487).
+    const occ::handle<OSD_FileSystem>& fileSystem = OSD_FileSystem::DefaultFileSystem();
+    std::shared_ptr<std::istream>      stream     = fileSystem->OpenIStream(path, std::ios::in);
+    if (stream.get() == nullptr)
       return nullptr;
-    }
-
-    if (shape.IsNull())
-      return nullptr;
-
-    return new OCCTShape(shape);
+    return occtReadBREPStream(*stream);
   }
   catch (...)
   {

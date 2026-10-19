@@ -1949,7 +1949,7 @@ Deserialize a shape from a BREP-format string.
 public static func fromBREPString(_ brep: String) -> Shape?
 ```
 
-- **Returns:** Deserialized shape, or `nil` if the string is invalid.
+- **Returns:** Deserialized shape, or `nil` if the string is invalid, which includes a string that ends early (every strict prefix of a written BREP is refused, #3487). A complete string with a reference to a shape or curve it does not hold is not checked; see ``Shape/loadBREP(from:)`` in `Shape.md`.
 - **OCCT:** `OCCTShapeFromBREPString` → `BRepTools::Read` from string stream.
 - **Example:**
   ```swift
