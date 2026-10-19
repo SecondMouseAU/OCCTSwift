@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Crafted binary OCAF files can no longer ask the kernel for gigabytes, loop on a label's tag count or overflow a table-name buffer (#3489)
+
+Carried kernel patches `0070` to `0072`, not in the pinned asset until the next repin. Fifteen binary attribute drivers allocated `last - first + 1` elements or a declared size before checking the record held them (1 to 17 GiB from a 400 byte file, the 32-bit wasm failure of #3477), `BinObjMgt_Persistent::GetLabel` tested an overflowing `tagCount * 4` and then looped past the data, and five `BinTools` set readers extracted a table name into a 255 byte buffer with an unbounded `>>` (a 4 KB token terminated the process). Each bound is now what the record, or the buffer, holds. Label nesting 20000 deep still overflows the stack of the recursive reader and is not mitigated.
+
 ### A binary OCAF file with an out-of-range type, root or reference index is refused before OCCT reads it (#3486)
 
 `Document.loadOCAF(from:)` now returns `(nil, .driverFailure)` for a binary OCAF file whose type number is outside its type section, whose root or reference index is outside the object count, whose type or object count is negative, whose root or reference section lacks the comment (or type) section it indexes, or whose table of contents has a name of exactly 512 bytes. OCCT used those numbers as array indices without a check, which crashed or read and wrote out of bounds. Documents OCCT writes carry none of these, so no loadable document is refused. Gaps that are measured and not mitigated (array attribute sizes, label nesting depth, shape-section tokens) are recorded in the known-bugs reference.
