@@ -1993,9 +1993,30 @@ public final class Shape: @unchecked Sendable {
     /// - Debugging geometry issues
     /// - Archiving exact geometry
     ///
+    /// A file that ends early, such as one cut short by an interrupted write, throws
+    /// ``ImportError/importFailed(_:)`` (#3487). `BRepTools::Read` faults, or never returns, on
+    /// one, and neither is catchable, so the bridge reads through a stream that throws where the
+    /// file ends: every strict prefix of a written BREP is refused, and so is a file whose
+    /// trailing whitespace was stripped (a written BREP ends in a space), and so is a word of 255
+    /// bytes or more in the text the reader takes (the reader copies words into a 255 byte buffer).
+    ///
+    /// A file that is complete but wrong is not checked: a reference to a shape that is not in the
+    /// file, or a count the body does not match, can still fault `BRepTools::Read`. Do not load a
+    /// BREP from a source you do not trust.
+    ///
+    /// ```swift
+    /// let url = URL(fileURLWithPath: "/tmp/part.brep")
+    /// do {
+    ///     let shape = try Shape.loadBREP(from: url)
+    ///     print(shape.isValid)
+    /// } catch {
+    ///     print("not a complete BREP file: \(error)")
+    /// }
+    /// ```
+    ///
     /// - Parameter url: URL to the BREP file (.brep)
     /// - Returns: Imported shape
-    /// - Throws: ImportError if import fails
+    /// - Throws: ImportError if import fails, including for a file that is not a complete BREP
     public static func loadBREP(from url: URL) throws -> Shape {
         guard let handle = OCCTImportBREP(url.path) else {
             throw ImportError.importFailed("Failed to import BREP file: \(url.lastPathComponent)")
@@ -2004,6 +2025,9 @@ public final class Shape: @unchecked Sendable {
     }
 
     /// Load a shape from a BREP file path.
+    ///
+    /// Refuses a file that ends early, like ``loadBREP(from:)``, which also says what is not
+    /// checked (#3487).
     public static func loadBREP(fromPath path: String) throws -> Shape {
         guard let handle = OCCTImportBREP(path) else {
             throw ImportError.importFailed("Failed to import BREP file: \(path)")

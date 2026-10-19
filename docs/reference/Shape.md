@@ -2027,8 +2027,9 @@ BREP is OCCT's native exact B-Rep format. It preserves full precision and is use
 
 - **Parameters:** `url`, URL to the `.brep` file.
 - **Returns:** Imported shape.
-- **Throws:** `ImportError.importFailed` on failure.
+- **Throws:** `ImportError.importFailed` on failure, which includes a file that is not a complete BREP.
 - **OCCT:** `BRep_Builder` / `BRepTools::Read` (via `OCCTImportBREP`).
+- **Damaged input (#3487):** a file that ends early, such as one cut short by an interrupted write, throws `ImportError.importFailed`. `BRepTools::Read` faults or never returns on one, and the fault is not catchable, so the bridge reads through a stream that throws where the file ends. Every strict prefix of a written BREP is refused, and so is a file whose trailing whitespace was stripped, because a written BREP ends in a space (`+1 0 `) and a number ended by the end of the file is the mark of a cut. A word of 255 bytes or more in the text the reader takes is refused too (the reader copies words into a 255 byte buffer; the bridge checks in 64 KiB blocks, so a long word in trailing junk past the last block it needs is not seen). **Not covered:** a file that is complete but wrong, such as a reference to a shape or curve that is not in the file or a count the body does not match. `BRepTools::Read` indexes its shape table without a range check for those and can fault on one; see `Scripts/repro/3487/README.md` and #3487. Do not hand `loadBREP` a file from an untrusted source.
 - **Example:**
   ```swift
   let shape = try Shape.loadBREP(from: brepURL)
@@ -2044,6 +2045,7 @@ Load a shape from a BREP file path.
 public static func loadBREP(fromPath path: String) throws -> Shape
 ```
 
+- **Throws:** `ImportError.importFailed`, including for a file that ends early (see ``loadBREP(from:)`` above for what is and is not refused, #3487).
 - **OCCT:** `BRep_Builder` / `BRepTools::Read` (via `OCCTImportBREP`).
 
 ---
