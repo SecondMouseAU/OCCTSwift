@@ -6,6 +6,7 @@
 //        strx    as str, with the stream set to throw on failbit/badbit
 //        strxe   as strx, plus eofbit
 //        bin     BinTools_ShapeReader::Read on a binary file (OCCTBinToolsReadShape's reader)
+//        binset  BinTools::Read, the BinTools_ShapeSet reader (a file BinTools::Write made; #3494)
 //        bridge  strxe through the word-length limit the bridge reads through (a copy of
 //                OcctBrepWordLimitBuf in OCCTBridge_IO_NativeFormats.mm: keep the two in step)
 #include <BRepAlgoAPI_Fuse.hxx>
@@ -20,6 +21,7 @@
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRepPrimAPI_MakeSphere.hxx>
 #include <BRepTools.hxx>
+#include <BinTools.hxx>
 #include <BinTools_ShapeReader.hxx>
 #include <BinTools_ShapeWriter.hxx>
 #include <BRep_Builder.hxx>
@@ -218,6 +220,14 @@ static void readOne(const std::string& mode, const std::string& file)
       bool r = BRepTools::Read(sh, file.c_str(), b);
       report(sh, r);
     }
+    else if (mode == "binset")
+    {
+      std::ifstream      in(file, std::ios::binary);
+      std::string        text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+      std::istringstream iss(text);
+      BinTools::Read(sh, iss);
+      report(sh, true);
+    }
     else if (mode == "bin")
     {
       std::ifstream      in(file, std::ios::binary);
@@ -317,8 +327,17 @@ static int batch(const std::string& mode, const char* listFile)
 
 int main(int argc, char** argv)
 {
-  signal(SIGSEGV, onSig);
-  signal(SIGBUS, onSig);
+  // A stack overflow has no stack to run the handler on: give it one (#3494).
+  static char altStack[1 << 16];
+  stack_t     ss = {};
+  ss.ss_sp       = altStack;
+  ss.ss_size     = sizeof altStack;
+  sigaltstack(&ss, nullptr);
+  struct sigaction sa = {};
+  sa.sa_handler       = onSig;
+  sa.sa_flags         = SA_ONSTACK;
+  sigaction(SIGSEGV, &sa, nullptr);
+  sigaction(SIGBUS, &sa, nullptr);
   signal(SIGABRT, onSig);
   signal(SIGALRM, onSig);
   if (argc >= 3 && std::string(argv[1]) == "gen")

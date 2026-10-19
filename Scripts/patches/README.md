@@ -21,7 +21,7 @@ retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), a
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry), and
 `0031` retired 2026-10-10 at the `v4.0.0-kernel.6` repin (#3065: the supported pattern is one
 adaptor per worker, so the lock it added is not needed).
-The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0066, 0068–0073.
+The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0066, 0068–0074.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -3641,6 +3641,96 @@ What each part buys, removed from the whole in turn (the same 5,156 thinned case
 **Verification.** A `Locations` entry `2 9999 1 0` (a location composed from an entry that is not in the table; `Scripts/repro/3490/cases.py` writes it) faults on the unpatched kernel and in the build without the composed-location range, and is refused with it; no file of the matrix has a composed location, which is why the ablation above does not show it. `BREPKernelDamagedReadTests` (gated on `OCCTSWIFT_LOCAL=1` until the pinned asset carries this) faults on an unpatched `v4.0.0-kernel.7` and passes patched. `Scripts/repro/occt1568-fillet-opposite-edge/gtest/window.brep` with its trailing white space stripped reads (10 faces, valid), before and after: a token the end of the stream ended is a whole token, the rule the kernel now holds.
 
 **Upstream checked 2026-10-18:** none of the files has a commit on master since 2026-08-01 and no open PR touches them; OCCT#1560 and OCCT#1608 are open. **Not yet filed upstream.** The pieces are independent and could go as three PRs (the `setw` reads, the failed-stream checks, `GetReal`); OCCT#1608 names the vertex and edge loops with `&& IS`.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0074-Shape-readers-refuse-a-count-the-stream-cannot-supply-3490.patch
+
+**The shape readers refuse a count the stream cannot supply, and a reference outside its table** ([#3490](https://github.com/SecondMouseAU/OCCTSwift/issues/3490), follow-up to [#3487](https://github.com/SecondMouseAU/OCCTSwift/issues/3487), [#3489](https://github.com/SecondMouseAU/OCCTSwift/issues/3489) and `0073`; not filed upstream).
+
+`0073` stopped the text readers at a stream that had failed and left, by design, one class open: **a count a record declares**. The text and binary shape readers size an array from it before reading the first element, and trust it. The library is built with `No_Exception`, so the range checks of `NCollection_Array1`, `NCollection_Array2` and `NCollection_IndexedMap` are gone and nothing refuses a damaged one:
+
+1. **A negative count sizes an array backwards.** A pole, knot or node count of a B-spline curve or surface, a triangulation or a polygon, read as a negative number, faults in the construction of the array or of the object built from it (`Geom_BSplineCurve`, `Geom_BSplineSurface`, `Poly_Triangulation`). These are the 22 `byte` cases `0073` left (a `-` where a digit was): 12 in a curve record, 8 in a surface record, 2 in a triangulation.
+2. **A count past the end of the stream sizes an array of that many elements** and loops to its end, though the stream failed at the first one. 2^31 - 1 poles is a 50 GB array; on `v4.0.0-kernel.7` the read takes 42 s to 2 minutes to find the end of the file.
+3. **A product overflows.** The two counts of a pole grid are each fine and their product is not: 65536 by 65536 poles.
+4. **A power of a composed location.** `TopLoc_Location::Powered` raises a composed location one multiplication at a time, recursively, so a power of 10^8 is the end of the stack (`TopTools_LocationSet::Read`, `BinTools_LocationSet::Read`, `BinTools_ShapeReader::ReadLocation`). A written file never raises a composed location (a composed entry names single ones), which `Powered` takes in one step.
+5. **A reference into a table.** A triangle names the nodes of its triangulation, a polygon on a triangulation the nodes of the triangulation it is attached to, and none was checked (`BRepCheck_Edge::CheckPolygonOnTriangulation` then faults). A face that holds only a triangulation indexed `myTriangulations.FindKey(s)` unchecked in `BRepTools_ShapeSet`; in the binary readers an edge's `Polygon3D`, `PolygonOnTriangulation` and `Triangulation`, a curve, a surface, a location and a sub-shape (`myPolygons3D(c)`, `myNodes(pt)`, `myTriangulations.FindKey(t)`, `myMap(I)`, `Shape(nbshapes - anIndx + 1)`) did the same, none of them with the range check `GeomTools_*Set` and `TopTools_LocationSet` already have.
+
+**The rule**, one for every site: a count is refused when it is negative, or when the characters or bytes the stream still holds cannot hold it, before any array is sized from it. `Standard_IStreamHasItems(stream, count, minimum size of an item)` (`Standard_IStream.hxx`, so every reader reaches it) answers it: a negative count or a failed stream is refused; a count of 4096 or less is allowed without a look, since the reader stops at the first element that is missing; a larger one is measured against the rest of the stream (`tellg`, `seekg` to the end, back; state and position restored); a stream that cannot be measured is allowed up to 2^24 items. **Cost on a valid file: none measured.** A text BREP of 31.9 MB (a sphere of 251,730 nodes and 502,752 triangles) reads in 0.40 s (`path`) and 3.4 s (`str`) on `v4.0.0-kernel.7` and on the patched build; a binary one of 16.1 MB in 1.6 s on both. The minimum size of an item is a lower bound (a text number is one character and a separator, a binary one is the size of its type, a tail item needs no separator), and the 18 corpus files, the 13 fixtures, the 15 tracked `.brep` files and 28 binary files read identically (below).
+
+Failure is reported the way each reader already reports it: a failed stream and a null result from the text readers (the table is left as it was, which the next table then finds failed), `Standard_Failure` from the binary ones. A reference outside its table is **skipped**, as the text readers already skip a `Polygon3D` and a `PolygonOnTriangulation` the table does not hold; a sub-shape or a location outside the binary table is **refused**, as `TopTools_ShapeSet::Read` already refuses it. A triangle with a node the triangulation does not have, a polygon with a node its triangulation lacks, and a power of 4096 or more of a composed location are refused.
+
+**Census** (every site that reads a count or a reference in the shape readers; `git grep` over `src/` for the reads that feed an array size, a loop bound or a table index):
+
+| Site | What it declares | Covered |
+|---|---|---|
+| `Poly.cxx` `ReadTriangulation`, `ReadPolygon3D`, `ReadPolygon2D` | node, triangle counts; triangle nodes | yes |
+| `BRepTools_ShapeSet.cxx` `ReadPolygon3D`, `ReadPolygonOnTriangulation`, `ReadTriangulation` | table count, per-record node and triangle counts; triangle nodes | yes |
+| `BRepTools_ShapeSet.cxx` edge case 5, 6, 7 and face `val == 2` | polygon, node and triangulation indices; polygon nodes against the triangulation | yes (the face index was the one unchecked) |
+| `GeomTools_{Curve,Curve2d}Set.cxx` Bezier and B-spline records, table count | degree, pole and knot counts | yes |
+| `GeomTools_SurfaceSet.cxx` Bezier and B-spline records, table count | degrees, pole grid, knot counts and their product | yes |
+| `TopTools_LocationSet.cxx` | power of a composed location | yes |
+| `TopTools_ShapeSet.cxx` | shape count, shape index | no: no array is sized from it, and `0073` bounds the index |
+| `BinTools_{Curve,Curve2d}Set.cxx` B-spline records; `Curve`, `Curve2d` | pole, knot counts; table index | yes; Bezier degree is a 16 bit `ExtChar`, at most 65536 poles, left |
+| `BinTools_SurfaceSet.cxx` Bezier and B-spline records; `Surface` | degrees (16 bit), pole grid and its product, knot counts; table index | yes |
+| `BinTools_LocationSet.cxx` `Read`, `Location` | location index, power | yes |
+| `BinTools_ShapeSet.cxx` `ReadPolygon3D`, `ReadPolygonOnTriangulation`, `ReadTriangulation` | table count, per-record counts; triangle nodes | yes |
+| `BinTools_ShapeSet.cxx` `ReadShape`, `ReadSubs` | polygon, node and triangulation indices (edge, face); sub-shape index and orientation | yes |
+| `BinTools_ShapeReader.cxx` `ReadPolygon3d`, `ReadPolygon`, `ReadTriangulation`, edge case 6 and 7, `ReadLocation` | node and triangle counts; triangle nodes; polygon nodes; power | yes |
+| `BinTools_ShapeReader.cxx` `ReadReference`, `GoTo` | a position in the file a shape, curve or location is read from | **no**: not a count, and a position that names itself or a cycle is a different rule (see below) |
+| `Geom_TrimmedCurve::SetTrim`, `Geom2d_TrimmedCurve`, `Geom_RectangularTrimmedSurface::SetTrim` | trim parameters (doubles) | **no**: a value, not a count |
+| `BRepCheck_*` | | **no**: the use site, not a reader |
+
+**Measured**, with the harness of `Scripts/repro/3487` and `Scripts/repro/3494`, macOS arm64, on the bare readers (no bridge stream guard). Before is the `v4.0.0-kernel.7` slice, `0073` is that slice with the changed translation units of `0070` to `0073` compiled from the patched tree (`-O2 -DNDEBUG -DNo_Exception`) and swapped in with `ar r`, and `0074` is the same with this patch's. That is not a `build-occt.sh` run; `kernel-integration.yml` is the full build.
+
+The new count class, `counts.py`: every standalone integer token of the 31 text files replaced by each of -1, -2^31, 2^31 - 1, 10^6 and 10^8 (a count, an index, a degree, a flag), and the four bytes at every offset of the binary files (every 4th offset of a file over 8,000 bytes) by the same values. Reader faults and spins; "returned, then faulted" is the use site (`BRepCheck_Analyzer` on a damaged coordinate or reference), after the read returned. `kernel.7` is every 8th case of the same set (an unpatched reader spins on its share of them, and each spin costs its CPU allowance), `0073` and `0074` are full. Text, `BRepTools::Read` on a stream (`str`; on a file, `path`, the 0074 row is identical):
+
+| build | cases | reader faulted | reader spun | refused | accepted | returned, then faulted or spun on use |
+|---|---|---|---|---|---|---|
+| `kernel.7` (every 8th case) | 12,453 | 570 | 124 | 710 | 10,568 | 481 |
+| `0073` | 99,620 | 268 | 408 | 10,559 | 84,528 | 3,857 |
+| `0074` | 99,620 | 0 | 0 | 25,286 | 72,125 | 2,209 |
+
+Binary, `BinTools::Read` (the `BinTools_ShapeSet` reader, `binset`) and `BinTools_ShapeReader` (`bin`):
+
+| reader | build | cases | reader faulted | reader spun | refused | accepted | returned, then faulted or spun on use |
+|---|---|---|---|---|---|---|---|
+| `binset` | `kernel.7` (every 8th case) | 23,130 | 3,667 | 11 | 2,685 | 16,687 | 80 |
+| `binset` | `0073` | 185,040 | 29,241 | 95 | 21,722 | 133,306 | 676 |
+| `binset` | `0074` | 185,040 | 16 | 18 | 46,143 | 137,759 | 1,104 |
+| `bin` | `kernel.7` (every 8th case) | 19,560 | 56 | 17 | 3,621 | 15,758 | 108 |
+| `bin` | `0073` | 156,474 | 399 | 110 | 28,741 | 126,386 | 838 |
+| `bin` | `0074` | 156,474 | 30 | 41 | 29,179 | 126,385 | 839 |
+
+The `0074` binary faults and spins (`binset` 16 and 18, `bin` 30 and 41) are two things, neither a count: **a trim parameter that is not a number** (a `Geom_TrimmedCurve` or `Geom_RectangularTrimmedSurface` read from the bytes of a `nan` or an infinity, all in `x_surfaces`: 16 faults and 18 spins in `binset`, 20 and 40 in `bin`, `SetTrim` recursing without end or looping), and, in `bin`, **a shape the position references of `BinTools_ShapeReader` made unusable** (11 cases of `x_located`, 10 faults and 1 spin in `TopExp_Explorer` over the returned shape). A text file reaches the first with `nan` as a trim parameter (`10 nan nan 0 4` in the `Surfaces` table faults the reader on `0074`). The text readers have no other.
+
+The classes of `Scripts/repro/3487` that `0073` was measured on, unthinned on `0074` (`byte`, `prefix`, `struct`), and the thinned sets of that README for the builds before:
+
+| class | `kernel.7` (thinned) faulted / spun | `0073` faulted / spun | `0074` cases | `0074` faulted / spun |
+|---|---|---|---|---|
+| prefix | 2,006 / 414 of 3,741 | 0 / 0 of 3,741 | 28,977 | 0 / 0 |
+| count, ref, root, long, header | 356 / 72 of 1,060 | 0 / 0 of 1,060 | 4,345 | 0 / 0 |
+| byte | 69 / 21 of 355 | 22 / 0 of 76,479 (unthinned) | 76,479 | 0 / 0 |
+
+"Returned, then faulted on use" in the `0074` struct and byte runs is 92 `ref` and 407 plus 12 `byte` cases: the reader returned a shape `BRepCheck_Analyzer` faults on (a damaged coordinate, an edge whose pcurve and curve no longer meet). `0073` had 2 `byte` cases of `BRepCheck_Edge::CheckPolygonOnTriangulation` among them, a polygon with a node its triangulation lacks, which `0074` refuses at the reader.
+
+**Verification.** `BREPKernelRecordCountTests` (7 tests, `OCCTIOTests`, gated on `OCCTSWIFT_LOCAL=1` until the pinned asset carries this), each test its own process, on the unpatched `v4.0.0-kernel.7` and on the patched build. The bridge guard (`occtReadBREPStream`) already refuses a cut file and an overlong word before the reader, so every case is a complete file with a made-up count, which the guard does not see:
+
+| test | unpatched `kernel.7` | patched |
+|---|---|---|
+| `recordsWithDeclaredCountsReadBack` (control) | pass | pass |
+| `aNegativeCountIsRefused` | SIGSEGV | pass |
+| `aPoleGridWhoseSizeOverflowsIsRefused` | SIGSEGV | pass |
+| `aCountFarBeyondTheFileIsRefusedAtOnce` | fails its time limit (35.8 s against 10 s) | pass |
+| `aTriangleWithANodeTheTriangulationLacksIsRefused` | fails (all 3 triangles read) | pass |
+| `aFaceNamingATriangulationOutsideTheTableDoesNotLookItUp` | SIGSEGV | pass |
+| `aLargePowerOfAComposedLocationIsRefused` | SIGILL (the stack) | pass |
+
+**Real files still read.** All 15 tracked `.brep` files, the 18 files of the #3487 corpus and the 13 of the #3494 fixtures read to the same result on `kernel.7` and on `0074` (faces, validity: 46 files, identical, including the 4 that are invalid and the 2 that fault on a use, on both); 28 binary files (`BinTools_ShapeReader`, `BinTools::Read`) the same. Meshed round trips (`Triangulations`, `PolygonOnTriangulations`, `Polygon3D`, normals) are among them. `OCCTIOTests` (244 tests) passes on `0074`, `BREPDamagedInputTests` among them (its every-prefix test takes 28 to 32 s against its 60 s limit at a machine load of about 280); `BRepGraphAttributeTests`, `BRepToolsUtilitiesTests`, `BRepToolExtrasTests`, `BRepToolCompletionsTests`, `BinToolsTests`, `OCAFBinaryDocumentDataKernelReadTests`, the fillet and chamfer fixtures (`FilletMergeWireRemovalTests`, `ChamferParallelSpineTangentTests`, `FilletObstacleTests`, `FilletModelValidityTests`), `StressRoundTrip*`, `StressCrossFormatConsistencyTests`, `StressBRepCheckInContextGuardTests`, `ShapeTopologyExtensionTests` and `Issue336ChainedHistoryTests` pass.
+
+**Left, and why.** (a) A trim parameter that is not a number faults the constructor of a trimmed curve or surface: a value hazard in `Geom_TrimmedCurve::SetTrim` and `Geom_RectangularTrimmedSurface::SetTrim` (periodic basis, `ElCLib::AdjustPeriodic` with `nan`), reachable from any caller and not a count. (b) The position references of `BinTools_ShapeReader` (`ReadReference`, `GoTo`) are not range checked and a cycle is not detected. (c) A structurally inconsistent shape the reader returns and `BRepCheck` then faults on: the use site, 2,209 cases of the text count class and 92 of the struct class, all coordinate or reference values. (d) On a stream that cannot be measured (the bridge's, `OcctBrepWordLimitBuf`, has no `seekoff`) a count up to 2^24 is allowed and sizes an array of at most about 400 MB that the failing stream then frees; the bridge guard throws at the end of the file in any case. **#3490 stays open** under (a) to (c).
+
+**Upstream checked 2026-10-19:** none of the 13 files has a commit on master since 2026-08-01, and no open PR touches them. **Not filed upstream.** The pieces are independent (`Standard_IStreamHasItems` with the text readers, the binary readers, the location power, the triangle and polygon node checks).
 
 **Retire** once the bundled OCCT includes this fix.
 
