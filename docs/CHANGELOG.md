@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Text BREP readers: carried kernel patch 0073 stops them faulting or spinning on a cut or damaged file (#3490)
+
+`Shape.loadBREP` and `Shape.fromBREPString` no longer fault or spin on a text BREP that is cut short or damaged, once the kernel carries patch `0073` (not in `v4.0.0-kernel.7`; the Swift tests are gated on `OCCTSWIFT_LOCAL=1` until the repin). The readers took a word into a fixed buffer without a limit, used the value a failed extraction left behind to index the shape table, and looped on a stale count (OCCT#1608); `GeomTools::GetReal` cut a number of 32 characters or more and read its tail as the next number (OCCT#1560). On `v4.0.0-kernel.7`, 2,006 of 3,741 sampled prefixes of 18 files faulted and 414 spun; with the patch none does, and a file that loses only its trailing white space still reads. Open: a negative count in a B-spline record (22 of 76,479 byte-damaged files) and a structurally inconsistent shape that `BRepCheck` then faults on.
+
 ### A binary OCAF file with an out-of-range type, root or reference index is refused before OCCT reads it (#3486)
 
 `Document.loadOCAF(from:)` now returns `(nil, .driverFailure)` for a binary OCAF file whose type number is outside its type section, whose root or reference index is outside the object count, whose type or object count is negative, whose root or reference section lacks the comment (or type) section it indexes, or whose table of contents has a name of exactly 512 bytes. OCCT used those numbers as array indices without a check, which crashed or read and wrote out of bounds. Documents OCCT writes carry none of these, so no loadable document is refused. Gaps that are measured and not mitigated (array attribute sizes, label nesting depth, shape-section tokens) are recorded in the known-bugs reference.
