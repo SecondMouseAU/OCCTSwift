@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### BREP readers: carried kernel patch 0074 refuses a count the stream cannot supply (#3490)
+
+`Shape.loadBREP`, `Shape.fromBREPString` and the binary shape readers no longer fault, or take minutes, on a BREP whose records declare a count the file cannot supply, once the kernel carries patch `0074` (not in `v4.0.0-kernel.7`; the Swift tests are gated on `OCCTSWIFT_LOCAL=1` until the repin). A negative pole, knot or node count of a B-spline or a mesh sized an array backwards, a count of 2^31 - 1 sized a 50 GB array, a pole grid of 65536 by 65536 overflowed its product, a composed location raised to a power of 10^8 ended at the stack, and a triangle or a polygon could name nodes its triangulation lacks. On `v4.0.0-kernel.7` 694 of 12,453 sampled count cases of 31 files fault or spin; with the patch none of 99,620 does in the text readers, and the 22 `byte` faults `0073` left are gone. Open: a trim parameter that is not a number, `BinTools_ShapeReader`'s position references, and a structurally inconsistent shape that `BRepCheck` then faults on.
+
 ### Text BREP readers: carried kernel patch 0073 stops them faulting or spinning on a cut or damaged file (#3490)
 
 `Shape.loadBREP` and `Shape.fromBREPString` no longer fault or spin on a text BREP that is cut short or damaged, once the kernel carries patch `0073` (not in `v4.0.0-kernel.7`; the Swift tests are gated on `OCCTSWIFT_LOCAL=1` until the repin). The readers took a word into a fixed buffer without a limit, used the value a failed extraction left behind to index the shape table, and looped on a stale count (OCCT#1608); `GeomTools::GetReal` cut a number of 32 characters or more and read its tail as the next number (OCCT#1560). On `v4.0.0-kernel.7`, 2,006 of 3,741 sampled prefixes of 18 files faulted and 414 spun; with the patch none does, and a file that loses only its trailing white space still reads. Open: a negative count in a B-spline record (22 of 76,479 byte-damaged files) and a structurally inconsistent shape that `BRepCheck` then faults on.
