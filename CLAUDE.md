@@ -649,7 +649,11 @@ to carry a new one; numbers are never reused. Existing build trees (`occt-build-
 macOS SDK sysroot and can no longer incrementally compile, so a fresh `cmake` configure is required
 to pick up patches. The lifecycle from GTest to upstream PR is
 [`okf/policies/upstream-occt-patch-process.md`](okf/policies/upstream-occt-patch-process.md) and
-[`okf/policies/upstream-occt-style.md`](okf/policies/upstream-occt-style.md).
+[`okf/policies/upstream-occt-style.md`](okf/policies/upstream-occt-style.md). **Anything bound for
+the OCCT tree follows OCCT's own AI instructions**
+([`okf/references/occt-ai-instructions.md`](okf/references/occt-ai-instructions.md), live file
+`.github/copilot-instructions.md` on `IR`): read the live file first, and open an upstream issue
+before a new PR.
 
 **A new patch means regenerating `Scripts/occt-raise-if-map.txt` in the same PR.** That map is a
 committed derivation of the PATCHED `Libraries/occt-src`, so a patch that adds or moves a raise
