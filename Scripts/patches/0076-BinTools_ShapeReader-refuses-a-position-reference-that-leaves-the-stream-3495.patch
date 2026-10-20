@@ -1,0 +1,336 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Data - BinTools_ShapeReader refuses a position reference that leaves the
+ stream, loops, or names the wrong kind of record
+
+BinTools_ShapeReader reads a shape, location, curve, surface, polygon or triangulation either
+inline or from a position earlier in the file (BinTools_IStream::ReadReference, then GoTo). The
+position is trusted, and so is the byte after it:
+ - ReadReference returns `position - delta - 1` in unsigned arithmetic. A delta past the start of
+   the stream wraps to a position near 2^64, GoTo fails the stream, and the reader goes on reading
+   end-of-file bytes as if they were a record.
+ - A reference to a shape or a location that is still being read is not found in the position
+   table (the entry is written when the record ends), so the reader reads that record again, from
+   inside itself: a reference from a compound to the compound that holds it recurses until the stack
+   ends. A chain of references to references recurses once per link.
+ - A reference to a record that is a null shape (EmptyShape, EndShape) returned a null shape that
+   the caller took for the end of its list, and the reference then took its location and its
+   orientation.
+ - The byte after a shape reference is the orientation, and was cast to TopAbs_Orientation
+   without a range check, so a shape with the orientation 255 reached TopAbs::Compose (a table
+   lookup) in TopoDS_Iterator and TopExp_Explorer. The continuity byte of an edge was cast to
+   GeomAbs_Shape the same way.
+ - A location slot that holds some other record type was read as the identity, without consuming
+   anything, and a curve, curve 2d, surface, polygon, polygon on triangulation or triangulation
+   slot that holds the wrong kind of record was read as a null, so a damaged byte kept the rest of
+   the file in step and the reader returned a shape whose structure no longer matched what the
+   writer wrote (BRepCheck_Analyzer then faulted on it, #3490).
+
+One rule: a reference names the start of a record before itself, in the stream, that is not a
+reference and is not being read, and a type or enumeration byte is one the slot can hold.
+BinTools_IStream::ReadReference refuses a delta of zero or one that reaches past the start of the
+stream. BinTools_ShapeReader keeps the positions of the shapes and locations it is reading
+(a member, myActivePos, cleared by Clear) and refuses a reference to one of them, a reference
+whose target is outside the stream or is another reference, and a reference to a null shape. The
+orientation and continuity bytes are checked against their enumerations, a location slot against
+the four location record types, and each other slot against its record type and the type for a
+null. A file the writer wrote is read as before: it never references a reference, a record it is
+inside, or a position that holds no record, and it writes only valid bytes.
+
+Failure is Standard_Failure, which is how the reader already reports a damaged record and what the
+bridge catches.
+
+Tracked as SecondMouseAU/OCCTSwift#3495, follow-up to #3490 and carried patch 0074.
+
+---
+diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_IStream.cxx b/src/ModelingData/TKBRep/BinTools/BinTools_IStream.cxx
+--- a/src/ModelingData/TKBRep/BinTools/BinTools_IStream.cxx
++++ b/src/ModelingData/TKBRep/BinTools/BinTools_IStream.cxx
+@@ -85,7 +85,9 @@ uint64_t BinTools_IStream::ReadReference()
+     default:
+       break;
+   }
+-  if (aDelta == 0)
++  // a reference names a record before itself: a delta of zero, or one that reaches past the start
++  // of the stream, is damage, and the unsigned subtraction below would wrap to a huge position
++  if (aDelta == 0 || aDelta >= aCurrentPos)
+   {
+     Standard_SStream aMsg;
+     aMsg << "BinTools_IStream::ReadReference: invalid reference " << (char)myLastType << '\n';
+diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_ShapeReader.cxx b/src/ModelingData/TKBRep/BinTools/BinTools_ShapeReader.cxx
+--- a/src/ModelingData/TKBRep/BinTools/BinTools_ShapeReader.cxx
++++ b/src/ModelingData/TKBRep/BinTools/BinTools_ShapeReader.cxx
+@@ -42,6 +42,64 @@ static bool IsPolygonOfTriangulation(const occ::handle<Poly_PolygonOnTriangulati
+   return true;
+ }
+ 
++namespace
++{
++//! Forgets the position of a record that is being read when the read ends, by return or by throw.
++class ActivePosition
++{
++public:
++  ActivePosition(NCollection_Map<uint64_t>& theMap, const uint64_t thePosition)
++      : myMap(theMap),
++        myPosition(thePosition)
++  {
++    myMap.Add(thePosition);
++  }
++
++  ~ActivePosition() { myMap.Remove(myPosition); }
++
++  ActivePosition(const ActivePosition&)            = delete;
++  ActivePosition& operator=(const ActivePosition&) = delete;
++
++private:
++  NCollection_Map<uint64_t>& myMap;
++  uint64_t                   myPosition;
++};
++
++//! Moves to the record a reference names. The writer references the start of a record it has
++//! written, so the target is inside the stream, is not a reference itself (a chain of references
++//! recurses once per link) and is not a record that is still being read (a cycle recurses
++//! without end).
++void GoToReferenced(BinTools_IStream&                theStream,
++                    const uint64_t                   theRef,
++                    const NCollection_Map<uint64_t>& theActive)
++{
++  if (theActive.Contains(theRef))
++  {
++    throw Standard_Failure("BinTools_ShapeReader: a reference to a record that is being read");
++  }
++  theStream.GoTo(theRef);
++  const int aNext = theStream ? theStream.Stream().peek() : EOF;
++  if (aNext == EOF
++      || (aNext >= BinTools_ObjectType_Reference8 && aNext <= BinTools_ObjectType_Reference64))
++  {
++    throw Standard_Failure("BinTools_ShapeReader: a reference to a position that holds no record");
++  }
++}
++
++//! A byte read as a TopAbs_Orientation or a GeomAbs_Shape that the enumeration does not have.
++uint8_t ReadEnumByte(BinTools_IStream& theStream, const uint8_t theMax, const char* theName)
++{
++  const uint8_t aByte = theStream.ReadByte();
++  if (aByte > theMax)
++  {
++    Standard_SStream aMsg;
++    aMsg << "BinTools_ShapeReader: " << theName << " out of range: " << int(aByte) << '\n';
++    throw Standard_Failure(aMsg.str().c_str());
++  }
++  return aByte;
++}
++} // namespace
++
+ //=================================================================================================
+ 
+ BinTools_ShapeReader::BinTools_ShapeReader() = default;
+@@ -63,6 +121,7 @@ void BinTools_ShapeReader::Clear()
+   myPolygon3dPos.Clear();
+   myPolygonPos.Clear();
+   myTriangulationPos.Clear();
++  myActivePos.Clear();
+ }
+ 
+ //=================================================================================================
+@@ -96,14 +155,20 @@ TopoDS_Shape BinTools_ShapeReader::ReadShape(BinTools_IStream& theStream)
+     else
+     {
+       uint64_t aCurrent = theStream.Position();
+-      theStream.GoTo(aRef); // go to the referenced position
++      GoToReferenced(theStream, aRef, myActivePos); // go to the referenced position
+       aResult = ReadShape(theStream);
+       theStream.GoTo(aCurrent); // returns to the current position
+     }
++    if (aResult.IsNull())
++    {
++      throw Standard_Failure("BinTools_ShapeReader: a reference to a null shape");
++    }
+     aResult.Location(*ReadLocation(theStream), false);
+-    aResult.Orientation(TopAbs_Orientation(theStream.ReadByte()));
++    aResult.Orientation(
++      TopAbs_Orientation(ReadEnumByte(theStream, TopAbs_EXTERNAL, "orientation")));
+     return aResult;
+   }
++  ActivePosition aActive(myActivePos, aPosition);
+   // read the shape
+   TopAbs_ShapeEnum       aShapeType        = theStream.ShapeType();
+   TopAbs_Orientation     aShapeOrientation = theStream.ShapeOrientation();
+@@ -219,7 +284,7 @@ TopoDS_Shape BinTools_ShapeReader::ReadShape(BinTools_IStream& theStream)
+               if (aClosed)
+               {
+                 aCurve2d_2 = ReadCurve2d(theStream);
+-                aReg       = (GeomAbs_Shape)theStream.ReadByte();
++                aReg       = (GeomAbs_Shape)ReadEnumByte(theStream, GeomAbs_CN, "continuity");
+               }
+               occ::handle<Geom_Surface> aSurface = ReadSurface(theStream);
+               const TopLoc_Location*    aLoc     = ReadLocation(theStream);
+@@ -243,7 +308,7 @@ TopoDS_Shape BinTools_ShapeReader::ReadShape(BinTools_IStream& theStream)
+             }
+             case 4: // -4- Regularity
+             {
+-              GeomAbs_Shape             aReg      = (GeomAbs_Shape)theStream.ReadByte();
++              GeomAbs_Shape aReg = (GeomAbs_Shape)ReadEnumByte(theStream, GeomAbs_CN, "continuity");
+               occ::handle<Geom_Surface> aSurface1 = ReadSurface(theStream);
+               const TopLoc_Location*    aLoc1     = ReadLocation(theStream);
+               occ::handle<Geom_Surface> aSurface2 = ReadSurface(theStream);
+@@ -384,12 +449,17 @@ const TopLoc_Location* BinTools_ShapeReader::ReadLocation(BinTools_IStream& theS
+       return aFound;
+     }
+     uint64_t aCurrent = theStream.Position();
+-    theStream.GoTo(aRef); // go to the referenced position
++    GoToReferenced(theStream, aRef, myActivePos); // go to the referenced position
+     const TopLoc_Location* aResult = ReadLocation(theStream);
+     theStream.GoTo(aCurrent); // returns to the current position
+     return aResult;
+   }
+-  // read the location directly from the stream
++  // read the location directly from the stream; any other type is a record of another kind
++  if (aType != BinTools_ObjectType_SimpleLocation && aType != BinTools_ObjectType_Location)
++  {
++    throw Standard_Failure("BinTools_ShapeReader::ReadLocation: unexpected record type");
++  }
++  ActivePosition  aActive(myActivePos, aPosition);
+   TopLoc_Location aLoc;
+   if (aType == BinTools_ObjectType_SimpleLocation)
+   {
+@@ -431,7 +501,7 @@ occ::handle<Geom_Curve> BinTools_ShapeReader::ReadCurve(BinTools_IStream& theStr
+       return *aFound;
+     }
+     uint64_t aCurrent = theStream.Position();
+-    theStream.GoTo(aRef); // go to the referenced position
++    GoToReferenced(theStream, aRef, myActivePos); // go to the referenced position
+     aResult = ReadCurve(theStream);
+     theStream.GoTo(aCurrent); // returns to the current position
+   }
+@@ -441,6 +511,10 @@ occ::handle<Geom_Curve> BinTools_ShapeReader::ReadCurve(BinTools_IStream& theStr
+     theStream.UpdatePosition();
+     myCurvePos.Bind(aPosition, aResult);
+   }
++  else if (theStream.LastType() != BinTools_ObjectType_EmptyCurve)
++  {
++    throw Standard_Failure("BinTools_ShapeReader: unexpected record type, expected a Curve");
++  }
+   return aResult;
+ }
+ 
+@@ -460,7 +534,7 @@ occ::handle<Geom2d_Curve> BinTools_ShapeReader::ReadCurve2d(BinTools_IStream& th
+       return *aFound;
+     }
+     uint64_t aCurrent = theStream.Position();
+-    theStream.GoTo(aRef); // go to the referenced position
++    GoToReferenced(theStream, aRef, myActivePos); // go to the referenced position
+     aResult = ReadCurve2d(theStream);
+     theStream.GoTo(aCurrent); // returns to the current position
+   }
+@@ -470,6 +544,10 @@ occ::handle<Geom2d_Curve> BinTools_ShapeReader::ReadCurve2d(BinTools_IStream& th
+     theStream.UpdatePosition();
+     myCurve2dPos.Bind(aPosition, aResult);
+   }
++  else if (theStream.LastType() != BinTools_ObjectType_EmptyCurve2d)
++  {
++    throw Standard_Failure("BinTools_ShapeReader: unexpected record type, expected a Curve2d");
++  }
+   return aResult;
+ }
+ 
+@@ -489,7 +567,7 @@ occ::handle<Geom_Surface> BinTools_ShapeReader::ReadSurface(BinTools_IStream& th
+       return *aFound;
+     }
+     uint64_t aCurrent = theStream.Position();
+-    theStream.GoTo(aRef); // go to the referenced position
++    GoToReferenced(theStream, aRef, myActivePos); // go to the referenced position
+     aResult = ReadSurface(theStream);
+     theStream.GoTo(aCurrent); // returns to the current position
+   }
+@@ -499,6 +577,10 @@ occ::handle<Geom_Surface> BinTools_ShapeReader::ReadSurface(BinTools_IStream& th
+     theStream.UpdatePosition();
+     mySurfacePos.Bind(aPosition, aResult);
+   }
++  else if (theStream.LastType() != BinTools_ObjectType_EmptySurface)
++  {
++    throw Standard_Failure("BinTools_ShapeReader: unexpected record type, expected a Surface");
++  }
+   return aResult;
+ }
+ 
+@@ -518,7 +600,7 @@ occ::handle<Poly_Polygon3D> BinTools_ShapeReader::ReadPolygon3d(BinTools_IStream
+       return *aFound;
+     }
+     uint64_t aCurrent = theStream.Position();
+-    theStream.GoTo(aRef); // go to the referenced position
++    GoToReferenced(theStream, aRef, myActivePos); // go to the referenced position
+     aResult = ReadPolygon3d(theStream);
+     theStream.GoTo(aCurrent); // returns to the current position
+   }
+@@ -549,6 +631,10 @@ occ::handle<Poly_Polygon3D> BinTools_ShapeReader::ReadPolygon3d(BinTools_IStream
+     }
+     myPolygon3dPos.Bind(aPosition, aResult);
+   }
++  else if (theStream.LastType() != BinTools_ObjectType_EmptyPolygon3d)
++  {
++    throw Standard_Failure("BinTools_ShapeReader: unexpected record type, expected a Polygon3d");
++  }
+   return aResult;
+ }
+ 
+@@ -569,7 +655,7 @@ occ::handle<Poly_PolygonOnTriangulation> BinTools_ShapeReader::ReadPolygon(
+       return *aFound;
+     }
+     uint64_t aCurrent = theStream.Position();
+-    theStream.GoTo(aRef); // go to the referenced position
++    GoToReferenced(theStream, aRef, myActivePos); // go to the referenced position
+     aResult = ReadPolygon(theStream);
+     theStream.GoTo(aCurrent); // returns to the current position
+   }
+@@ -599,6 +685,11 @@ occ::handle<Poly_PolygonOnTriangulation> BinTools_ShapeReader::ReadPolygon(
+     }
+     myPolygonPos.Bind(aPosition, aResult);
+   }
++  else if (theStream.LastType() != BinTools_ObjectType_EmptyPolygonOnTriangulation)
++  {
++    throw Standard_Failure(
++      "BinTools_ShapeReader: unexpected record type, expected a PolygonOnTriangulation");
++  }
+   return aResult;
+ }
+ 
+@@ -618,7 +709,7 @@ occ::handle<Poly_Triangulation> BinTools_ShapeReader::ReadTriangulation(BinTools
+       return *aFound;
+     }
+     uint64_t aCurrent = theStream.Position();
+-    theStream.GoTo(aRef); // go to the referenced position
++    GoToReferenced(theStream, aRef, myActivePos); // go to the referenced position
+     aResult = ReadTriangulation(theStream);
+     theStream.GoTo(aCurrent); // returns to the current position
+   }
+@@ -681,5 +772,10 @@ occ::handle<Poly_Triangulation> BinTools_ShapeReader::ReadTriangulation(BinTools
+ 
+     myTriangulationPos.Bind(aPosition, aResult);
+   }
++  else if (aType != BinTools_ObjectType_EmptyTriangulation)
++  {
++    throw Standard_Failure(
++      "BinTools_ShapeReader: unexpected record type, expected a Triangulation");
++  }
+   return aResult;
+ }
+diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_ShapeReader.hxx b/src/ModelingData/TKBRep/BinTools/BinTools_ShapeReader.hxx
+--- a/src/ModelingData/TKBRep/BinTools/BinTools_ShapeReader.hxx
++++ b/src/ModelingData/TKBRep/BinTools/BinTools_ShapeReader.hxx
+@@ -17,6 +17,7 @@
+ #include <BinTools_ShapeSetBase.hxx>
+ #include <BinTools_IStream.hxx>
+ #include <NCollection_DataMap.hxx>
++#include <NCollection_Map.hxx>
+ #include <TopLoc_Location.hxx>
+ #include <TopoDS_Shape.hxx>
+ 
+@@ -73,6 +74,8 @@ private:
+   NCollection_DataMap<uint64_t, occ::handle<Poly_Polygon3D>>              myPolygon3dPos;
+   NCollection_DataMap<uint64_t, occ::handle<Poly_PolygonOnTriangulation>> myPolygonPos;
+   NCollection_DataMap<uint64_t, occ::handle<Poly_Triangulation>>          myTriangulationPos;
++  /// positions of the shapes and locations being read, a reference to one of them is a cycle
++  NCollection_Map<uint64_t> myActivePos;
+ };
+ 
+ #endif // _BinTools_ShapeReader_HeaderFile
