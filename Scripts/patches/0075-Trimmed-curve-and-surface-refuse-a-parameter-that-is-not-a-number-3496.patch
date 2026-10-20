@@ -5,13 +5,15 @@ Subject: [PATCH] Modeling Data - A trimmed curve or surface refuses a parameter 
 Geom_TrimmedCurve::SetTrim, Geom2d_TrimmedCurve::SetTrim and the eight argument overload of
 Geom_RectangularTrimmedSurface::SetTrim take their two (four) parameters on trust. A nan or an
 infinity fails every comparison the constructors make against the range, or loops on it:
- - a basis that is periodic: ElCLib::AdjustPeriodic shifts the parameter by whole periods until it
-   is in range, and a nan or an infinity is never in range, so Geom_TrimmedCurve and
-   Geom2d_TrimmedCurve never return; Geom_RectangularTrimmedSurface does not return either, or
-   recurses (UReverse and VReverse call SetTrim again) until the stack ends.
+ - a basis that is periodic: the surface always hands the parameters to ElCLib::AdjustPeriodic, and
+   the curves do when theAdjustPeriodic is set, which shifts a parameter by whole periods until it
+   is in range; a nan or an infinity never is. Geom_RectangularTrimmedSurface then recurses
+   (UReverse and VReverse call SetTrim again) until the stack ends. Without the adjustment the
+   curves are built with the parameter as it is.
  - a basis that is not periodic: every comparison with a nan is false, so neither the order of the
-   two parameters nor the range check fires, and an object is built whose bounds are nan and which
-   faults on its first use. An infinity is refused only by a basis whose own bound is finite.
+   two parameters nor the range check fires, and an object is built whose bounds are nan; it faults
+   or never returns on its first use. An infinity is refused only by a basis whose own bound is
+   finite.
 The range checks that follow (U1 == U2, parameters out of range) already throw
 Standard_ConstructionError, and GeomTools_CurveSet, Curve2dSet and SurfaceSet turn that into a null
 record, but they cannot see a nan. Reached from the BREP text and binary readers (a damaged

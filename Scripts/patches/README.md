@@ -3745,6 +3745,25 @@ Before each file was deleted its hunks were checked against the as-merged upstre
 pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
 Each section opens with that verdict.
 
+## 0075-Trimmed-curve-and-surface-refuse-a-parameter-that-is-not-a-number-3496.patch
+
+**A trimmed curve or surface refuses a parameter that is not a finite number** ([#3496](https://github.com/SecondMouseAU/OCCTSwift/issues/3496), follow-up to [#3490](https://github.com/SecondMouseAU/OCCTSwift/issues/3490) and `0074`; not filed upstream).
+
+`Geom_TrimmedCurve::SetTrim`, `Geom2d_TrimmedCurve::SetTrim` and the eight argument `Geom_RectangularTrimmedSurface::SetTrim` take their parameters on trust. Their range checks (`U1 == U2`, parameters out of range) compare them, and a `nan` fails every comparison; an infinity is refused only by a basis whose own bound is finite. The consequences, by basis:
+
+1. **Periodic.** `Geom_RectangularTrimmedSurface::SetTrim` always hands the parameters to `ElCLib::AdjustPeriodic`, and the curves do when `theAdjustPeriodic` is set; a `nan` or an infinity is never in range. The surface recurses through `UReverse` and `VReverse` (each calls `SetTrim` again) to the end of the stack: `10 nan nan 0 4` in the `Surfaces` table of a complete BREP faults `BRepTools::Read`. Without the adjustment the curves are built with the parameter as it is.
+2. **Not periodic.** Neither the order of the two parameters nor the range check fires for a `nan`, so an object with `nan` bounds is built and faults or never returns on use (`10 inf 5 0 4` returns a shape that faults on use).
+
+Reached from the text and binary BREP readers (`GeomTools_{Curve,Curve2d,Surface}Set`, `BinTools_{Curve,Curve2d,Surface}Set`: 34 of 185,040 cases of the `BinTools::Read` count matrix of `Scripts/repro/3494/counts.py` and 60 of 156,474 of `BinTools_ShapeReader` were the four bytes of a trim parameter) and from any caller of the constructors.
+
+**The rule**, one for every site: a parameter that is not finite (`std::isfinite`) is refused with `Standard_ConstructionError` before anything is compared or adjusted. It is a `throw` statement, which the build's `No_Exception` does not remove ([`okf/policies/occt-validation-is-compiled-out.md`](../../okf/policies/occt-validation-is-compiled-out.md)), and the neighbouring checks throw the same. The readers already turn it into a null record, so the file is refused. `Precision::Infinite()` (2e100), which unbounded curves and surfaces report for their bounds, is finite and is accepted as before. The surface checks a direction only when that direction is trimmed.
+
+**Measured** on the `v4.0.0-kernel.7` slice, the three translation units recompiled with its flags (`-O2 -DNDEBUG -DNo_Exception`) and swapped into a copy with `ar r`; `BREPKernelTrimParameterTests` (box plus one trimmed record in a table nothing refers to): without the patch the periodic cases read the file instead of refusing it for the curves, and the process dies on the surface (exit -10); the non-periodic cases do not return within 90 s; the control (finite parameters) passes. With the patch all three tests pass. The numbers are recorded in the PR.
+
+**Upstream checked 2026-10-20:** `Geom_TrimmedCurve.cxx`, `Geom2d_TrimmedCurve.cxx` and `Geom_RectangularTrimmedSurface.cxx` carry no finiteness check on `upstream/IR`. **Not yet filed upstream.**
+
+**Retire** once the bundled OCCT includes this fix.
+
 ## 0031-bspline-adaptor-cache-thread-safety-1153.patch
 
 **RETIRED 2026-10-10, at the `v4.0.0-kernel.6` repin. The `.patch` file is deleted and the asset
