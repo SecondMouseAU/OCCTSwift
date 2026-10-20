@@ -16,7 +16,7 @@ timestamp: 2026-10-20
   authors have. The maintainers said on 2026-10-19 that community PRs resume after they finish porting
   their own patches ([discussion 1645](https://github.com/Open-Cascade-SAS/OCCT/discussions/1645)).
 - 13 of the 40 have had any human response. No maintainer has asked for changes on any of them.
-- An audit of all 43 open PRs against [OCCT's AI instructions](../references/occt-ai-instructions.md) found
+- An audit of the 43 PRs open at the time (before #1648-1650 were closed, hence 40 above) against [OCCT's AI instructions](../references/occt-ai-instructions.md) found
   none clean. Common: base `master`, no template or CLA, body text that breaks the language rules,
   comments that narrate the bug, STL containers in tests. Several bundle fixes or add public API.
 
@@ -56,7 +56,7 @@ Linux, Windows or Debug, and a PR inside the fork notifies nobody upstream.
 - Never name a branch `ir/...`. The Windows runners have a case-insensitive file system, so a branch under `ir/` collides with `IR`, the checkout fetch fails, and the format and non-ASCII jobs go red (measured 2026-10-20). Use `fix/<topic>`.
 - The fork's workflows are enabled. `Build and Test` runs on a pull request to any branch and on a push
   to `master` only, so the staging PR is what triggers CI, and each new push to it cancels the run before
-  it. Never push to `master` on the fork. Open one staging PR per revision that is ready, not in bulk.
+  it (`cancel-in-progress` in the workflow's `concurrency` block). Never push to `master` on the fork. Open one staging PR per revision that is ready, not in bulk.
 
 ## The process
 

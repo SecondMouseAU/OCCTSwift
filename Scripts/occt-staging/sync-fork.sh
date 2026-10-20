@@ -5,7 +5,7 @@
 set -euo pipefail
 
 # upstream/ is gitignored and lives in the main checkout, not in a linked worktree
-root="$(cd "$(git -C "$(dirname "$0")" rev-parse --git-common-dir)/.." && pwd)"
+root="$(cd "$(git -C "$(dirname "$0")" rev-parse --path-format=absolute --git-common-dir)/.." && pwd)"
 cd "$root/upstream"
 eval "$(direnv export bash 2>/dev/null)"
 
