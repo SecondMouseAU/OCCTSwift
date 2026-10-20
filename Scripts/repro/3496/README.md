@@ -9,5 +9,5 @@ kernel with and without `0075`; `Scripts/repro/3494/stage.sh` stages a kernel fr
 few seconds.
 
 Without the patch (kernel.7 flags, the three translation units rebuilt from the unpatched source):
-the periodic cases read the file with the curves' `nan` accepted and the process dies on the
-surface (exit -10); the non-periodic cases do not return in 90 s. With it, all three tests pass.
+the control passes, the periodic test ends the test process (exit -4) and the non-periodic test does
+not return in 90 s. With it, all three pass: the reader drops the record and the box reads as before.
