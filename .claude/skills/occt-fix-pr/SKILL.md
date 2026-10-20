@@ -41,7 +41,7 @@ cwd's repo and picks the wrong one): `git worktree add -b ir/<topic> ../<dir> up
    confirm the tests ran. Zero matched tests is not a pass.
 4. Format with the CI version: clang-format 18.1.8 (`uvx --from clang-format==18.1.8 clang-format ...`),
    `--dry-run -Werror` on every changed `.cxx` and `.hxx`.
-5. Run `upstream/tools/occt-precheck.py` when it exists. Fix every MUST-FIX.
+5. Run `Scripts/occt-staging/occt-precheck.py` when it exists. Fix every MUST-FIX.
 
 ## 4. Size and focus gate
 
@@ -66,7 +66,28 @@ Only after the upstream commit is final: derive `Scripts/patches/00NN-*.patch` f
 so what ships in our kernel is what upstream is asked to take. The OCCTSwift PR for the patch is a separate
 change and follows `carrying-occt-patches`.
 
-## 7. Hand off
+## 7. Stage on the fork
 
-Write the branch, commit shas, PR body file, proof logs and the "not verified" list into CASE.md, then
-stop. Do not push, open the PR or comment. Next step is `occt-review` by a different agent.
+The fork `SecondMouseAU/OCCT` is the staging area, not upstream (`okf/policies/upstream-pr-volume.md`).
+Pushing there and opening a PR there need no asking, and notify no maintainer.
+
+1. `Scripts/occt-staging/sync-fork.sh` first, so the fork's `IR` is exactly upstream's.
+2. Push the branch once per revision (every push runs the fork's CI matrix, which is slow):
+   `git push smau ir/<topic>`.
+3. Open a draft PR **on the fork**, base `IR`, with the exact title and body the upstream PR will have:
+   `gh pr create -R SecondMouseAU/OCCT --base IR --head ir/<topic> --draft`.
+4. Wait for the fork's CI (Linux, Windows, macOS, format and non-ASCII checks). Record every result, red
+   or green, in CASE.md. A platform that did not run is "not verified", not a pass.
+5. Do not open anything on `Open-Cascade-SAS/OCCT`. That is the user's decision after `occt-review`.
+
+## 8. Hand off
+
+Write the branch, commit shas, the staging PR link, CI results, proof logs and the "not verified" list into
+CASE.md, then stop. Next step is `occt-review` by a different agent.
+
+## 9. Submitting (only on the user's go)
+
+The upstream PR reuses the staged branch, so the commits and the CI results are the same:
+`gh pr create -R Open-Cascade-SAS/OCCT --head SecondMouseAU:ir/<topic> --base IR --draft` with the same
+title and body, from `upstream/` after `eval "$(direnv export bash)"` and a check that `gh api user --jq .login`
+prints `gsdali`. Then close the staging PR with a link. Delete the staging branch when upstream merges.

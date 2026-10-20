@@ -38,18 +38,35 @@ More PRs do not help. Every open PR costs the maintainers reading and rebasing t
    says, and withdrawn where a maintainer's work has superseded them. A PR is not left open only because
    it exists.
 
+## The staging fork
+
+`SecondMouseAU/OCCT` stages every change before upstream sees it. This replaces the 2026-08 rule against
+PRs on the fork: that rule rested on local override-link tests being enough, which they are not for
+Linux, Windows or Debug, and a PR inside the fork notifies nobody upstream.
+
+- `IR` and `master` on the fork are pure mirrors of upstream and are never committed to.
+  `Scripts/occt-staging/sync-fork.sh` fast-forwards them and fails if they differ. Run it at the start of each
+  case. No scheduled workflow, because the scoped token has no `workflow` scope.
+- A change lives on `ir/<topic>`, cut from the mirrored `IR`, with a draft PR on the fork whose title and
+  body are exactly what upstream will get. The fork's CI matrix and Kilo run there.
+- The upstream PR reuses the same branch (`--head SecondMouseAU:ir/<topic>`), so its commits and CI results
+  are the ones we reviewed. The staging PR is then closed with a link, and the branch deleted on merge.
+- Opening anything on `Open-Cascade-SAS/OCCT` still needs the user's go.
+- Every push to a fork branch runs the matrix once the fork's workflows are enabled (one-time, in the
+  Actions tab). Push once per revision, and never in bulk.
+
 ## The process
 
-Each step is a skill; the user approves between steps. Nothing is pushed, filed or posted by a skill.
+Each step is a skill; the user approves between steps. Skills push only to the staging fork. Nothing is filed or posted upstream by a skill.
 
 | Step | Skill | Ends with |
 |---|---|---|
 | 1. Identify | `occt-intake` | `CASE.md`: value gate, reproducer on current IR, root-cause sentence, failing GTest that fails for the original reason, issue draft |
-| 2. Fix | `occt-fix-pr` | Local branch, commit, PR body, proof logs; one focused draft PR |
-| 3. Review | `occt-review` (agent `occt-upstream-reviewer`) | `REVIEW.md`: SEND, REVISE or HOLD, by an agent that did not write the fix |
+| 2. Fix | `occt-fix-pr` | Branch, commit, PR body, proof logs; draft PR on the staging fork with its CI results |
+| 3. Review | `occt-review` (agent `occt-upstream-reviewer`) | `REVIEW.md`: SEND, REVISE or HOLD, by an agent that did not write the fix, using the fork's CI as evidence |
 
 The case record lives in `Scripts/repro/<OCCTSwift issue>/`. The mechanical rules are meant to move into
-`upstream/tools/occt-precheck.py`; until it exists the reviewer applies them by reading.
+`Scripts/occt-staging/occt-precheck.py`; until it exists the reviewer applies them by reading.
 
 ## Related
 

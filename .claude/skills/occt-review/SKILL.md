@@ -24,10 +24,14 @@ Read the live instructions first: `git -C upstream/occt show upstream/IR:.github
 5. **Callers and siblings.** Check the shared contract was not changed under other callers. Note sibling
    sites with the same pattern; do not ask for them in this PR.
 6. **Neighbours.** Run the related suites; confirm tests actually ran.
+7. **Fork CI.** Read the staging PR's checks at the reviewed head sha (`gh pr checks`). Linux, Windows and
+   macOS results, the format check and the non-ASCII check are evidence; a red job is a REVISE until its log
+   is read and explained, and an infrastructure failure is named as one. A job that did not run is not a
+   pass. Adjudicate any Kilo comment on the staging PR; Kilo is a gate, not an authority.
 
 ## B. Compliance
 
-Run `upstream/tools/occt-precheck.py` when it exists. Then walk sections 1 to 9 of the instructions over every
+Run `Scripts/occt-staging/occt-precheck.py` when it exists. Then walk sections 1 to 9 of the instructions over every
 added line, the commit messages and the PR body: ASCII and banned words; STL owned containers and strings;
 `Standard_*` aliases; `auto`; comments that narrate history; separators and banners; anonymous namespace;
 inline bodies in `.cxx`; `//!` docs; GTest design (self-contained, deterministic, naming, `ASSERT` versus
@@ -55,4 +59,6 @@ exact replacement, then what was run and what was not. Verdicts:
 - **REVISE:** list the changes; the author fixes and the review is rerun on the new head.
 - **HOLD:** do not send, with the reason (duplicate, queue full, not reproducible on IR, wrong cause).
 
-Report the verdict and the findings table in the reply. Never treat SEND as the user's approval.
+Post a short summary of the verdict as a comment on the **staging PR on the fork** (our own repo, no
+notification upstream). Report the verdict and the findings table in the reply. Never treat SEND as the
+user's approval.
