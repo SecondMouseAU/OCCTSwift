@@ -115,7 +115,7 @@
 # patch: 0072-BinTools-Set-Read-cuts-the-table-name-token-at-the-buffer-3489 4be52ad597c1
 # patch: 0073-Text-shape-readers-bound-a-token-and-stop-at-a-failed-stream-3490 72cc40f22a5c
 # patch: 0074-Shape-readers-refuse-a-count-the-stream-cannot-supply-3490 c0350f73b62e
-# patch: 0075-Trimmed-curve-and-surface-refuse-a-parameter-that-is-not-a-number-3496 7b09b7535430
+# patch: 0075-Trimmed-curve-and-surface-refuse-a-parameter-that-is-not-a-number-3496 61d5774a23e0
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    827 site(s) in  283 class(es)
