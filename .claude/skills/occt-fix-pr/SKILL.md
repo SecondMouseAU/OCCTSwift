@@ -15,8 +15,8 @@ write-time rules; the reviewer (`occt-review`) will check every one.
 ## 1. Set up
 
 Create the worktree yourself from a freshly fetched `upstream/IR` (a worktree-isolated agent keys off the
-cwd's repo and picks the wrong one): `git worktree add -b ir/<topic> ../<dir> upstream/IR`. Branch names
-`ir/<topic>`. One defect per branch. Do not start from our carried-patch tree.
+cwd's repo and picks the wrong one): `git worktree add -b fix/<topic> ../<dir> upstream/IR`. Branch names
+`fix/<topic>`. One defect per branch. Do not start from our carried-patch tree.
 
 ## 2. Write the fix
 
@@ -73,9 +73,9 @@ Pushing there and opening a PR there need no asking, and notify no maintainer.
 
 1. `Scripts/occt-staging/sync-fork.sh` first, so the fork's `IR` is exactly upstream's.
 2. Push the branch once per revision (every push runs the fork's CI matrix, which is slow):
-   `git push smau ir/<topic>`.
+   `git push smau fix/<topic>`.
 3. Open a draft PR **on the fork**, base `IR`, with the exact title and body the upstream PR will have:
-   `gh pr create -R SecondMouseAU/OCCT --base IR --head ir/<topic> --draft`.
+   `gh pr create -R SecondMouseAU/OCCT --base IR --head fix/<topic> --draft`.
 4. Wait for the fork's CI (Linux, Windows, macOS, format and non-ASCII checks). Record every result, red
    or green, in CASE.md. A platform that did not run is "not verified", not a pass.
 5. Do not open anything on `Open-Cascade-SAS/OCCT`. That is the user's decision after `occt-review`.
@@ -88,6 +88,6 @@ CASE.md, then stop. Next step is `occt-review` by a different agent.
 ## 9. Submitting (only on the user's go)
 
 The upstream PR reuses the staged branch, so the commits and the CI results are the same:
-`gh pr create -R Open-Cascade-SAS/OCCT --head SecondMouseAU:ir/<topic> --base IR --draft` with the same
+`gh pr create -R Open-Cascade-SAS/OCCT --head SecondMouseAU:fix/<topic> --base IR --draft` with the same
 title and body, from `upstream/` after `eval "$(direnv export bash)"` and a check that `gh api user --jq .login`
 prints `gsdali`. Then close the staging PR with a link. Delete the staging branch when upstream merges.

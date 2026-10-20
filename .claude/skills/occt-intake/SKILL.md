@@ -14,7 +14,7 @@ pushed or posted by this skill.** It ends by showing the user CASE.md and asking
 
 ## 0. Sync the staging fork
 
-`Scripts/occt-staging/sync-fork.sh` fast-forwards `SecondMouseAU/OCCT` `IR` and `master` to upstream and checks
+`Scripts/occt-staging/sync-fork.sh` fast-forwards `SecondMouseAU/OCCT` `IR` to upstream and checks
 they match. It refuses if the fork has commits of its own. Run it first; a case is always cut from the
 `IR` it prints.
 

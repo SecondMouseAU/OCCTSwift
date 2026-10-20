@@ -44,16 +44,19 @@ More PRs do not help. Every open PR costs the maintainers reading and rebasing t
 PRs on the fork: that rule rested on local override-link tests being enough, which they are not for
 Linux, Windows or Debug, and a PR inside the fork notifies nobody upstream.
 
-- `IR` and `master` on the fork are pure mirrors of upstream and are never committed to.
-  `Scripts/occt-staging/sync-fork.sh` fast-forwards them and fails if they differ. Run it at the start of each
+- `IR` on the fork is a pure mirror of upstream and is never committed to.
+  `Scripts/occt-staging/sync-fork.sh` fast-forwards it and fails if it differs. `master` is left alone:
+  a push to it triggers the fork's two heavy workflows (`Build and Test`, `Master Validation`). Run it at the start of each
   case. No scheduled workflow, because the scoped token has no `workflow` scope.
-- A change lives on `ir/<topic>`, cut from the mirrored `IR`, with a draft PR on the fork whose title and
+- A change lives on `fix/<topic>`, cut from the mirrored `IR`, with a draft PR on the fork whose title and
   body are exactly what upstream will get. The fork's CI matrix and Kilo run there.
-- The upstream PR reuses the same branch (`--head SecondMouseAU:ir/<topic>`), so its commits and CI results
+- The upstream PR reuses the same branch (`--head SecondMouseAU:fix/<topic>`), so its commits and CI results
   are the ones we reviewed. The staging PR is then closed with a link, and the branch deleted on merge.
 - Opening anything on `Open-Cascade-SAS/OCCT` still needs the user's go.
-- Every push to a fork branch runs the matrix once the fork's workflows are enabled (one-time, in the
-  Actions tab). Push once per revision, and never in bulk.
+- Never name a branch `ir/...`. The Windows runners have a case-insensitive file system, so a branch under `ir/` collides with `IR`, the checkout fetch fails, and the format and non-ASCII jobs go red (measured 2026-10-20). Use `fix/<topic>`.
+- The fork's workflows are enabled. `Build and Test` runs on a pull request to any branch and on a push
+  to `master` only, so the staging PR is what triggers CI, and each new push to it cancels the run before
+  it. Never push to `master` on the fork. Open one staging PR per revision that is ready, not in bulk.
 
 ## The process
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Fast-forward the staging fork's IR and master to upstream and confirm they match.
+# Fast-forward the staging fork's IR to upstream and confirm they match.
+# master is not synced: a push to it runs the fork's two heavy workflows.
 # Run at the start of every upstream case. Refuses if the fork has commits of its own.
 set -euo pipefail
 
@@ -14,7 +15,7 @@ if [ "$login" != "gsdali" ]; then
   exit 2
 fi
 
-for branch in IR master; do
+for branch in IR; do
   gh repo sync SecondMouseAU/OCCT -b "$branch" >/dev/null
   up="$(gh api "repos/Open-Cascade-SAS/OCCT/commits/$branch" --jq .sha)"
   fork="$(gh api "repos/SecondMouseAU/OCCT/commits/$branch" --jq .sha)"
