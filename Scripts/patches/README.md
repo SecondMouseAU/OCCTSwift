@@ -21,7 +21,7 @@ retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), a
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry), and
 `0031` retired 2026-10-10 at the `v4.0.0-kernel.6` repin (#3065: the supported pattern is one
 adaptor per worker, so the lock it added is not needed).
-The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0066, 0068–0074.
+The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0066, 0068–0075.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
