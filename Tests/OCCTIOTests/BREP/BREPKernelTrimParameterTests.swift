@@ -72,7 +72,8 @@ struct BREPKernelTrimParameterTests {
         Shape.fromBREPString(text)?.volume
     }
 
-    /// The read returns, and returns the box: the damaged record is dropped, nothing else is lost.
+    /// The read returns instead of faulting. A refused file (nil) is allowed, since the point is that the
+    /// process survives; a file that is returned must be the box, with only the damaged record dropped.
     private static func expectBoxOrRefused(_ text: String, _ label: String) {
         if let volume = volume(of: text) {
             #expect(abs(volume - 6000) < 1e-6, Comment(rawValue: label))

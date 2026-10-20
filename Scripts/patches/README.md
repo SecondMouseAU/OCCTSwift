@@ -3734,17 +3734,6 @@ The classes of `Scripts/repro/3487` that `0073` was measured on, unthinned on `0
 
 **Retire** once the bundled OCCT includes this fix.
 
-# Retired patches
-
-The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so
-re-applying it would fail (the change is already in the source tree) and `build-occt.sh` would abort.
-The writeups are kept because for several of these they are the only record of the root cause at
-this depth; read them as history, not as a description of anything the build still does.
-
-Before each file was deleted its hunks were checked against the as-merged upstream form in the
-pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
-Each section opens with that verdict.
-
 ## 0075-Trimmed-curve-and-surface-refuse-a-parameter-that-is-not-a-number-3496.patch
 
 **A trimmed curve or surface refuses a parameter that is not a finite number** ([#3496](https://github.com/SecondMouseAU/OCCTSwift/issues/3496), follow-up to [#3490](https://github.com/SecondMouseAU/OCCTSwift/issues/3490) and `0074`; not filed upstream).
@@ -3763,6 +3752,17 @@ Reached from the text and binary BREP readers (`GeomTools_{Curve,Curve2d,Surface
 **Upstream checked 2026-10-20:** `Geom_TrimmedCurve.cxx`, `Geom2d_TrimmedCurve.cxx` and `Geom_RectangularTrimmedSurface.cxx` carry no finiteness check on `upstream/IR`. **Not yet filed upstream.**
 
 **Retire** once the bundled OCCT includes this fix.
+
+# Retired patches
+
+The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so
+re-applying it would fail (the change is already in the source tree) and `build-occt.sh` would abort.
+The writeups are kept because for several of these they are the only record of the root cause at
+this depth; read them as history, not as a description of anything the build still does.
+
+Before each file was deleted its hunks were checked against the as-merged upstream form in the
+pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
+Each section opens with that verdict.
 
 ## 0031-bspline-adaptor-cache-thread-safety-1153.patch
 
