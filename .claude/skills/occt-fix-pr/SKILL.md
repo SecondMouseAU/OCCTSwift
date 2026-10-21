@@ -64,7 +64,7 @@ sentences, split it before writing the PR. A maintainer reads every line; fewer 
 Only after the upstream commit is final: derive `Scripts/patches/00NN-*.patch` from it
 (`git format-patch`, adapted to the patched tree if earlier carried patches overlap). One source of truth,
 so what ships in our kernel is what upstream is asked to take. The OCCTSwift PR for the patch is a separate
-change and follows the `carrying-occt-patches` skill.
+change and follows [upstream-occt-patch-process](../../../okf/policies/upstream-occt-patch-process.md).
 
 ## 7. Stage on the fork
 
