@@ -58,7 +58,7 @@
 # the stray check in docs/guides/building-occt.md's "Shipping a rebuild" answers it.
 #
 # occt-version: 8.0.1
-# derived against: 55 carried patch(es) in Scripts/patches/, every one of them verified
+# derived against: 56 carried patch(es) in Scripts/patches/, every one of them verified
 # derived against: applied in the tree the rows below were derived from.
 # patch: 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319 79fe529c26ef
 # patch: 0011-XCAFDoc_ShapeTool-AutoNamingScope-341 76898e2438a2
@@ -115,11 +115,12 @@
 # patch: 0072-BinTools-Set-Read-cuts-the-table-name-token-at-the-buffer-3489 4be52ad597c1
 # patch: 0073-Text-shape-readers-bound-a-token-and-stop-at-a-failed-stream-3490 72cc40f22a5c
 # patch: 0074-Shape-readers-refuse-a-count-the-stream-cannot-supply-3490 c0350f73b62e
+# patch: 0075-Trimmed-curve-and-surface-refuse-a-parameter-that-is-not-a-number-3496 61d5774a23e0
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    827 site(s) in  283 class(es)
 # totals: inline-throw       501 site(s) in  212 class(es)
-# totals: outofline-throw   3792 site(s) in  833 class(es)
+# totals: outofline-throw   3796 site(s) in  833 class(es)
 # totals: outofline-delegated  5947 site(s) in  924 class(es)
 # totals: inherited-live    2587 site(s) in 2587 class(es)
 # totals: inline-dead-at-depth  9911 site(s) in  100 class(es)
@@ -1640,7 +1641,7 @@ Geom2d_Point inherited-live 1 Standard_ProgramError Standard_Transient
 Geom2d_Transformation inherited-live 1 Standard_ProgramError Standard_Transient
 Geom2d_Transformation_Test outofline-delegated 5 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d,gp_Vec2d
 Geom2d_TrimmedCurve outofline-raise 1 Standard_RangeError IsCN
-Geom2d_TrimmedCurve outofline-throw 3 Standard_ConstructionError Geom2d_TrimmedCurve,SetTrim
+Geom2d_TrimmedCurve outofline-throw 4 Standard_ConstructionError Geom2d_TrimmedCurve,SetTrim
 Geom2d_TrimmedCurve_Test outofline-delegated 3 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d,gp_Vec2d
 Geom2d_UndefinedDerivative inline-throw 1 Geom2d_UndefinedDerivative <file-scope>
 Geom2d_UndefinedValue inline-throw 1 Geom2d_UndefinedValue <file-scope>
@@ -1976,7 +1977,7 @@ Geom_Plane outofline-delegated 1 Standard_OutOfRange gp_GTrsf2d
 Geom_Plane_Test outofline-delegated 9 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
 Geom_Point inherited-live 1 Standard_ConstructionError Geom_Geometry
 Geom_RectangularTrimmedSurface outofline-raise 2 Standard_RangeError IsCNu,IsCNv
-Geom_RectangularTrimmedSurface outofline-throw 5 Geom_UndefinedDerivative,Standard_ConstructionError EvalDN,SetTrim
+Geom_RectangularTrimmedSurface outofline-throw 7 Geom_UndefinedDerivative,Standard_ConstructionError EvalDN,SetTrim
 Geom_RevolutionUtils outofline-delegated 14 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec
 Geom_SphericalSurface outofline-throw 3 Geom_UndefinedDerivative,Standard_ConstructionError EvalDN,Geom_SphericalSurface,SetRadius
 Geom_SphericalSurface outofline-delegated 1 Standard_ConstructionError gp_Sphere
@@ -1994,7 +1995,7 @@ Geom_ToroidalSurface outofline-throw 4 Geom_UndefinedDerivative,Standard_Constru
 Geom_ToroidalSurface outofline-delegated 1 Standard_ConstructionError gp_Torus
 Geom_Transformation inherited-live 1 Standard_ProgramError Standard_Transient
 Geom_TrimmedCurve outofline-raise 1 Standard_RangeError IsCN
-Geom_TrimmedCurve outofline-throw 2 Standard_ConstructionError SetTrim
+Geom_TrimmedCurve outofline-throw 3 Standard_ConstructionError SetTrim
 Geom_UndefinedDerivative inline-throw 1 Geom_UndefinedDerivative <file-scope>
 Geom_UndefinedValue inline-throw 1 Geom_UndefinedValue <file-scope>
 Geom_Vector inherited-live 1 Standard_ConstructionError Geom_Geometry
