@@ -57,6 +57,8 @@ and the [injection sweep mechanics](references/injection-sweep-mechanics.md).
 - [Helper placement is decided by reach, not by style](policies/helper-placement-by-reach.md)
 - [Upstream OCCT PRs follow OCCT's house style](policies/upstream-occt-style.md)
 - [Upstream OCCT patch process, start to finish](policies/upstream-occt-patch-process.md)
+- [Upstream PR volume, and the three-step process](policies/upstream-pr-volume.md): cap, one defect per PR, occt-intake / occt-fix-pr / occt-review
+- [OCCT's AI development instructions](references/occt-ai-instructions.md): the maintainers' rule file for AI-assisted contributions
 - [Pinned kernel patch check](policies/pinned-kernel-patch-check.md)
 - [WASI patches are authored against the carried-patch tree](policies/wasi-patch-base.md)
 - [Null handle and null shape guards in the bridge](policies/null-handle-guards.md)
