@@ -4,7 +4,7 @@ title: References index
 resource: https://github.com/SecondMouseAU/OCCTSwift
 tags: [index, references]
 description: Upstream and licensing references for OCCTSwift.
-timestamp: 2026-09-07
+timestamp: 2026-10-20
 ---
 
 # References
@@ -22,3 +22,6 @@ timestamp: 2026-09-07
   that read a pass where there was none.
 - [**Known OCCT bugs**](known-occt-bugs.md), every kernel defect this project has root-caused, one
   row per defect, keyed by issue rather than by patch, with where the writeup lives.
+- [**OCCT's AI development instructions**](occt-ai-instructions.md), the OCCT maintainers' own
+  rules for AI-assisted contributions (discussion 1645, 2026-10-19): where they bind us and the
+  rules that differ from our habits.

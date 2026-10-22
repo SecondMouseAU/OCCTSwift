@@ -1,9 +1,9 @@
 ---
 type: policy
 title: Upstream OCCT PRs, style and submission workflow
-description: PRs offered to OpenCASCADE must be clang-formatted with OCCT's own .clang-format, use OCCT's concise comment style not OCCTSwift's, and include a GTest by default; when a fix is ready, go straight to a PR, don't file a separate issue first. Formatting and GTest mechanics live in the patch-process doc, not here.
+description: PRs offered to OpenCASCADE must be clang-formatted with OCCT's own .clang-format, follow OCCT's own AI development instructions, use OCCT's concise comment style not OCCTSwift's, and include a GTest by default; since 2026-10-19 open an issue first for a new contribution and keep the PR small. Formatting and GTest mechanics live in the patch-process doc, not here.
 tags: [policy, occt, upstream, contributing, formatting, workflow, gtest]
-timestamp: 2026-10-08
+timestamp: 2026-10-20
 ---
 
 # Upstream OCCT PRs, style and submission workflow
@@ -11,7 +11,7 @@ timestamp: 2026-10-08
 We contribute fixes upstream, not just issues, the [carried OCCT patches](../references/carried-occt-patches.md)
 are written to be offered to OpenCASCADE, and each is retired once an upstream release contains it.
 A patch only lands upstream if it reads like OCCT's own code, and reaches them the way they've
-asked to receive it. Four requirements before opening (or attaching a patch to) an OCCT PR:
+asked to receive it. Five requirements before opening (or attaching a patch to) an OCCT PR:
 
 1. **Format with OCCT's `.clang-format`, not ours, and don't trust a clean local run as proof.** Run
    `clang-format -style=file` against the `.clang-format` file at the root of the OCCT source tree the
@@ -29,7 +29,10 @@ asked to receive it. Four requirements before opening (or attaching a patch to) 
    Do **not** carry OCCTSwift's expansive doc-comment voice (the multi-sentence "why", runnable
    examples, issue back-references) into upstream C++. State the mechanism and stop. Keep our own
    rationale, issue numbers, the reproducer, workaround history, in the PR description / commit
-   message, never in the source comments.
+   message, never in the source comments. OCCT's own AI instructions say the same (§8: production
+   comments, not change history) and add rules on ASCII, banned words and container types; read
+   [OCCT's AI development instructions](../references/occt-ai-instructions.md) before writing any
+   upstream-bound code, comment or test.
 
 3. **Include a GTest, in the same commit, not optional even for a fix that looks too small to need
    one.** Measured, not assumed: of 11 open upstream PRs as of 2026-08-10, maintainer dpasukhi asked
@@ -38,23 +41,31 @@ asked to receive it. Four requirements before opening (or attaching a patch to) 
    patch-process doc for the full evidence, where the test file goes, naming, and how to prove it
    actually catches the defect before pushing.
 
-4. **Go straight to a PR when a fix is ready, don't file a separate issue first.** Our older
-   pattern (see the pre-2026-07-30 rows in [carried-occt-patches.md](../references/carried-occt-patches.md))
-   was always repro-issue-then-fix-PR, two separate items. An OCCT maintainer has since said
-   directly that the issue step isn't wanted when a PR is already in hand:
-   > Thank you for your contribution. In case if you preparing PR, no needs to create Issue.
-   > Issue is recommended to create when you are not working on PR ;)
-, [Open-Cascade-SAS/OCCT#1409 (comment)](https://github.com/Open-Cascade-SAS/OCCT/issues/1409#issuecomment-5124395058)
+4. **Open an issue first for a new contribution, then a small PR that links it.** The maintainers
+   asked for this on 2026-10-19 ([discussion 1645](https://github.com/Open-Cascade-SAS/OCCT/discussions/1645)):
+   a GitHub issue with the problem, expected behavior and technical findings, particularly when the
+   fix came from AI-assisted analysis, and PRs "small, focused, and limited to a specific bug fix or
+   feature". Where an upstream issue already describes the defect (check first), link it with
+   `Closes` or `Refs` and do not file another. The PR description still carries the reproducer and
+   root cause.
 
-   So: if we're submitting a fix, open the PR directly, the PR description carries the repro and
-   root cause, same as an issue would have. Only open a standalone issue when we don't yet have a
-   fix ready to attach (a report without a PR), matching what the maintainer actually asked for.
+   This replaces the earlier rule, which was to skip the issue when a PR is in hand. That came from
+   an exchange on [OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409#issuecomment-5124395058)
+   ("In case if you preparing PR, no needs to create Issue"). The newer, general announcement
+   wins; the exchange was one maintainer on one PR. The PRs sent on 2026-10-20 (#1648 to #1650)
+   went out before the announcement was read and have no issue.
 
-   **Target `IR`, not `master`** (maintainer dpasukhi, 2026-10-07: `IR` is always the integration
-   branch and `master` is never merged into directly; a PR against `master` is tolerated for older PRs,
-   since he changes the base himself). Upstream CI also runs a license check and include cleanup, and
-   an observed clang-format 18.1.8 matched its format check on all five PRs of 2026-10-07/08; see
-   [§10](upstream-occt-patch-process.md#10-upstream-ci-facts) for the CI facts.
+   One PR per defect: a change that touches several subsystems is split so each part can land on
+   its own, as 0073 and 0074 are.
+
+   **Target `IR`, not `master`** (maintainer dpasukhi, 2026-10-07: `IR` is always the
+   integration branch and `master` is never merged into directly; a PR against `master` is tolerated
+   for older PRs, since he changes the base himself). Upstream CI also runs a license check and
+   include cleanup, and an observed clang-format 18.1.8 matched its format check on all five PRs of
+   2026-10-07/08; see [§10](upstream-occt-patch-process.md#10-upstream-ci-facts) for the CI facts.
+
+5. **The CLA is signed (ID 1139).** Fill the template's CLA section with it. The maintainers now
+   take new CLAs through the OCCT3D contact form.
 
 This is a **context switch from the Swift API**, not from the bridge: the Swift public API keeps
 its own conventions, including the verbose doc comments the [docs-current](docs-current.md) policy
@@ -70,6 +81,8 @@ doesn't create process friction upstream maintainers have explicitly said they d
 
 ## Related
 
+[OCCT's AI development instructions](../references/occt-ai-instructions.md) is the maintainers'
+own rule file for AI-assisted work, with the rules that differ from our habits.
 [Upstream OCCT patch process, start to finish](upstream-occt-patch-process.md) covers the rest of the
 lifecycle this policy doesn't: the full GTest and formatting mechanics behind requirements 1 and 3
 above, proving a fix actually changes behavior, the git mechanics of pushing to a live PR branch
