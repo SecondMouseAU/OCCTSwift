@@ -58,7 +58,7 @@
 # the stray check in docs/guides/building-occt.md's "Shipping a rebuild" answers it.
 #
 # occt-version: 8.0.1
-# derived against: 57 carried patch(es) in Scripts/patches/, every one of them verified
+# derived against: 58 carried patch(es) in Scripts/patches/, every one of them verified
 # derived against: applied in the tree the rows below were derived from.
 # patch: 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319 79fe529c26ef
 # patch: 0011-XCAFDoc_ShapeTool-AutoNamingScope-341 76898e2438a2
@@ -117,6 +117,7 @@
 # patch: 0074-Shape-readers-refuse-a-count-the-stream-cannot-supply-3490 c0350f73b62e
 # patch: 0076-BinTools_ShapeReader-refuses-a-position-reference-that-leaves-the-stream-3495 57c60912bbcd
 # patch: 0077-BRepCheck_Edge-InContext-copes-with-a-face-without-a-surface-and-an-edge-without-a-3D-curve-3490 bd474bef9dbc
+# patch: 0078-BinLDrivers-ReadSubTree-refuses-a-label-nested-too-deeply-3489 fe3a18021a55
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    827 site(s) in  283 class(es)

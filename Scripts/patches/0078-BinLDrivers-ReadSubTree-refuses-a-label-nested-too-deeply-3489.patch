@@ -1,0 +1,71 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Application Framework - BinLDrivers reader refuses a label nested too deeply
+
+BinLDrivers_DocumentRetrievalDriver::ReadSubTree reads a label, then calls itself once for each
+child label. A file chooses how deep its labels nest, so it chooses how deep the call stack
+goes: a binary OCAF file of 20000 nested labels, 320 KB, overflowed the 8 MB stack of the thread
+that opened it (SIGSEGV), where 1000 levels load; on the 512 KB stack of a dispatch or Swift
+concurrency worker, 1000 levels already overflow. Nothing in the file marks the depth, so a reader
+that is handed the stream cannot know it ahead of the recursion.
+
+The reader now counts the levels it is nested in on the calling thread and, past 512, reports
+"labels nested too deeply" as a Message_Fail, sets PCDM_RS_UnrecognizedFileFormat and returns -1,
+which every caller up the recursion already treats as a read failure. A document is nested far
+less deeply than that. The counter is a function-local thread_local, so no header and no class layout changes, and a subclass that
+overrides ReadSubTree and calls this one is counted too.
+
+The bound is a constant: stack depth is a property of the thread. 512 levels take about 300 KB,
+which a 512 KB worker holds; a thread with a smaller stack can still overflow below it.
+
+Tracked as SecondMouseAU/OCCTSwift#3489, follow-up to #3486.
+
+---
+diff --git a/src/ApplicationFramework/TKBinL/BinLDrivers/BinLDrivers_DocumentRetrievalDriver.cxx b/src/ApplicationFramework/TKBinL/BinLDrivers/BinLDrivers_DocumentRetrievalDriver.cxx
+index 50750ccd..1b9b5493 100644
+--- a/src/ApplicationFramework/TKBinL/BinLDrivers/BinLDrivers_DocumentRetrievalDriver.cxx
++++ b/src/ApplicationFramework/TKBinL/BinLDrivers/BinLDrivers_DocumentRetrievalDriver.cxx
+@@ -45,6 +45,29 @@
+ #include <Message_ProgressScope.hxx>
+ #include <PCDM_ReaderFilter.hxx>
+ 
++namespace
++{
++//! A label nested deeper than this is refused. ReadSubTree recurses once per level, about 600 bytes
++//! of stack each, and a file chooses its own depth: 20000 levels (a 320 KB file) overflowed an 8 MB
++//! stack, and 1000 levels overflow the 512 KB stack of a dispatch or Swift concurrency worker.
++//! 512 stays under what such a worker can hold and is far deeper than a document is nested.
++constexpr int THE_MAX_LABEL_DEPTH = 512;
++
++//! Counts the levels ReadSubTree is nested in on this thread.
++struct LabelDepthGuard
++{
++  LabelDepthGuard() { ++Depth(); }
++
++  ~LabelDepthGuard() { --Depth(); }
++
++  static int& Depth()
++  {
++    static thread_local int THE_DEPTH = 0;
++    return THE_DEPTH;
++  }
++};
++} // namespace
++
+ IMPLEMENT_STANDARD_RTTIEXT(BinLDrivers_DocumentRetrievalDriver, PCDM_RetrievalDriver)
+ 
+ #define SHAPESECTION_POS "SHAPE_SECTION_POS:"
+@@ -438,6 +461,14 @@ int BinLDrivers_DocumentRetrievalDriver::ReadSubTree(
+   int                        nbRead = 0;
+   TCollection_ExtendedString aMethStr("BinLDrivers_DocumentRetrievalDriver: ");
+ 
++  const LabelDepthGuard aDepthGuard;
++  if (LabelDepthGuard::Depth() > THE_MAX_LABEL_DEPTH)
++  {
++    myMsgDriver->Send(aMethStr + "error: labels nested too deeply", Message_Fail);
++    myReaderStatus = PCDM_RS_UnrecognizedFileFormat;
++    return -1;
++  }
++
+   Message_ProgressScope aPS(theRange, "Reading sub tree", 2, true);
+ 
+   bool aSkipAttrs = false;
