@@ -1,0 +1,61 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - BRepCheck_Edge::InContext copes with a face that has no
+ surface and with an edge that has no 3D curve
+
+BRepCheck_Edge::InContext checks an edge against a face. For a face it reads the face's surface
+and goes on to use it, with two ways to reach a null handle:
+ - The face has no surface. TopoDS faces without a geometry are legal (BRepCheck_Face reports
+   BRepCheck_NoSurface for one), but InContext is also asked about each of the face's edges, and
+   when the edge has a curve that is not a curve on a surface of this face it asks the null surface
+   for its DynamicType (`Su->DynamicType()`), or transforms it (`Su->Transformed`).
+ - The edge has no 3D curve and its reference curve is a curve on a surface. Minimum then sets
+   myCref to that curve on a surface and myHCurve to its adaptor, which is not a GeomAdaptor_Curve.
+   Because the loop over the edge's representations skips myCref itself, a planar face finds no
+   other curve on its surface and projects "the 3D curve" onto the plane, through
+   `occ::down_cast<GeomAdaptor_Curve>(myHCurve)->Curve()` on a null handle. The same edge on a
+   face that is not a plane already reported BRepCheck_NoCurveOnSurface.
+
+Both are uncatchable SIGSEGVs in BRepCheck_Analyzer, and the second needs no damaged file: a box
+face whose edge loses its 3D curve (`BRep_Builder::UpdateEdge(E, Handle(Geom_Curve)(), tol)`)
+faults. The readers return such shapes from a file that names a surface or a 3D curve the file
+does not hold (`BRepTools_ShapeSet` and `BinTools_ShapeReader` skip a reference outside its table,
+as patch 0074 records), which is how 2,208 of the 99,620 text count cases of Scripts/repro/3494
+returned a shape and then faulted in `InContext`.
+
+A face without a surface reports BRepCheck_NoCurveOnSurface for its edge and stops, and a planar
+face whose reference is a curve on a surface reports the same as a face that is not a plane. Both
+shapes are invalid, as they were whenever they did not fault, and now say so.
+
+Tracked as SecondMouseAU/OCCTSwift#3490, the structurally inconsistent shape that BRepCheck
+faults on.
+
+---
+diff --git a/src/ModelingAlgorithms/TKTopAlgo/BRepCheck/BRepCheck_Edge.cxx b/src/ModelingAlgorithms/TKTopAlgo/BRepCheck/BRepCheck_Edge.cxx
+--- a/src/ModelingAlgorithms/TKTopAlgo/BRepCheck/BRepCheck_Edge.cxx
++++ b/src/ModelingAlgorithms/TKTopAlgo/BRepCheck/BRepCheck_Edge.cxx
+@@ -338,6 +338,12 @@ void BRepCheck_Edge::InContext(const TopoDS_Shape& S)
+         TopLoc_Location                  LE    = myShape.Location() * myCref->Location();
+         const gp_Trsf&                   Etrsf = LE.Transformation();
+         bool                             pcurvefound = false;
++        // a face without a surface has no curve on it to check; BRepCheck_Face reports the surface
++        if (Su.IsNull())
++        {
++          BRepCheck::Add(lst, BRepCheck_NoCurveOnSurface);
++          return;
++        }
+ 
+         NCollection_List<occ::handle<BRep_CurveRepresentation>>::Iterator itcr(TE->Curves());
+         constexpr double eps           = Precision::PConfusion();
+@@ -470,8 +476,10 @@ void BRepCheck_Edge::InContext(const TopoDS_Shape& S)
+           {
+             P = occ::down_cast<Geom_Plane>(Su);
+           }
+-          if (P.IsNull())
+-          { // not a plane
++          // not a plane, or a plane and the reference is itself a curve on a surface, so there is
++          // no 3D curve to project onto it
++          if (P.IsNull() || occ::down_cast<GeomAdaptor_Curve>(myHCurve).IsNull())
++          {
+             BRepCheck::Add(lst, BRepCheck_NoCurveOnSurface);
+           }
+           else

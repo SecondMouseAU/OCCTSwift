@@ -1954,8 +1954,9 @@ public static func fromBREPString(_ brep: String) -> Shape?
   does not hold, or that declares a pole, knot, node or triangle count it cannot supply, returns `nil`
   once carried patches `0073` and `0074` are in the kernel (the pinned asset carries neither yet). It
   also reads a number of 32 characters or more whole (OCCT#1560). The kernel also reads a string whose trailing
-  white space is gone, but the bridge's end-of-stream check still refuses it. Not covered: a structurally inconsistent shape that is returned and
-  that `BRepCheck` then faults on.
+  white space is gone, but the bridge's end-of-stream check still refuses it. A face with no surface or an edge with only a curve on a surface, which the
+  reader returns, no longer faults `BRepCheck` once carried patch `0077` is in the kernel (the bridge
+  already refuses both before the analyzer). Not covered: a coordinate, tolerance or parameter that is not a number or is of the wrong size.
 - **OCCT:** `OCCTShapeFromBREPString` → `BRepTools::Read` from string stream.
 - **Example:**
   ```swift
