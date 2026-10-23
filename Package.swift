@@ -294,9 +294,9 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The pinned asset lacks six of them, 0070, 0071, 0072, 0073, 0074 and 0078: it holds fifty and
-        // Scripts/patches/ holds fifty-six, so those six are exercised by no CI job until the next
-        // repin.
+        // The pinned asset lacks eight of them, 0070, 0071, 0072, 0073, 0074, 0076, 0077 and 0078: it
+        // holds fifty and Scripts/patches/ holds fifty-eight, so those eight are exercised by no CI
+        // job until the next repin.
         // 0064 (#3335), 0065 (#3350), 0066 (#3464), 0068 (#3449) and
         // 0069 (#3330) were carried after v4.0.0-kernel.6 and are pinned by v4.0.0-kernel.7; the
         // rows for 0053 through 0069 below are history in the way the rows for 0044 through 0052
@@ -344,9 +344,10 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds fifty-six patches and the pinned asset holds fifty of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 56 against a list of 50,
-        // and the six that the list lacks are 0070, 0071, 0072, 0073, 0074 and 0078, written up below. The
+        // Scripts/patches/ holds fifty-eight patches and the pinned asset holds fifty of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 58 against a list of 50,
+        // and the eight that the list lacks are 0070, 0071, 0072, 0073, 0074, 0076, 0077 and 0078,
+        // written up below. The
         // v4.0.0-kernel.4 rebuild closed the divergence that 0044 had
         // opened and that 0045 through 0052 widened, the v4.0.0-kernel.5 rebuild closed the one that
         // 0053 through 0057 opened, the v4.0.0-kernel.6 rebuild closed the one that 0058 and 0059
@@ -615,6 +616,21 @@ let occtTarget: Target =
         //         sub-shape reference outside its table is skipped or refused. NOT in
         //         v4.0.0-kernel.7; BREPKernelRecordCountTests is gated on OCCTSWIFT_LOCAL=1 until
         //         the next repin (#3490).
+        //
+        //   0076  BinTools_ShapeReader trusted the position a reference names and the byte
+        //         after it: a delta past the start of the stream wrapped to a position near 2^64,
+        //         a reference to a shape or location still being read recursed until the stack
+        //         ended, an orientation byte of 4 or more reached TopExp_Explorer, and a record
+        //         of the wrong kind in a slot was read as an empty one. NOT in v4.0.0-kernel.7;
+        //         BinToolsPositionReferenceTests is gated on OCCTSWIFT_LOCAL=1 until the next
+        //         repin (#3495).
+        //
+        //   0077  BRepCheck_Edge::InContext used the surface of a face that had none, and
+        //         projected "the 3D curve" of an edge that had only a curve on a surface onto a
+        //         planar face, through a null handle. Both fault BRepCheck_Analyzer; both now
+        //         report NoCurveOnSurface. NOT in v4.0.0-kernel.7;
+        //         BREPKernelInconsistentShapeTests is gated on OCCTSWIFT_LOCAL=1 until the next
+        //         repin (#3490).
         //
         //   0078  BinLDrivers_DocumentRetrievalDriver::ReadSubTree recursed once per nested
         //         label and a file chose its own depth: 20000 levels, a 320 KB file, overflowed
