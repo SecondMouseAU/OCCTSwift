@@ -11,6 +11,7 @@ Documents breaking changes and migration steps for each OCCT version upgrade.
 
 | OCCTSwift | OCCT Version | Date | Notes |
 |-----------|-------------|------|-------|
+| Unreleased (kernel rebase, phase 1) | `IR` 53706f78a8 (8.1.0.dev1) | Oct 2026 | Source base moves from the `V8_0_1` tag to upstream branch `IR`; the shipped kernel stays `V8_0_1` until the phase 2 rebuild. Four patches retired, ten rebased, six fillet patches added: see `Scripts/patches/README.md` |
 | Unreleased | 8.0.1 | Aug 2026 | Current source pin: first 8.0 maintenance release, retired ten carried patches |
 | v1.15.x | 8.0.0p1 | Jun 2026 | Hot-patch tag; the kernel every v1.15–v1.17 release was built from |
 | v1.0.0 | 8.0.0 GA | May 2026 | SemVer-stable; PointSetLib removed, EdgeRegularity consolidated |
@@ -20,6 +21,19 @@ Documents breaking changes and migration steps for each OCCT version upgrade.
 | v0.27.0 | 8.0.0-rc4 | Feb 2026 | 111 improvements, 4 breaking changes |
 | v0.26.0 | 8.0.0-rc3 | Feb 2026 | Initial OCCT 8.0 adoption |
 | v0.16.0 | 7.8.1 | Feb 2026 | Original release |
+
+---
+
+## V8_0_1 to upstream IR 53706f78a8 (kernel rebase, phase 1)
+
+`Scripts/build-occt.sh` builds a pinned commit (`OCCT_COMMIT`, default
+`53706f78a8640c4407bdcc6752df13a270b159f2`, `V8_0_1-76-g53706f78a8`, `Standard_Version` 8.1.0.dev1)
+instead of the `V8_0_1` tag. `OCCT_COMMIT=""` builds the tag again, which only works with the
+`V8_0_1` patch stack. The stale-tree guard compares `HEAD` with the commit and aborts on a mismatch,
+as it did for the tag. What changed in the carried stack, why, and the evidence (a full compile of the
+patched tree, the GTest suites, the repros) is in `Scripts/patches/README.md` ("The base is upstream
+`IR`") and in the pull request that moved the base. This is phase 1: nothing is repinned, no
+asset is built, and `Package.swift`'s `url:`/`checksum:` still name the `V8_0_1` kernel.
 
 ---
 

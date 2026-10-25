@@ -283,12 +283,17 @@ The actual build script is at `Scripts/build-occt.sh`. It handles:
 To update the OCCT version, edit the variables at the top of the script:
 
 ```bash
-OCCT_VERSION="8.0.1"
-OCCT_RC=""          # Pre-release suffix (rc4, beta2, p1); empty for a GA tag like V8_0_1
+OCCT_VERSION="8.1.0"                  # what the pinned commit states; the raise-map gate compares it
+OCCT_TAG="V8_0_1"                     # the release tag the commit descends from
+OCCT_COMMIT="${OCCT_COMMIT-53706f78a8640c4407bdcc6752df13a270b159f2}"   # the base that is built; "" builds OCCT_TAG
 ```
 
+(Since the kernel rebase onto upstream `IR` the script builds a pinned commit, fetched by its full
+sha, rather than a tag. Keep the `OCCT_COMMIT=` assignment on one line: `Scripts/tsan-stress.sh`
+reads its default from it.)
+
 Then **delete `Libraries/occt-src`**. The script reuses an existing tree only when its `HEAD` is at
-the tag these variables name, and aborts otherwise. Editing the version without removing the tree
+the commit (or, with `OCCT_COMMIT=""`, the tag) these variables name, and aborts otherwise. Editing the version without removing the tree
 used to build the previous kernel silently and package it under the new version's number.
 
 Make executable:

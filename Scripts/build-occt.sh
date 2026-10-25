@@ -70,14 +70,29 @@ require_toolkits() {
 }
 
 
-OCCT_VERSION="8.0.1"
+# The version the pinned commit states (adm/cmake/version.cmake: 8.1.0 with OCC_VERSION_DEVELOPMENT dev1).
+# It is not a tag any more: OCCT_TAG below is the tag the commit descends from, kept for the
+# OCCT_COMMIT="" fallback and for the message.
+OCCT_VERSION="8.1.0"
 OCCT_RC=""
-# Pre-release tags use format V8_0_0_rc5 / V8_0_0_beta2; the p1 hot-patch is V8_0_0_p1; GA is V8_0_0
-# and the 8.0.1 maintenance release is V8_0_1, both plain, so OCCT_RC is empty for a GA tag.
-if [ -n "$OCCT_RC" ]; then
-    OCCT_TAG="V${OCCT_VERSION//./_}_${OCCT_RC}"
+# OCCT_RC is vestigial (the pre-release token of the tag names V8_0_0_rc5 and the like); it stays empty
+# and Scripts/census-compiled-out-validation.py's docstring still names it.
+# OCCT_TAG: the release tag the pinned commit descends from (V8_0_1). Building the tag itself
+# (OCCT_COMMIT="") is only meaningful with the V8_0_1 patch stack, which this branch no longer has.
+OCCT_TAG="V8_0_1"
+
+# BASE SWITCH (kernel rebase onto upstream IR, phase 1). The kernel is built from a pinned COMMIT of
+# Open-Cascade-SAS/OCCT, not from a tag: OCCT_COMMIT names the full sha (IR, 53706f78a8, is
+# `V8_0_1-76-g53706f78a8`). Keep the assignment on this one line: Scripts/tsan-stress.sh reads the
+# default out of it. Set OCCT_COMMIT="" to build OCCT_TAG instead, which is what this script did
+# until the rebase. Scripts/patches/ is a stack against whichever base is built: the patches on this
+# branch apply to the IR commit and not to the tag, so building the tag with them aborts at the
+# first patch that does not apply.
+OCCT_COMMIT="${OCCT_COMMIT-53706f78a8640c4407bdcc6752df13a270b159f2}"
+if [ -n "$OCCT_COMMIT" ]; then
+    OCCT_BASE_DESC="commit $OCCT_COMMIT (descends from $OCCT_TAG)"
 else
-    OCCT_TAG="V${OCCT_VERSION//./_}"
+    OCCT_BASE_DESC="tag $OCCT_TAG"
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -107,7 +122,7 @@ CC=$(xcrun --find clang)
 CXX=$(xcrun --find clang++)
 
 echo "========================================"
-echo "Building OCCT $OCCT_VERSION for iOS/macOS"
+echo "Building OCCT for iOS/macOS from $OCCT_BASE_DESC"
 echo "========================================"
 echo "Project directory: $PROJECT_DIR"
 echo "Libraries directory: $LIBRARIES_DIR"
@@ -144,30 +159,48 @@ cd "$LIBRARIES_DIR"
 
 if [ ! -d "occt-src" ]; then
     echo ">>> Downloading OCCT source..."
-    git clone --depth 1 --branch "$OCCT_TAG" \
-        https://github.com/Open-Cascade-SAS/OCCT.git occt-src
+    if [ -n "$OCCT_COMMIT" ]; then
+        # A shallow fetch of one sha: GitHub serves any reachable commit by its full sha.
+        git init -q occt-src
+        git -C occt-src remote add origin https://github.com/Open-Cascade-SAS/OCCT.git
+        git -C occt-src fetch --depth 1 origin "$OCCT_COMMIT"
+        git -C occt-src checkout -q --detach FETCH_HEAD
+        if [ "$(git -C occt-src rev-parse HEAD)" != "$OCCT_COMMIT" ]; then
+            echo "ERROR: fetched $(git -C occt-src rev-parse HEAD), expected $OCCT_COMMIT." >&2
+            exit 1
+        fi
+    else
+        git clone --depth 1 --branch "$OCCT_TAG" \
+            https://github.com/Open-Cascade-SAS/OCCT.git occt-src
+    fi
 else
-    # Reuse the tree only when it is at the tag this script names. Testing for the directory alone
+    # Reuse the tree only when it is at the commit (or tag) this script names. Testing for the directory alone
     # (what this did until the 8.0.1 re-pin) makes a version bump a silent no-op on any machine that
     # has built before: OCCT_TAG changes, the clone is skipped, and the build ships the OLD kernel
     # under the new version's name. Same failure the stale-install-prefix wipe below exists to
     # prevent: a reused artifact masquerading as the current one.
     #
-    # HEAD stays on the tag while the carried patches are applied (they dirty the working tree, not
+    # HEAD stays on the base while the carried patches are applied (they dirty the working tree, not
     # HEAD), so a repeated run of the same version still reuses the tree. A mismatch aborts rather
     # than resetting: an investigation may have left a diagnostic probe or a half-written patch here,
     # and destroying that silently would be worse than one manual step per version bump.
-    CURRENT_TAG="$(git -C occt-src describe --tags --exact-match HEAD 2>/dev/null || true)"
-    if [ "$CURRENT_TAG" = "$OCCT_TAG" ]; then
-        echo ">>> OCCT source already at $OCCT_TAG, skipping download"
+    if [ -n "$OCCT_COMMIT" ]; then
+        CURRENT_BASE="$(git -C occt-src rev-parse HEAD 2>/dev/null || true)"
+        WANTED_BASE="$OCCT_COMMIT"
     else
-        echo "ERROR: $LIBRARIES_DIR/occt-src is at '${CURRENT_TAG:-an untagged commit ($(git -C occt-src rev-parse --short HEAD 2>/dev/null || echo 'not a git repo'))}'," >&2
-        echo "       but this script builds $OCCT_TAG. Reusing it would build the wrong kernel." >&2
+        CURRENT_BASE="$(git -C occt-src describe --tags --exact-match HEAD 2>/dev/null || true)"
+        WANTED_BASE="$OCCT_TAG"
+    fi
+    if [ "$CURRENT_BASE" = "$WANTED_BASE" ]; then
+        echo ">>> OCCT source already at $OCCT_BASE_DESC, skipping download"
+    else
+        echo "ERROR: $LIBRARIES_DIR/occt-src is at '${CURRENT_BASE:-an unknown commit ($(git -C occt-src rev-parse --short HEAD 2>/dev/null || echo 'not a git repo'))}'," >&2
+        echo "       but this script builds $OCCT_BASE_DESC. Reusing it would build the wrong kernel." >&2
         echo "" >&2
         echo "       Check for work worth keeping first, anything not touched by a carried patch:" >&2
         echo "         git -C '$LIBRARIES_DIR/occt-src' status --porcelain" >&2
         echo "" >&2
-        echo "       Then remove the tree and re-run, so the clone above fetches $OCCT_TAG:" >&2
+        echo "       Then remove the tree and re-run, so the clone above fetches $OCCT_BASE_DESC:" >&2
         echo "         rm -rf '$LIBRARIES_DIR/occt-src'" >&2
         exit 1
     fi
