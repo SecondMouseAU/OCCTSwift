@@ -1,0 +1,261 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - ChFi3d: fillets whose arcs cross are no longer taken for a touching pair
+
+Two fillets on the opposite edges of a face whose radii add up to more than its width
+(a 4 x 10 x 6 box, 3 and 3) were reported done with a solid that BRepCheck rejects and whose
+volume is above the box's (315 for 240). The 8.0.1 builder refused them. Part 2 of the fillet
+handling (#1449) accepts tangential contacts and rejects transversal ones, but a crossing of
+the end-cap arcs is reported by Geom2dInt_GInter as a segment about the tolerance long, with
+no point, and ChFi3d_HasTransversalIntersection looked at points only.
+
+A segment is now a crossing when the two curves are not tangent at it, unless it joins the
+ends of both curves. The fillets are refused again, as in 8.0.1.
+
+DRAW case blend complex H4 carried a TODO for the faulty shape its fillet returned; it now expects the refusal and keeps the old check for the day the fillet is built.
+
+Related to #1568 and #1177. The GTest checks that no such solid is reported done.
+
+Upstream: Open-Cascade-SAS/OCCT#1667 (fork branch SecondMouseAU/OCCT fix/chfi3d-crossing-arcs). This is the form of that
+pull request as it stacks on the earlier patches of this series; where it differs from the pull request
+as submitted it is only in the lines the stack made conflict (see Scripts/patches/README.md). The DRAW
+test cases under tests/ that the pull request edits are not part of this patch: the build has no Draw.
+
+---
+diff --git a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_0.cxx b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_0.cxx
+index 37491f8104..75f68ffedd 100644
+--- a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_0.cxx
++++ b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_0.cxx
+@@ -3346,7 +3346,16 @@ void ChFi3d_FilDS(const int                         SolidIndex,
+ 
+ //=======================================================================
+ 
+-bool ChFi3d_HasTransversalIntersection(const Geom2dInt_GInter& theIntersector)
++namespace
++{
++//! Sine of the largest angle between two curves that still counts as tangent.
++constexpr double THE_TANGENT_SIN = 1.e-6;
++} // namespace
++
++bool ChFi3d_HasTransversalIntersection(const Geom2dInt_GInter&    theIntersector,
++                                       const Geom2dAdaptor_Curve& theFirstCurve,
++                                       const Geom2dAdaptor_Curve& theSecondCurve,
++                                       const double               theTolerance)
+ {
+   for (int anIndex = 1; anIndex <= theIntersector.NbPoints(); ++anIndex)
+   {
+@@ -3359,6 +3368,36 @@ bool ChFi3d_HasTransversalIntersection(const Geom2dInt_GInter& theIntersector)
+       return true;
+     }
+   }
++  // Curves that cross are reported as a segment, not a point: a crossing unless tangent there.
++  for (int anIndex = 1; anIndex <= theIntersector.NbSegments(); ++anIndex)
++  {
++    const IntRes2d_IntersectionSegment& aSegment = theIntersector.Segment(anIndex);
++    if (!aSegment.HasFirstPoint() || !aSegment.HasLastPoint())
++    {
++      continue;
++    }
++    const IntRes2d_IntersectionPoint& aFirstPoint = aSegment.FirstPoint();
++    const auto                        isEnd = [theTolerance](const double               theParameter,
++                                      const Geom2dAdaptor_Curve& theCurve) {
++      return std::abs(theParameter - theCurve.FirstParameter()) <= theTolerance
++             || std::abs(theParameter - theCurve.LastParameter()) <= theTolerance;
++    };
++    if (isEnd(aFirstPoint.ParamOnFirst(), theFirstCurve)
++        && isEnd(aFirstPoint.ParamOnSecond(), theSecondCurve))
++    {
++      continue; // the curves join end to end: not a crossing
++    }
++    gp_Pnt2d aPoint;
++    gp_Vec2d aFirstTangent, aSecondTangent;
++    theFirstCurve.D1(aFirstPoint.ParamOnFirst(), aPoint, aFirstTangent);
++    theSecondCurve.D1(aFirstPoint.ParamOnSecond(), aPoint, aSecondTangent);
++    const double aNorms = aFirstTangent.Magnitude() * aSecondTangent.Magnitude();
++    if (aNorms > gp::Resolution()
++        && std::abs(aFirstTangent.Crossed(aSecondTangent)) > THE_TANGENT_SIN * aNorms)
++    {
++      return true;
++    }
++  }
+   return false;
+ }
+ 
+@@ -3549,7 +3588,7 @@ void ChFi3d_StripeEdgeInter(const occ::handle<ChFiDS_Stripe>& theStripe1,
+       {
+         DStr.MergeEquivalentCurves(aFI1.LineIndex(), aFI2.LineIndex(), isReversed);
+       }
+-      if (ChFi3d_HasTransversalIntersection(anIntersector))
++      if (ChFi3d_HasTransversalIntersection(anIntersector, aPCurve1, aPCurve2, tol2d))
+       {
+         throw StdFail_NotDone("StripeEdgeInter : fillets have too big radiuses");
+       }
+diff --git a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_0.hxx b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_0.hxx
+index 853fa6c8c8..d5de768070 100644
+--- a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_0.hxx
++++ b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_0.hxx
+@@ -389,8 +389,15 @@ void ChFi3d_StripeEdgeInter(const occ::handle<ChFiDS_Stripe>& theStripe1,
+ 
+ //! Checks whether a 2D intersection contains a transversal crossing.
+ //! @param[in] theIntersector intersection result to examine
+-//! @return true if at least one intersection point crosses either curve
+-bool ChFi3d_HasTransversalIntersection(const Geom2dInt_GInter& theIntersector);
++//! @param[in] theFirstCurve first intersected curve
++//! @param[in] theSecondCurve second intersected curve
++//! @param[in] theTolerance largest length of a segment taken for a point
++//! @return true if at least one intersection point crosses either curve, or the curves cross at
++//! a segment of no length
++bool ChFi3d_HasTransversalIntersection(const Geom2dInt_GInter&    theIntersector,
++                                       const Geom2dAdaptor_Curve& theFirstCurve,
++                                       const Geom2dAdaptor_Curve& theSecondCurve,
++                                       const double               theTolerance);
+ 
+ //! Checks whether a non-transversal contact joins two curve ends.
+ //! @param[in] theIntersector intersection result to examine
+diff --git a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_C1.cxx b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_C1.cxx
+index eb19147431..d0dc6c941e 100644
+--- a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_C1.cxx
++++ b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_C1.cxx
+@@ -1139,7 +1139,7 @@ void ChFi3d_Builder::PerformOneCorner(const int Index, const bool thePrepareOnSa
+           continue;
+         }
+         anIntersector.Perform(aCorkPCurve, anOtherPCurve, tol2d, Precision::PConfusion());
+-        if (ChFi3d_HasTransversalIntersection(anIntersector))
++        if (ChFi3d_HasTransversalIntersection(anIntersector, aCorkPCurve, anOtherPCurve, tol2d))
+         {
+           throw StdFail_NotDone("OneCorner : fillets have too big radiuses");
+         }
+@@ -1185,7 +1185,7 @@ void ChFi3d_Builder::PerformOneCorner(const int Index, const bool thePrepareOnSa
+                                         anOtherCur->FirstParameter(),
+                                         anOtherCur->LastParameter());
+       anIntersector.Perform(aCorkPCurve, anOtherPCurve, tol2d, Precision::PConfusion());
+-      if (ChFi3d_HasTransversalIntersection(anIntersector))
++      if (ChFi3d_HasTransversalIntersection(anIntersector, aCorkPCurve, anOtherPCurve, tol2d))
+       {
+         throw StdFail_NotDone("OneCorner : fillets have too big radiuses");
+       }
+diff --git a/src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_OppositeEdges_Test.cxx b/src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_OppositeEdges_Test.cxx
+new file mode 100644
+index 0000000000..5390e66a1a
+--- /dev/null
++++ b/src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_OppositeEdges_Test.cxx
+@@ -0,0 +1,108 @@
++// Copyright (c) 2026 OPEN CASCADE SAS
++//
++// This file is part of Open CASCADE Technology software library.
++//
++// This library is free software; you can redistribute it and/or modify it under
++// the terms of the GNU Lesser General Public License version 2.1 as published
++// by the Free Software Foundation, with special exception defined in the file
++// OCCT_LGPL_EXCEPTION.txt. Consult the file LICENSE_LGPL_21.txt included in OCCT
++// distribution for complete text of the license and disclaimer of any warranty.
++//
++// Alternatively, this file may be used under the terms of Open CASCADE
++// commercial license or contractual agreement.
++
++// Fillets on the two opposite edges of a face. Related reports:
++// - https://github.com/Open-Cascade-SAS/OCCT/issues/1568
++// - https://github.com/Open-Cascade-SAS/OCCT/issues/1177
++
++#include <BRepAdaptor_Curve.hxx>
++#include <BRepCheck_Analyzer.hxx>
++#include <BRepFilletAPI_MakeFillet.hxx>
++#include <BRepGProp.hxx>
++#include <BRepPrimAPI_MakeBox.hxx>
++#include <GProp_GProps.hxx>
++#include <TopAbs_ShapeEnum.hxx>
++#include <TopExp_Explorer.hxx>
++#include <TopoDS.hxx>
++#include <TopoDS_Edge.hxx>
++#include <TopoDS_Shape.hxx>
++#include <gp_Pnt.hxx>
++
++#include <gtest/gtest.h>
++
++#include <cmath>
++
++namespace
++{
++//! Returns the edge of the shape whose middle is at the given point.
++TopoDS_Edge findEdgeAt(const TopoDS_Shape& theShape, const gp_Pnt& theMiddle)
++{
++  for (TopExp_Explorer anExp(theShape, TopAbs_EDGE); anExp.More(); anExp.Next())
++  {
++    const TopoDS_Edge& anEdge = TopoDS::Edge(anExp.Current());
++    BRepAdaptor_Curve  aCurve(anEdge);
++    const gp_Pnt aMiddle = aCurve.Value(0.5 * (aCurve.FirstParameter() + aCurve.LastParameter()));
++    if (aMiddle.Distance(theMiddle) < 1.e-7)
++    {
++      return anEdge;
++    }
++  }
++  return TopoDS_Edge();
++}
++
++//! Volume of the shape.
++double volumeOf(const TopoDS_Shape& theShape)
++{
++  GProp_GProps aProps;
++  BRepGProp::VolumeProperties(theShape, aProps);
++  return aProps.Mass();
++}
++} // namespace
++
++// Two fillets on the opposite edges of a 4 wide face whose radii add up to more than the width:
++// their arcs cross. The builder must not report a solid that is not one (the volume was more
++// than the box's) and, when it does report one, it must be valid.
++TEST(BRepFilletAPI_MakeFilletTest, OCCT1568_OverlappingOppositeFilletsAreNotAnInvalidSolid)
++{
++  const TopoDS_Shape aBox         = BRepPrimAPI_MakeBox(4.0, 10.0, 6.0).Shape();
++  const double       aBoxVol      = volumeOf(aBox);
++  const double       aRadii[9][2] = {{2.001, 2.001},
++                                     {2.2, 2.2},
++                                     {2.5, 2.5},
++                                     {3.0, 3.0},
++                                     {3.9, 3.9},
++                                     {2.0, 2.5},
++                                     {1.0, 3.5},
++                                     {2.5, 3.0},
++                                     {0.5, 3.9}};
++  for (const auto& aPair : aRadii)
++  {
++    BRepFilletAPI_MakeFillet aFillet(aBox);
++    aFillet.Add(aPair[0], findEdgeAt(aBox, gp_Pnt(0.0, 5.0, 6.0)));
++    aFillet.Add(aPair[1], findEdgeAt(aBox, gp_Pnt(4.0, 5.0, 6.0)));
++    ASSERT_NO_THROW(aFillet.Build());
++    if (!aFillet.IsDone())
++    {
++      continue;
++    }
++    ASSERT_FALSE(aFillet.Shape().IsNull());
++    EXPECT_TRUE(BRepCheck_Analyzer(aFillet.Shape()).IsValid())
++      << "radii " << aPair[0] << " and " << aPair[1];
++    EXPECT_LT(volumeOf(aFillet.Shape()), aBoxVol) << "radii " << aPair[0] << " and " << aPair[1];
++  }
++}
++
++// Radii that add up to exactly the width: the arcs touch and the result is a valid solid.
++TEST(BRepFilletAPI_MakeFilletTest, OCCT1568_OppositeFilletsThatTouchAreValid)
++{
++  const TopoDS_Shape       aBox = BRepPrimAPI_MakeBox(4.0, 10.0, 6.0).Shape();
++  BRepFilletAPI_MakeFillet aFillet(aBox);
++  aFillet.Add(1.5, findEdgeAt(aBox, gp_Pnt(0.0, 5.0, 6.0)));
++  aFillet.Add(2.5, findEdgeAt(aBox, gp_Pnt(4.0, 5.0, 6.0)));
++  ASSERT_NO_THROW(aFillet.Build());
++  ASSERT_TRUE(aFillet.IsDone());
++  EXPECT_TRUE(BRepCheck_Analyzer(aFillet.Shape()).IsValid());
++  // The area removed from the section is (1 - pi / 4) (r1^2 + r2^2).
++  const double aRemoved = (1.0 - M_PI / 4.0) * (1.5 * 1.5 + 2.5 * 2.5) * 10.0;
++  EXPECT_NEAR(volumeOf(aFillet.Shape()), 240.0 - aRemoved, 1.e-6);
++}
+diff --git a/src/ModelingAlgorithms/TKFillet/GTests/FILES.cmake b/src/ModelingAlgorithms/TKFillet/GTests/FILES.cmake
+index 92c802aedd..3ffc5fee6b 100644
+--- a/src/ModelingAlgorithms/TKFillet/GTests/FILES.cmake
++++ b/src/ModelingAlgorithms/TKFillet/GTests/FILES.cmake
+@@ -4,6 +4,7 @@ set(OCCT_TKFillet_GTests_FILES_LOCATION "${CMAKE_CURRENT_LIST_DIR}")
+ set(OCCT_TKFillet_GTests_FILES
+   BRepFilletAPI_MakeChamfer_Test.cxx
+   BRepFilletAPI_MakeFillet_Obstacle_Test.cxx
++  BRepFilletAPI_MakeFillet_OppositeEdges_Test.cxx
+   BRepFilletAPI_MakeFillet_Test.cxx
+   ChFi3d_Builder_0_Test.cxx
+   ChFi3d_Hatching_Test.cxx

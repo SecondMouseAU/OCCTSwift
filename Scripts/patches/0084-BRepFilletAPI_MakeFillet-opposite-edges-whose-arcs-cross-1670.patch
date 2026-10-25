@@ -1,0 +1,203 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - BRepFilletAPI_MakeFillet builds fillets on opposite edges whose arcs cross
+
+Two fillets on the opposite edges of a face with r1 + r2 > w (a 4 mm face, 3 and 3) are
+refused by the stripe builder, which has no section curve for stripes that cross (#1177).
+
+When Compute() fails for contours that share no vertex and are all of constant radius, Build
+now returns the intersection (BRepAlgoAPI_Common) of the shape filleted on each contour alone:
+each arc stays tangent to the face it starts on and the arcs cross on the face between them.
+The result must be one valid closed solid that removes at least the largest and at most the
+sum of what each contour removes; otherwise the failure stands.
+
+Related to #1568.
+
+The DRAW case bugs moddata_1 bug203 expected the fillet of two edges next to a chamfer to be
+refused; the case now checks the shape if it is built.
+
+Upstream: Open-Cascade-SAS/OCCT#1670 (fork branch SecondMouseAU/OCCT fix/fillet-opposite-edges-wide-radii). This is the form of that
+pull request as it stacks on the earlier patches of this series; where it differs from the pull request
+as submitted it is only in the lines the stack made conflict (see Scripts/patches/README.md). The DRAW
+test cases under tests/ that the pull request edits are not part of this patch: the build has no Draw.
+
+---
+diff --git a/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeFillet.cxx b/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeFillet.cxx
+index b04008c3ea..65a98c62cc 100644
+--- a/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeFillet.cxx
++++ b/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeFillet.cxx
+@@ -20,6 +20,7 @@
+ #include <BRep_Tool.hxx>
+ #include <BRepAdaptor_Curve.hxx>
+ #include <BRepAdaptor_Surface.hxx>
++#include <BRepAlgoAPI_Common.hxx>
+ #include <BRepAlgoAPI_Cut.hxx>
+ #include <BRepBuilderAPI_Copy.hxx>
+ #include <BRepBuilderAPI_MakeEdge.hxx>
+@@ -37,6 +38,7 @@
+ #include <GProp_GProps.hxx>
+ #include <Law_Linear.hxx>
+ #include <NCollection_IndexedDataMap.hxx>
++#include <NCollection_IndexedMap.hxx>
+ #include <Precision.hxx>
+ #include <Standard_Failure.hxx>
+ #include <TopExp.hxx>
+@@ -340,6 +342,92 @@ bool isValidResult(const TopoDS_Shape& theShape)
+   BRepLib::SameParameter(aCopy.Shape(), Precision::Confusion(), true);
+   return BRepCheck_Analyzer(aCopy.Shape()).IsValid();
+ }
++
++//! The most contours the fallback intersects: each costs a fillet and a Boolean operation.
++const int THE_MAX_CONTOURS = 8;
++
++//! The fillets of the contours of theBuilder, computed after Compute() failed: each contour on its
++//! own, and the intersection of the results. Two fillets whose arcs cross are built this way.
++//! The contours must share no vertex, and every contour must be a constant radius.
++//! Null if not applicable.
++TopoDS_Shape fallbackFillets(ChFi3d_FilBuilder& theBuilder, const ChFi3d_FilletShape theShape)
++{
++  const int aNbContours = theBuilder.NbElements();
++  if (aNbContours < 2 || aNbContours > THE_MAX_CONTOURS)
++  {
++    return TopoDS_Shape();
++  }
++  const TopoDS_Shape&                                           aShape = theBuilder.InitialShape();
++  NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> aVertices;
++  for (int aContour = 1; aContour <= aNbContours; ++aContour)
++  {
++    const occ::handle<ChFiDS_Spine> aSpine = theBuilder.Value(aContour);
++    if (aSpine.IsNull() || aSpine->NbEdges() < 1 || !theBuilder.IsConstant(aContour))
++    {
++      return TopoDS_Shape();
++    }
++    NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> aOwn;
++    for (int anEdge = 1; anEdge <= aSpine->NbEdges(); ++anEdge)
++    {
++      TopExp::MapShapes(aSpine->Edges(anEdge), TopAbs_VERTEX, aOwn);
++    }
++    for (int aVertex = 1; aVertex <= aOwn.Extent(); ++aVertex)
++    {
++      if (aVertices.Contains(aOwn(aVertex)))
++      {
++        return TopoDS_Shape();
++      }
++    }
++    for (int aVertex = 1; aVertex <= aOwn.Extent(); ++aVertex)
++    {
++      aVertices.Add(aOwn(aVertex));
++    }
++  }
++
++  const double aVolume = volumeOf(aShape);
++  TopoDS_Shape aResult;
++  double       aSumRemoved = 0., aMaxRemoved = 0.;
++  for (int aContour = 1; aContour <= aNbContours; ++aContour)
++  {
++    const TopoDS_Edge&       aFirst  = theBuilder.Value(aContour)->Edges(1);
++    const double             aRadius = theBuilder.Radius(aContour);
++    BRepFilletAPI_MakeFillet aSingle(aShape, theShape);
++    aSingle.Add(aRadius, aFirst);
++    aSingle.Build();
++    if (!aSingle.IsDone() || !isClosedValidSolid(aSingle.Shape()))
++    {
++      return TopoDS_Shape();
++    }
++    const TopoDS_Shape& aOne     = aSingle.Shape();
++    const double        aRemoved = aVolume - volumeOf(aOne);
++    if (aRemoved <= 0.)
++    {
++      // Only fillets that take material away are an intersection.
++      return TopoDS_Shape();
++    }
++    aSumRemoved += aRemoved;
++    aMaxRemoved = std::max(aMaxRemoved, aRemoved);
++    if (aResult.IsNull())
++    {
++      aResult = aOne;
++      continue;
++    }
++    BRepAlgoAPI_Common aCommon(aResult, aOne);
++    if (!aCommon.IsDone() || aCommon.HasErrors() || !isClosedValidSolid(aCommon.Shape()))
++    {
++      return TopoDS_Shape();
++    }
++    aResult = aCommon.Shape();
++  }
++  // What the intersection removes is at least what any one fillet removes and at most the sum.
++  const double aTol     = 1.e-6 * aVolume;
++  const double aRemoved = aVolume - volumeOf(aResult);
++  if (aRemoved < aMaxRemoved - aTol || aRemoved > aSumRemoved + aTol)
++  {
++    return TopoDS_Shape();
++  }
++  return aResult;
++}
+ } // namespace
+ 
+ //=================================================================================================
+@@ -689,20 +777,25 @@ void BRepFilletAPI_MakeFillet::Build(const Message_ProgressRange& /*theRange*/)
+   // A result that is not a valid solid is a failure, as for a computation that failed.
+   if (!myBuilder.IsDone() || !isValidResult(myBuilder.Shape()))
+   {
+-    // A fillet wider than its face has no start solution: see pivotCut.
+-    TopoDS_Shape aPivot;
++    // A fillet wider than its face has no start solution: see pivotCut. Fillets whose arcs cross
++    // each other: see fallbackFillets.
++    TopoDS_Shape aFallback;
+     try
+     {
+-      aPivot = pivotFillet(myBuilder);
++      aFallback = pivotFillet(myBuilder);
++      if (aFallback.IsNull())
++      {
++        aFallback = fallbackFillets(myBuilder, myBuilder.GetFilletShape());
++      }
+     }
+     catch (Standard_Failure const&)
+     {
+     }
+-    if (!aPivot.IsNull())
++    if (!aFallback.IsNull())
+     {
+       myBuilder.Reset();
+       Done();
+-      myShape = aPivot;
++      myShape = aFallback;
+       myMap.Clear();
+       for (TopExp_Explorer anExp(myShape, TopAbs_FACE); anExp.More(); anExp.Next())
+       {
+diff --git a/src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_OppositeEdges_Test.cxx b/src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_OppositeEdges_Test.cxx
+index 926b3e0b8d..eef7694e84 100644
+--- a/src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_OppositeEdges_Test.cxx
++++ b/src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_OppositeEdges_Test.cxx
+@@ -198,3 +198,31 @@ TEST(BRepFilletAPI_MakeFilletTest, OCCT1568_FourFilletsThatConsumeTheirFaceRetur
+   aThread.join();
+   EXPECT_NE(aState.load(), 2) << "the builder reported a solid that is not valid";
+ }
++
++// The arcs cross on the face between: the result is the intersection of the two rounded profiles.
++// Removed area 3.749792368679 for r = 3,
++// 2 w r - pi r^2 / 2 + (r - w / 2) sqrt(w r - w^2 / 4) + r^2 asin(1 - w / (2 r)) with w = 4.
++TEST(BRepFilletAPI_MakeFilletTest, OCCT1568_OppositeFilletsWhoseArcsCrossAreTheIntersection)
++{
++  const TopoDS_Shape       aBox = BRepPrimAPI_MakeBox(4.0, 10.0, 6.0).Shape();
++  BRepFilletAPI_MakeFillet aFillet(aBox);
++  aFillet.Add(3.0, findEdgeAt(aBox, gp_Pnt(0.0, 5.0, 6.0)));
++  aFillet.Add(3.0, findEdgeAt(aBox, gp_Pnt(4.0, 5.0, 6.0)));
++  ASSERT_NO_THROW(aFillet.Build());
++  ASSERT_TRUE(aFillet.IsDone());
++  EXPECT_TRUE(BRepCheck_Analyzer(aFillet.Shape()).IsValid());
++  EXPECT_NEAR(volumeOf(aFillet.Shape()), 240.0 - 10.0 * 3.749792368679, 1.e-6);
++}
++
++// r1 = 1, r2 = 3.5: removed area 2.840940340.
++TEST(BRepFilletAPI_MakeFilletTest, OCCT1568_OppositeFilletsOfDifferentRadiiCross)
++{
++  const TopoDS_Shape       aBox = BRepPrimAPI_MakeBox(4.0, 10.0, 6.0).Shape();
++  BRepFilletAPI_MakeFillet aFillet(aBox);
++  aFillet.Add(1.0, findEdgeAt(aBox, gp_Pnt(0.0, 5.0, 6.0)));
++  aFillet.Add(3.5, findEdgeAt(aBox, gp_Pnt(4.0, 5.0, 6.0)));
++  ASSERT_NO_THROW(aFillet.Build());
++  ASSERT_TRUE(aFillet.IsDone());
++  EXPECT_TRUE(BRepCheck_Analyzer(aFillet.Shape()).IsValid());
++  EXPECT_NEAR(volumeOf(aFillet.Shape()), 240.0 - 10.0 * 2.840940340, 1.e-6);
++}

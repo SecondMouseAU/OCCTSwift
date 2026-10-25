@@ -1,0 +1,184 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Data - BRepTools_WireExplorer: a pcurve too short to step along ends the exploration
+
+GetNextParamOnPC steps along a pcurve in thousandths of its range to find a point that
+differs from the reference. On a pcurve whose range is a few units of the last place wide
+(a face that its fillets consumed down to a point has four of them, at parameter 2.0) the step
+is below the spacing of the parameter, so startPar never changes and the loop never ends.
+BRepCheck_Wire reaches it through Closed2d, so BRepCheck_Analyzer never returned.
+
+The loop now stops when a step does not move the parameter, which gives the same answer as
+running out of range: the pcurve has no second point, the explorer reports the wire as not
+continuing, and the analyzer reports a defect.
+
+Found with four r = 2 fillets on a 4 x 4 face of a cube (#1568). Adds a GTest that runs the
+explorer on such a wire under a deadline.
+
+Upstream: Open-Cascade-SAS/OCCT#1666 (fork branch SecondMouseAU/OCCT fix/wireexplorer-pcurve-step). This is the form of that
+pull request as it stacks on the earlier patches of this series; where it differs from the pull request
+as submitted it is only in the lines the stack made conflict (see Scripts/patches/README.md). The DRAW
+test cases under tests/ that the pull request edits are not part of this patch: the build has no Draw.
+
+---
+diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_WireExplorer.cxx b/src/ModelingData/TKBRep/BRepTools/BRepTools_WireExplorer.cxx
+index 4335c1f94a..ae9b203e59 100644
+--- a/src/ModelingData/TKBRep/BRepTools/BRepTools_WireExplorer.cxx
++++ b/src/ModelingData/TKBRep/BRepTools/BRepTools_WireExplorer.cxx
+@@ -812,8 +812,14 @@ double GetNextParamOnPC(const occ::handle<Geom2d_Curve>& aPC,
+     bool   nextPntOnEdge = false;
+     while (!nextPntOnEdge && startPar < lP)
+     {
+-      gp_Pnt2d pnt;
++      gp_Pnt2d     pnt;
++      const double aPrevPar = startPar;
+       startPar += dP;
++      // A step below the spacing of the parameter makes no progress.
++      if (startPar <= aPrevPar)
++      {
++        break;
++      }
+       aPC->D0(startPar, pnt);
+       if (std::abs(aPRef.X() - pnt.X()) < tolU && std::abs(aPRef.Y() - pnt.Y()) < tolV)
+       {
+@@ -843,8 +849,14 @@ double GetNextParamOnPC(const occ::handle<Geom2d_Curve>& aPC,
+     bool   nextPntOnEdge = false;
+     while (!nextPntOnEdge && startPar > fP)
+     {
+-      gp_Pnt2d pnt;
++      gp_Pnt2d     pnt;
++      const double aPrevPar = startPar;
+       startPar -= dP;
++      // A step below the spacing of the parameter makes no progress.
++      if (startPar >= aPrevPar)
++      {
++        break;
++      }
+       aPC->D0(startPar, pnt);
+       if (std::abs(aPRef.X() - pnt.X()) < tolU && std::abs(aPRef.Y() - pnt.Y()) < tolV)
+       {
+diff --git a/src/ModelingData/TKBRep/GTests/BRepTools_WireExplorer_Test.cxx b/src/ModelingData/TKBRep/GTests/BRepTools_WireExplorer_Test.cxx
+new file mode 100644
+index 0000000000..85f23a8692
+--- /dev/null
++++ b/src/ModelingData/TKBRep/GTests/BRepTools_WireExplorer_Test.cxx
+@@ -0,0 +1,108 @@
++// Copyright (c) 2026 OPEN CASCADE SAS
++//
++// This file is part of Open CASCADE Technology software library.
++//
++// This library is free software; you can redistribute it and/or modify it under
++// the terms of the GNU Lesser General Public License version 2.1 as published
++// by the Free Software Foundation, with special exception defined in the file
++// OCCT_LGPL_EXCEPTION.txt. Consult the file LICENSE_LGPL_21.txt included in OCCT
++// distribution for complete text of the license and disclaimer of any warranty.
++//
++// Alternatively, this file may be used under the terms of Open CASCADE
++// commercial license or contractual agreement.
++
++// BRepTools_WireExplorer on a wire of a face whose edges have pcurves too short to step along.
++// Related report: https://github.com/Open-Cascade-SAS/OCCT/issues/1568
++
++#include <BRep_Builder.hxx>
++#include <BRepTools_WireExplorer.hxx>
++#include <Geom2d_Line.hxx>
++#include <Geom_Plane.hxx>
++#include <TopAbs_Orientation.hxx>
++#include <TopoDS_Edge.hxx>
++#include <TopoDS_Face.hxx>
++#include <TopoDS_Vertex.hxx>
++#include <TopoDS_Wire.hxx>
++#include <gp_Ax2d.hxx>
++#include <gp_Dir2d.hxx>
++#include <gp_Pnt.hxx>
++#include <gp_Pnt2d.hxx>
++
++#include <gtest/gtest.h>
++
++#include <atomic>
++#include <chrono>
++#include <thread>
++
++namespace
++{
++//! Edge of the face whose pcurve is the line through (0, 2) along +U, restricted to the range
++//! [theFirst, theLast], which is a few units of the last place of 2.0 wide.
++TopoDS_Edge makeEdge(const TopoDS_Face&       theFace,
++                     const TopoDS_Vertex&     theV1,
++                     const TopoDS_Vertex&     theV2,
++                     const bool               theDegenerated,
++                     const TopAbs_Orientation theOrient)
++{
++  const double aFirst = 1.9999999999999993;
++  const double aLast  = 2.0000000000000004;
++  BRep_Builder aBuilder;
++  TopoDS_Edge  anEdge;
++  aBuilder.MakeEdge(anEdge);
++  aBuilder.UpdateEdge(anEdge,
++                      new Geom2d_Line(gp_Pnt2d(0.0, 2.0), gp_Dir2d(1.0, 0.0)),
++                      theFace,
++                      1.e-7);
++  aBuilder.Range(anEdge, aFirst, aLast);
++  aBuilder.Degenerated(anEdge, theDegenerated);
++  aBuilder.Add(anEdge, theV1.Oriented(TopAbs_FORWARD));
++  aBuilder.Add(anEdge, theV2.Oriented(TopAbs_REVERSED));
++  anEdge.Orientation(theOrient);
++  return anEdge;
++}
++} // namespace
++
++// The wire is the one a fillet leaves of a face that its neighbours consumed: all four edges
++// are a rounding error long. Stepping along such a pcurve by a thousandth of its length does
++// not move the parameter, and the explorer used to loop on it forever.
++TEST(BRepTools_WireExplorerTest, OCCT1568_PCurvesShorterThanTheParameterSpacingTerminate)
++{
++  BRep_Builder aBuilder;
++  TopoDS_Face  aFace;
++  aBuilder.MakeFace(aFace, new Geom_Plane(gp_Pnt(0.0, 0.0, 4.0), gp::DZ()), 1.e-7);
++
++  TopoDS_Vertex aV1;
++  TopoDS_Vertex aV2;
++  aBuilder.MakeVertex(aV1, gp_Pnt(2.0, 2.0, 4.0), 1.e-7);
++  aBuilder.MakeVertex(aV2, gp_Pnt(2.0, 2.0, 4.0), 1.e-7);
++
++  TopoDS_Wire aWire;
++  aBuilder.MakeWire(aWire);
++  aBuilder.Add(aWire, makeEdge(aFace, aV1, aV1, true, TopAbs_REVERSED));
++  aBuilder.Add(aWire, makeEdge(aFace, aV1, aV2, false, TopAbs_FORWARD));
++  aBuilder.Add(aWire, makeEdge(aFace, aV1, aV1, true, TopAbs_FORWARD));
++  aBuilder.Add(aWire, makeEdge(aFace, aV2, aV1, false, TopAbs_REVERSED));
++  aBuilder.Add(aFace, aWire);
++
++  // A hang would block the test process, so the exploration runs on a thread with a deadline.
++  std::atomic<int> aCount(-1);
++  std::thread      aThread([&]() {
++    int aN = 0;
++    for (BRepTools_WireExplorer anExp(aWire, aFace); anExp.More() && aN < 100; anExp.Next())
++    {
++      ++aN;
++    }
++    aCount = aN;
++  });
++  for (int i = 0; i < 200 && aCount.load() < 0; ++i)
++  {
++    std::this_thread::sleep_for(std::chrono::milliseconds(50));
++  }
++  if (aCount.load() < 0)
++  {
++    aThread.detach();
++    FAIL() << "BRepTools_WireExplorer did not terminate within 10 s";
++  }
++  aThread.join();
++  EXPECT_LE(aCount.load(), 4);
++}
+diff --git a/src/ModelingData/TKBRep/GTests/FILES.cmake b/src/ModelingData/TKBRep/GTests/FILES.cmake
+index 897dd69533..66f0fe5da0 100644
+--- a/src/ModelingData/TKBRep/GTests/FILES.cmake
++++ b/src/ModelingData/TKBRep/GTests/FILES.cmake
+@@ -9,6 +9,7 @@ set(OCCT_TKBRep_GTests_FILES
+   BRepTools_GTrsfModification_Test.cxx
+   BRepTools_TrsfModification_Test.cxx
+   BRepTools_Test.cxx
++  BRepTools_WireExplorer_Test.cxx
+   TopExp_Test.cxx
+   TopoDS_Builder_Test.cxx
+   TopoDS_Edge_Test.cxx

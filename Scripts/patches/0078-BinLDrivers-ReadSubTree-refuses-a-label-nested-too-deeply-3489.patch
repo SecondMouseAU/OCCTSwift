@@ -21,12 +21,12 @@ Tracked as SecondMouseAU/OCCTSwift#3489, follow-up to #3486.
 
 ---
 diff --git a/src/ApplicationFramework/TKBinL/BinLDrivers/BinLDrivers_DocumentRetrievalDriver.cxx b/src/ApplicationFramework/TKBinL/BinLDrivers/BinLDrivers_DocumentRetrievalDriver.cxx
-index 50750ccd..1b9b5493 100644
+index a6c2f9b33b..71545664cf 100644
 --- a/src/ApplicationFramework/TKBinL/BinLDrivers/BinLDrivers_DocumentRetrievalDriver.cxx
 +++ b/src/ApplicationFramework/TKBinL/BinLDrivers/BinLDrivers_DocumentRetrievalDriver.cxx
-@@ -45,6 +45,29 @@
- #include <Message_ProgressScope.hxx>
- #include <PCDM_ReaderFilter.hxx>
+@@ -48,6 +48,29 @@
+ #include <iostream>
+ #include <limits>
  
 +namespace
 +{
@@ -54,7 +54,7 @@ index 50750ccd..1b9b5493 100644
  IMPLEMENT_STANDARD_RTTIEXT(BinLDrivers_DocumentRetrievalDriver, PCDM_RetrievalDriver)
  
  #define SHAPESECTION_POS "SHAPE_SECTION_POS:"
-@@ -438,6 +461,14 @@ int BinLDrivers_DocumentRetrievalDriver::ReadSubTree(
+@@ -686,6 +709,14 @@ int BinLDrivers_DocumentRetrievalDriver::ReadSubTree(
    int                        nbRead = 0;
    TCollection_ExtendedString aMethStr("BinLDrivers_DocumentRetrievalDriver: ");
  

@@ -1,8 +1,8 @@
 diff --git a/src/DataExchange/TKXSBase/IFSelect/IFSelect_WorkSession.cxx b/src/DataExchange/TKXSBase/IFSelect/IFSelect_WorkSession.cxx
-index 6e34bf5e..8e64a2bf 100644
+index aa26e47168..87f149df49 100644
 --- a/src/DataExchange/TKXSBase/IFSelect/IFSelect_WorkSession.cxx
 +++ b/src/DataExchange/TKXSBase/IFSelect/IFSelect_WorkSession.cxx
-@@ -73,7 +73,6 @@ IMPLEMENT_STANDARD_RTTIEXT(IFSelect_WorkSession, Standard_Transient)
+@@ -75,7 +75,6 @@ IMPLEMENT_STANDARD_RTTIEXT(IFSelect_WorkSession, Standard_Transient)
  #define Flag_Incorrect 2
  //  (Bit Map n0 2)
  
@@ -10,7 +10,7 @@ index 6e34bf5e..8e64a2bf 100644
  static TCollection_AsciiString bufstr;
  
  //  #################################################################
-@@ -83,8 +82,8 @@ static TCollection_AsciiString bufstr;
+@@ -85,8 +84,8 @@ static TCollection_AsciiString bufstr;
  IFSelect_WorkSession::IFSelect_WorkSession()
  {
    theshareout = new IFSelect_ShareOut;
@@ -21,7 +21,7 @@ index 6e34bf5e..8e64a2bf 100644
    thecopier->SetShareOut(theshareout);
    thecheckdone = false;
    thegtool     = new Interface_GTool;
-@@ -95,7 +94,7 @@ IFSelect_WorkSession::IFSelect_WorkSession()
+@@ -97,7 +96,7 @@ IFSelect_WorkSession::IFSelect_WorkSession()
  
  void IFSelect_WorkSession::SetErrorHandle(const bool toHandle)
  {
@@ -30,7 +30,7 @@ index 6e34bf5e..8e64a2bf 100644
  }
  
  //=================================================================================================
-@@ -1417,9 +1416,9 @@ Interface_EntityIterator IFSelect_WorkSession::EvalSelection(
+@@ -1419,9 +1418,9 @@ Interface_EntityIterator IFSelect_WorkSession::EvalSelection(
    const occ::handle<IFSelect_Selection>& sel) const
  {
    Interface_EntityIterator iter;
@@ -42,7 +42,7 @@ index 6e34bf5e..8e64a2bf 100644
      try
      {
        OCC_CATCH_SIGNALS
-@@ -1432,7 +1431,7 @@ Interface_EntityIterator IFSelect_WorkSession::EvalSelection(
+@@ -1434,7 +1433,7 @@ Interface_EntityIterator IFSelect_WorkSession::EvalSelection(
        sout << anException.what();
        sout << "\n    Abandon" << '\n';
      }
@@ -51,7 +51,7 @@ index 6e34bf5e..8e64a2bf 100644
      return iter;
    }
  
-@@ -1458,9 +1457,9 @@ occ::handle<NCollection_HSequence<occ::handle<Standard_Transient>>> IFSelect_Wor
+@@ -1460,9 +1459,9 @@ occ::handle<NCollection_HSequence<occ::handle<Standard_Transient>>> IFSelect_Wor
    SelectionResult(const occ::handle<IFSelect_Selection>& sel) const
  {
    occ::handle<NCollection_HSequence<occ::handle<Standard_Transient>>> res;
@@ -63,7 +63,7 @@ index 6e34bf5e..8e64a2bf 100644
      try
      {
        OCC_CATCH_SIGNALS
-@@ -1473,7 +1472,7 @@ occ::handle<NCollection_HSequence<occ::handle<Standard_Transient>>> IFSelect_Wor
+@@ -1475,7 +1474,7 @@ occ::handle<NCollection_HSequence<occ::handle<Standard_Transient>>> IFSelect_Wor
        sout << anException.what();
        sout << "\n    Abandon" << '\n';
      }
@@ -72,7 +72,7 @@ index 6e34bf5e..8e64a2bf 100644
      return res;
    }
  
-@@ -2217,9 +2216,9 @@ void IFSelect_WorkSession::EvaluateFile()
+@@ -2219,9 +2218,9 @@ void IFSelect_WorkSession::EvaluateFile()
      return;
    }
    Interface_CheckIterator checks;
@@ -84,7 +84,7 @@ index 6e34bf5e..8e64a2bf 100644
      try
      {
        OCC_CATCH_SIGNALS
-@@ -2233,8 +2232,8 @@ void IFSelect_WorkSession::EvaluateFile()
+@@ -2235,8 +2234,8 @@ void IFSelect_WorkSession::EvaluateFile()
        sout << "\n    Abandon" << '\n';
        checks.CCheck(0)->AddFail("Exception Raised -> Abandon");
      }
@@ -95,7 +95,7 @@ index 6e34bf5e..8e64a2bf 100644
      return;
    }
  
-@@ -2306,9 +2305,9 @@ bool IFSelect_WorkSession::SendSplit()
+@@ -2308,9 +2307,9 @@ bool IFSelect_WorkSession::SendSplit()
    ////...
    Interface_CheckIterator checks;
  
@@ -107,7 +107,7 @@ index 6e34bf5e..8e64a2bf 100644
      try
      {
        OCC_CATCH_SIGNALS
-@@ -2322,8 +2321,8 @@ bool IFSelect_WorkSession::SendSplit()
+@@ -2324,8 +2323,8 @@ bool IFSelect_WorkSession::SendSplit()
        sout << "\n    Abandon" << '\n';
        checks.CCheck(0)->AddFail("Exception Raised -> Abandon");
      }
@@ -118,7 +118,7 @@ index 6e34bf5e..8e64a2bf 100644
      return false;
    }
  
-@@ -2592,9 +2591,9 @@ IFSelect_ReturnStatus IFSelect_WorkSession::SendAll(const char* const filename,
+@@ -2594,9 +2593,9 @@ IFSelect_ReturnStatus IFSelect_WorkSession::SendAll(const char* const filename,
      return IFSelect_RetError;
    }
  
@@ -130,7 +130,7 @@ index 6e34bf5e..8e64a2bf 100644
      try
      {
        OCC_CATCH_SIGNALS
-@@ -2607,7 +2606,7 @@ IFSelect_ReturnStatus IFSelect_WorkSession::SendAll(const char* const filename,
+@@ -2609,7 +2608,7 @@ IFSelect_ReturnStatus IFSelect_WorkSession::SendAll(const char* const filename,
        sout << "    ****    SendAll Interrupted by Exception :   ****\n";
        sout << anException.what();
        sout << "\n    Abandon" << '\n';
@@ -139,7 +139,47 @@ index 6e34bf5e..8e64a2bf 100644
        checks.CCheck(0)->AddFail("Exception Raised -> Abandon");
        thecheckrun = checks;
        return IFSelect_RetFail;
-@@ -2653,9 +2652,9 @@ IFSelect_ReturnStatus IFSelect_WorkSession::SendSelected(const char* const filen
+@@ -2654,10 +2653,10 @@ IFSelect_ReturnStatus IFSelect_WorkSession::SendAll(Standard_OStream& theOStream
+     return IFSelect_RetError;
+   }
+ 
+-  const bool isErrorHandlingEnabled = errhand;
++  const bool isErrorHandlingEnabled = theerrhand && !myInErrorHandler;
+   if (isErrorHandlingEnabled)
+   {
+-    errhand = false;
++    myInErrorHandler = true;
+     try
+     {
+       OCC_CATCH_SIGNALS
+@@ -2670,7 +2669,7 @@ IFSelect_ReturnStatus IFSelect_WorkSession::SendAll(Standard_OStream& theOStream
+       sout << "    ****    SendAll Interrupted by Exception :   ****\n";
+       sout << anException.what();
+       sout << "\n    Abandon" << '\n';
+-      errhand = theerrhand;
++      myInErrorHandler = false;
+       aChecks.CCheck(0)->AddFail("Exception Raised -> Abandon");
+       thecheckrun = aChecks;
+       return IFSelect_RetFail;
+@@ -2678,7 +2677,7 @@ IFSelect_ReturnStatus IFSelect_WorkSession::SendAll(Standard_OStream& theOStream
+     catch (const std::ios_base::failure& anException)
+     {
+       Message::SendFail() << "SendAll interrupted by stream exception: " << anException.what();
+-      errhand = theerrhand;
++      myInErrorHandler = false;
+       aChecks.CCheck(0)->AddFail("Stream exception raised during SendAll");
+       thecheckrun = aChecks;
+       return IFSelect_RetFail;
+@@ -2690,7 +2689,7 @@ IFSelect_ReturnStatus IFSelect_WorkSession::SendAll(Standard_OStream& theOStream
+   }
+   if (isErrorHandlingEnabled)
+   {
+-    errhand = theerrhand;
++    myInErrorHandler = false;
+   }
+   thecheckrun                                  = aChecks;
+   const occ::handle<Interface_Check> aMainFail = aChecks.CCheck(0);
+@@ -2728,9 +2727,9 @@ IFSelect_ReturnStatus IFSelect_WorkSession::SendSelected(const char* const filen
      return IFSelect_RetVoid;
    }
  
@@ -151,7 +191,7 @@ index 6e34bf5e..8e64a2bf 100644
      try
      {
        OCC_CATCH_SIGNALS
-@@ -2669,8 +2668,8 @@ IFSelect_ReturnStatus IFSelect_WorkSession::SendSelected(const char* const filen
+@@ -2744,8 +2743,8 @@ IFSelect_ReturnStatus IFSelect_WorkSession::SendSelected(const char* const filen
        sout << anException.what();
        sout << "\n    Abandon" << '\n';
        checks.CCheck(0)->AddFail("Exception Raised -> Abandon");
@@ -162,7 +202,7 @@ index 6e34bf5e..8e64a2bf 100644
        return IFSelect_RetFail;
      }
    }
-@@ -4264,9 +4263,9 @@ void IFSelect_WorkSession::PrintSignatureList(Standard_OStream&
+@@ -4356,9 +4355,9 @@ void IFSelect_WorkSession::PrintSignatureList(Standard_OStream&
  void IFSelect_WorkSession::EvaluateSelection(const occ::handle<IFSelect_Selection>& sel) const
  {
    Message_Messenger::StreamBuffer sout = Message::SendInfo();
@@ -174,7 +214,7 @@ index 6e34bf5e..8e64a2bf 100644
      try
      {
        OCC_CATCH_SIGNALS
-@@ -4278,7 +4277,7 @@ void IFSelect_WorkSession::EvaluateSelection(const occ::handle<IFSelect_Selectio
+@@ -4370,7 +4369,7 @@ void IFSelect_WorkSession::EvaluateSelection(const occ::handle<IFSelect_Selectio
        sout << anException.what();
        sout << "\n    Abandon" << '\n';
      }
@@ -183,7 +223,7 @@ index 6e34bf5e..8e64a2bf 100644
      return;
    }
  
-@@ -4306,9 +4305,9 @@ void IFSelect_WorkSession::EvaluateDispatch(const occ::handle<IFSelect_Dispatch>
+@@ -4398,9 +4397,9 @@ void IFSelect_WorkSession::EvaluateDispatch(const occ::handle<IFSelect_Dispatch>
                                              const int                             mode) const
  {
    Message_Messenger::StreamBuffer sout = Message::SendInfo();
@@ -195,7 +235,7 @@ index 6e34bf5e..8e64a2bf 100644
      try
      {
        OCC_CATCH_SIGNALS
-@@ -4320,7 +4319,7 @@ void IFSelect_WorkSession::EvaluateDispatch(const occ::handle<IFSelect_Dispatch>
+@@ -4412,7 +4411,7 @@ void IFSelect_WorkSession::EvaluateDispatch(const occ::handle<IFSelect_Dispatch>
        sout << anException.what();
        sout << "\n    Abandon" << '\n';
      }
@@ -204,7 +244,7 @@ index 6e34bf5e..8e64a2bf 100644
      return;
    }
  
-@@ -4410,9 +4409,9 @@ void IFSelect_WorkSession::EvaluateDispatch(const occ::handle<IFSelect_Dispatch>
+@@ -4502,9 +4501,9 @@ void IFSelect_WorkSession::EvaluateDispatch(const occ::handle<IFSelect_Dispatch>
  void IFSelect_WorkSession::EvaluateComplete(const int mode) const
  {
    Message_Messenger::StreamBuffer sout = Message::SendInfo();
@@ -216,7 +256,7 @@ index 6e34bf5e..8e64a2bf 100644
      try
      {
        OCC_CATCH_SIGNALS
-@@ -4424,7 +4423,7 @@ void IFSelect_WorkSession::EvaluateComplete(const int mode) const
+@@ -4516,7 +4515,7 @@ void IFSelect_WorkSession::EvaluateComplete(const int mode) const
        sout << anException.what();
        sout << "\n    Abandon" << '\n';
      }
@@ -226,10 +266,10 @@ index 6e34bf5e..8e64a2bf 100644
    }
  
 diff --git a/src/DataExchange/TKXSBase/IFSelect/IFSelect_WorkSession.hxx b/src/DataExchange/TKXSBase/IFSelect/IFSelect_WorkSession.hxx
-index 4df3a317..634b4058 100644
+index 7add516e80..f69397c602 100644
 --- a/src/DataExchange/TKXSBase/IFSelect/IFSelect_WorkSession.hxx
 +++ b/src/DataExchange/TKXSBase/IFSelect/IFSelect_WorkSession.hxx
-@@ -1169,6 +1169,10 @@ private:
+@@ -1187,6 +1187,10 @@ private:
    occ::handle<IFSelect_ModelCopier>     thecopier;
    occ::handle<Interface_InterfaceModel> theoldel;
    bool                                  themodelstat;

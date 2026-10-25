@@ -1,8 +1,21 @@
+diff --git a/src/ApplicationFramework/TKCDF/CDF/CDF_Application.cxx b/src/ApplicationFramework/TKCDF/CDF/CDF_Application.cxx
+index ffe1cf1fde..ae92037dd3 100644
+--- a/src/ApplicationFramework/TKCDF/CDF/CDF_Application.cxx
++++ b/src/ApplicationFramework/TKCDF/CDF/CDF_Application.cxx
+@@ -56,7 +56,7 @@ CDF_Application::CDF_Application()
+     : myRetrievableStatus(PCDM_RS_OK)
+ {
+   myDirectory      = new CDF_Directory();
+-  myMetaDataDriver = new CDF_FWOSDriver(MetaDataLookUpTable());
++  myMetaDataDriver = new CDF_FWOSDriver(MetaDataLookUpTable(), MetaDataLookUpTableMutex());
+ }
+ 
+ //=================================================================================================
 diff --git a/src/ApplicationFramework/TKCDF/CDF/CDF_FWOSDriver.cxx b/src/ApplicationFramework/TKCDF/CDF/CDF_FWOSDriver.cxx
-index 1d992174..c832f5b2 100644
+index 9b4a240555..a4041d84b2 100644
 --- a/src/ApplicationFramework/TKCDF/CDF/CDF_FWOSDriver.cxx
 +++ b/src/ApplicationFramework/TKCDF/CDF/CDF_FWOSDriver.cxx
-@@ -43,8 +43,10 @@ static void PutSlash(TCollection_ExtendedString& anXSTRING)
+@@ -40,8 +40,10 @@ static void PutSlash(TCollection_ExtendedString& anXSTRING)
  //=================================================================================================
  
  CDF_FWOSDriver::CDF_FWOSDriver(
@@ -15,16 +28,15 @@ index 1d992174..c832f5b2 100644
  {
  }
  
-@@ -102,7 +104,7 @@ occ::handle<CDM_MetaData> CDF_FWOSDriver::MetaData(const TCollection_ExtendedStr
-                                                    const TCollection_ExtendedString& /*aVersion*/)
+@@ -83,6 +85,7 @@ occ::handle<CDM_MetaData> CDF_FWOSDriver::MetaData(const TCollection_ExtendedStr
  {
    TCollection_ExtendedString p = Concatenate(aFolder, aName);
--  return CDM_MetaData::LookUp(*myLookUpTable, aFolder, aName, p, p, UTL::IsReadOnly(p));
-+  return CDM_MetaData::LookUp(*myLookUpTable, *myMutex, aFolder, aName, p, p, UTL::IsReadOnly(p));
- }
- 
- //=================================================================================================
-@@ -112,6 +114,7 @@ occ::handle<CDM_MetaData> CDF_FWOSDriver::CreateMetaData(
+   return CDM_MetaData::LookUp(*myLookUpTable,
++                              *myMutex,
+                               aFolder,
+                               aName,
+                               p,
+@@ -97,6 +100,7 @@ occ::handle<CDM_MetaData> CDF_FWOSDriver::CreateMetaData(
    const TCollection_ExtendedString& aFileName)
  {
    return CDM_MetaData::LookUp(*myLookUpTable,
@@ -33,7 +45,7 @@ index 1d992174..c832f5b2 100644
                                aDocument->RequestedName(),
                                Concatenate(aDocument->RequestedFolder(), aDocument->RequestedName()),
 diff --git a/src/ApplicationFramework/TKCDF/CDF/CDF_FWOSDriver.hxx b/src/ApplicationFramework/TKCDF/CDF/CDF_FWOSDriver.hxx
-index 13eabf23..d10da401 100644
+index 13eabf23e6..d10da4014c 100644
 --- a/src/ApplicationFramework/TKCDF/CDF/CDF_FWOSDriver.hxx
 +++ b/src/ApplicationFramework/TKCDF/CDF/CDF_FWOSDriver.hxx
 @@ -22,6 +22,7 @@
@@ -67,7 +79,7 @@ index 13eabf23..d10da401 100644
  
  #endif // _CDF_FWOSDriver_HeaderFile
 diff --git a/src/ApplicationFramework/TKCDF/CDM/CDM_Application.hxx b/src/ApplicationFramework/TKCDF/CDM/CDM_Application.hxx
-index de8fe871..7b48ae43 100644
+index de8fe8714f..7b48ae43d0 100644
 --- a/src/ApplicationFramework/TKCDF/CDM/CDM_Application.hxx
 +++ b/src/ApplicationFramework/TKCDF/CDM/CDM_Application.hxx
 @@ -24,6 +24,7 @@
@@ -97,7 +109,7 @@ index de8fe871..7b48ae43 100644
  
  #endif // _CDM_Application_HeaderFile
 diff --git a/src/ApplicationFramework/TKCDF/CDM/CDM_Document.cxx b/src/ApplicationFramework/TKCDF/CDM/CDM_Document.cxx
-index 5da83030..d1e8b05f 100644
+index 75141a9998..1f4773b149 100644
 --- a/src/ApplicationFramework/TKCDF/CDM/CDM_Document.cxx
 +++ b/src/ApplicationFramework/TKCDF/CDM/CDM_Document.cxx
 @@ -28,6 +28,7 @@
@@ -108,7 +120,7 @@ index 5da83030..d1e8b05f 100644
  #include <Standard_NoSuchObject.hxx>
  #include <Standard_NullObject.hxx>
  #include <Standard_Type.hxx>
-@@ -479,6 +480,8 @@ void CDM_Document::SetMetaData(const occ::handle<CDM_MetaData>& aMetaData)
+@@ -478,6 +479,8 @@ void CDM_Document::SetMetaData(const occ::handle<CDM_MetaData>& aMetaData)
      aMetaData->SetDocument(this);
  
      // Update the document referencing this MetaData:
@@ -118,7 +130,7 @@ index 5da83030..d1e8b05f 100644
        Application()->MetaDataLookUpTable());
      for (; it.More(); it.Next())
 diff --git a/src/ApplicationFramework/TKCDF/CDM/CDM_MetaData.cxx b/src/ApplicationFramework/TKCDF/CDM/CDM_MetaData.cxx
-index 5986056c..d9f022d3 100644
+index 5986056caa..d9f022d318 100644
 --- a/src/ApplicationFramework/TKCDF/CDM/CDM_MetaData.cxx
 +++ b/src/ApplicationFramework/TKCDF/CDM/CDM_MetaData.cxx
 @@ -66,27 +66,32 @@ CDM_MetaData::CDM_MetaData(const TCollection_ExtendedString& aFolder,
@@ -181,10 +193,10 @@ index 5986056c..d9f022d3 100644
    {
      theMetaData = new CDM_MetaData(aFolder, aName, aPath, aVersion, aFileName, ReadOnly);
 diff --git a/src/ApplicationFramework/TKCDF/CDM/CDM_MetaData.hxx b/src/ApplicationFramework/TKCDF/CDM/CDM_MetaData.hxx
-index 28fcdba8..e590234b 100644
+index 007e59a27b..564c6073d7 100644
 --- a/src/ApplicationFramework/TKCDF/CDM/CDM_MetaData.hxx
 +++ b/src/ApplicationFramework/TKCDF/CDM/CDM_MetaData.hxx
-@@ -28,22 +28,27 @@
+@@ -27,22 +27,27 @@
  #include <CDM_Application.hxx>
  #include <Standard_OStream.hxx>
  #include <NCollection_DataMap.hxx>
@@ -212,7 +224,7 @@ index 28fcdba8..e590234b 100644
      const TCollection_ExtendedString&                                           aFolder,
      const TCollection_ExtendedString&                                           aName,
      const TCollection_ExtendedString&                                           aPath,
-@@ -131,6 +136,7 @@ private:
+@@ -130,6 +135,7 @@ private:
    TCollection_ExtendedString myPath;
    int                        myDocumentVersion;
    bool                       myIsReadOnly;
@@ -220,11 +232,44 @@ index 28fcdba8..e590234b 100644
  };
  
  #endif // _CDM_MetaData_HeaderFile
+diff --git a/src/ApplicationFramework/TKCDF/GTests/CDF_FWOSDriver_Test.cxx b/src/ApplicationFramework/TKCDF/GTests/CDF_FWOSDriver_Test.cxx
+index f4e93aafb5..820da8c3dc 100644
+--- a/src/ApplicationFramework/TKCDF/GTests/CDF_FWOSDriver_Test.cxx
++++ b/src/ApplicationFramework/TKCDF/GTests/CDF_FWOSDriver_Test.cxx
+@@ -19,6 +19,8 @@
+ #include <TCollection_AsciiString.hxx>
+ #include <TCollection_ExtendedString.hxx>
+ 
++#include <mutex>
++
+ TEST(CDF_FWOSDriverTest, ExistingReadableFile)
+ {
+   TCollection_AsciiString aFolder;
+@@ -28,7 +30,8 @@ TEST(CDF_FWOSDriverTest, ExistingReadableFile)
+   ASSERT_FALSE(aFileName.IsEmpty());
+ 
+   NCollection_DataMap<TCollection_ExtendedString, occ::handle<CDM_MetaData>> aLookUpTable;
+-  CDF_FWOSDriver                                                             aDriver(aLookUpTable);
++  std::mutex                                                                 aMutex;
++  CDF_FWOSDriver                                                             aDriver(aLookUpTable, aMutex);
+ 
+   EXPECT_TRUE(aDriver.FindFolder(aFolder));
+   EXPECT_TRUE(aDriver.Find(aFolder, aFileName, ""));
+@@ -43,7 +46,8 @@ TEST(CDF_FWOSDriverTest, MissingFileIsNotReadable)
+   ASSERT_FALSE(aFolder.IsEmpty());
+ 
+   NCollection_DataMap<TCollection_ExtendedString, occ::handle<CDM_MetaData>> aLookUpTable;
+-  CDF_FWOSDriver                                                             aDriver(aLookUpTable);
++  std::mutex                                                                 aMutex;
++  CDF_FWOSDriver                                                             aDriver(aLookUpTable, aMutex);
+ 
+   const TCollection_ExtendedString aMissingName("CDF_FWOSDriver_missing_test_file");
+   EXPECT_FALSE(aDriver.Find(aFolder, aMissingName, ""));
 diff --git a/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReferenceIterator.cxx b/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReferenceIterator.cxx
-index 76572aec..8be8c8b1 100644
+index 0d045f6612..b008c2affc 100644
 --- a/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReferenceIterator.cxx
 +++ b/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReferenceIterator.cxx
-@@ -45,12 +45,13 @@ void PCDM_ReferenceIterator::LoadReferences(const occ::handle<CDM_Document>&
+@@ -46,12 +46,13 @@ void PCDM_ReferenceIterator::LoadReferences(const occ::handle<CDM_Document>&
  {
    for (Init(aMetaData); More(); Next())
    {
@@ -244,7 +289,7 @@ index 76572aec..8be8c8b1 100644
    }
  }
  
-@@ -83,6 +84,7 @@ void PCDM_ReferenceIterator::Next()
+@@ -84,6 +85,7 @@ void PCDM_ReferenceIterator::Next()
  
  occ::handle<CDM_MetaData> PCDM_ReferenceIterator::MetaData(
    NCollection_DataMap<TCollection_ExtendedString, occ::handle<CDM_MetaData>>& theLookUpTable,
@@ -252,7 +297,7 @@ index 76572aec..8be8c8b1 100644
    const bool) const
  {
  
-@@ -131,6 +133,7 @@ occ::handle<CDM_MetaData> PCDM_ReferenceIterator::MetaData(
+@@ -133,6 +135,7 @@ occ::handle<CDM_MetaData> PCDM_ReferenceIterator::MetaData(
  #endif // _WIN32
  
    return CDM_MetaData::LookUp(theLookUpTable,
@@ -261,7 +306,7 @@ index 76572aec..8be8c8b1 100644
                                theName,
                                theFile,
 diff --git a/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReferenceIterator.hxx b/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReferenceIterator.hxx
-index f462dd8a..1a443c69 100644
+index f462dd8ab0..1a443c692f 100644
 --- a/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReferenceIterator.hxx
 +++ b/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReferenceIterator.hxx
 @@ -24,6 +24,7 @@
@@ -281,10 +326,10 @@ index f462dd8a..1a443c69 100644
  
    Standard_EXPORT virtual int ReferenceIdentifier() const;
 diff --git a/src/ApplicationFramework/TKXmlL/XmlLDrivers/XmlLDrivers_DocumentRetrievalDriver.cxx b/src/ApplicationFramework/TKXmlL/XmlLDrivers/XmlLDrivers_DocumentRetrievalDriver.cxx
-index 37753a50..c71a65b9 100644
+index 8347462bb7..e74ecb832f 100644
 --- a/src/ApplicationFramework/TKXmlL/XmlLDrivers/XmlLDrivers_DocumentRetrievalDriver.cxx
 +++ b/src/ApplicationFramework/TKXmlL/XmlLDrivers/XmlLDrivers_DocumentRetrievalDriver.cxx
-@@ -443,6 +443,7 @@ void XmlLDrivers_DocumentRetrievalDriver::ReadFromDomDocument(
+@@ -422,6 +422,7 @@ void XmlLDrivers_DocumentRetrievalDriver::ReadFromDomDocument(
  
                occ::handle<CDM_MetaData> aMetaData =
                  CDM_MetaData::LookUp(theApplication->MetaDataLookUpTable(),
@@ -292,16 +337,3 @@ index 37753a50..c71a65b9 100644
                                       theFolder,
                                       theName,
                                       aPath,
-diff --git a/src/ApplicationFramework/TKCDF/CDF/CDF_Application.cxx b/src/ApplicationFramework/TKCDF/CDF/CDF_Application.cxx
-index e612ec9c..2dbb92da 100644
---- a/src/ApplicationFramework/TKCDF/CDF/CDF_Application.cxx
-+++ b/src/ApplicationFramework/TKCDF/CDF/CDF_Application.cxx
-@@ -41,7 +41,7 @@ CDF_Application::CDF_Application()
-     : myRetrievableStatus(PCDM_RS_OK)
- {
-   myDirectory      = new CDF_Directory();
--  myMetaDataDriver = new CDF_FWOSDriver(MetaDataLookUpTable());
-+  myMetaDataDriver = new CDF_FWOSDriver(MetaDataLookUpTable(), MetaDataLookUpTableMutex());
- }
- 
- //=================================================================================================

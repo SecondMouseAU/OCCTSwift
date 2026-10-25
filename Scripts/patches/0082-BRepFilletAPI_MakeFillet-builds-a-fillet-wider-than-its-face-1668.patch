@@ -1,0 +1,523 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - BRepFilletAPI_MakeFillet builds a fillet wider than its face
+
+A fillet whose radius is above the width of the face it sits on (r > 4 on a 4 mm face) has no
+start solution in the stripe builder: the contact line on the far face lies outside the face
+(#1177).
+
+When Compute() fails for a single straight edge between two planar rectangles at a right
+angle, Build now cuts the shape by the prism of the region between the arc and the faces. The
+arc stays tangent to the face that lasts and passes through the far edge of the face that runs
+out (the pivot), or through both far edges when both run out. The cut must give one valid
+closed solid and remove exactly the section area times the edge length; otherwise the failure
+stands.
+
+ChFi3d_Builder gains the inline accessor InitialShape(). TKFillet links TKPrim, which it
+already reaches through TKBO. Related to #1568.
+
+Upstream: Open-Cascade-SAS/OCCT#1668 (fork branch SecondMouseAU/OCCT fix/fillet-wider-than-face). This is the form of that
+pull request as it stacks on the earlier patches of this series; where it differs from the pull request
+as submitted it is only in the lines the stack made conflict (see Scripts/patches/README.md). The DRAW
+test cases under tests/ that the pull request edits are not part of this patch: the build has no Draw.
+
+---
+diff --git a/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeFillet.cxx b/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeFillet.cxx
+index f192eb5fad..8618984efb 100644
+--- a/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeFillet.cxx
++++ b/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeFillet.cxx
+@@ -14,18 +14,319 @@
+ // Alternatively, this file may be used under the terms of Open CASCADE
+ // commercial license or contractual agreement.
+ 
++#include <algorithm>
++#include <cmath>
++
++#include <BRep_Tool.hxx>
++#include <BRepAdaptor_Curve.hxx>
++#include <BRepAdaptor_Surface.hxx>
++#include <BRepAlgoAPI_Cut.hxx>
++#include <BRepBuilderAPI_MakeEdge.hxx>
++#include <BRepBuilderAPI_MakeFace.hxx>
++#include <BRepBuilderAPI_MakeWire.hxx>
++#include <BRepCheck_Analyzer.hxx>
+ #include <BRepFilletAPI_MakeFillet.hxx>
++#include <BRepGProp.hxx>
++#include <BRepPrimAPI_MakePrism.hxx>
+ #include <ChFiDS_ErrorStatus.hxx>
+ #include <ChFiDS_Spine.hxx>
++#include <GC_MakeArcOfCircle.hxx>
+ #include <Geom_Surface.hxx>
++#include <GProp_GProps.hxx>
+ #include <Law_Linear.hxx>
++#include <NCollection_IndexedDataMap.hxx>
+ #include <Precision.hxx>
++#include <Standard_Failure.hxx>
++#include <TopExp.hxx>
+ #include <TopExp_Explorer.hxx>
++#include <TopoDS.hxx>
+ #include <TopoDS_Edge.hxx>
++#include <TopoDS_Face.hxx>
+ #include <TopoDS_Shape.hxx>
+ #include <TopoDS_Vertex.hxx>
+ #include <TopOpeBRepBuild_HBuilder.hxx>
+ #include <TopOpeBRepDS_HDataStructure.hxx>
++#include <TopTools_ShapeMapHasher.hxx>
++#include <gp_Dir.hxx>
++#include <gp_Pnt.hxx>
++#include <gp_Vec.hxx>
++
++namespace
++{
++typedef NCollection_IndexedDataMap<TopoDS_Shape,
++                                   NCollection_List<TopoDS_Shape>,
++                                   TopTools_ShapeMapHasher>
++  EdgeFaceMap;
++
++double volumeOf(const TopoDS_Shape& theShape)
++{
++  GProp_GProps aProps;
++  BRepGProp::VolumeProperties(theShape, aProps);
++  return aProps.Mass();
++}
++
++//! True if the shape is one valid solid whose every edge borders two faces.
++bool isClosedValidSolid(const TopoDS_Shape& theShape)
++{
++  if (theShape.IsNull())
++  {
++    return false;
++  }
++  int aNbSolids = 0;
++  for (TopExp_Explorer anExp(theShape, TopAbs_SOLID); anExp.More(); anExp.Next())
++  {
++    ++aNbSolids;
++  }
++  if (aNbSolids != 1 || !BRepCheck_Analyzer(theShape).IsValid())
++  {
++    return false;
++  }
++  EdgeFaceMap anEdgeFaces;
++  TopExp::MapShapesAndAncestors(theShape, TopAbs_EDGE, TopAbs_FACE, anEdgeFaces);
++  for (int anIdx = 1; anIdx <= anEdgeFaces.Extent(); ++anIdx)
++  {
++    if (!BRep_Tool::Degenerated(TopoDS::Edge(anEdgeFaces.FindKey(anIdx)))
++        && anEdgeFaces.FindFromIndex(anIdx).Extent() != 2)
++    {
++      return false;
++    }
++  }
++  return true;
++}
++
++//! Fillet arc in the section of a right-angle convex edge, the edge at the origin.
++struct SectionArc
++{
++  double myCx, myCy; //!< centre
++  double myQ1, myQ2; //!< ends of the arc on face 1 and on face 2
++  double myArea;     //!< area between the arc and the two faces, the part the fillet removes
++};
++
++//! Arc of radius theR on faces reaching theA and theB, through the far edge of one that runs out.
++bool pivotArc(const double theA, const double theB, const double theR, SectionArc& theArc)
++{
++  const double aTol = Precision::Confusion();
++  if (theR < std::min(theA, theB) - aTol)
++  {
++    return false;
++  }
++  const double aCx =
++    theR >= theA - aTol ? std::sqrt(std::max(2. * theA * theR - theA * theA, 0.)) : -1.;
++  const double aCy =
++    theR >= theB - aTol ? std::sqrt(std::max(2. * theB * theR - theB * theB, 0.)) : -1.;
++  if (aCx >= 0. && aCx <= theB + aTol)
++  {
++    theArc.myCx = theR;
++    theArc.myCy = aCx;
++    theArc.myQ1 = theA;
++    theArc.myQ2 = aCx;
++  }
++  else if (aCy >= 0. && aCy <= theA + aTol)
++  {
++    theArc.myCx = aCy;
++    theArc.myCy = theR;
++    theArc.myQ1 = aCy;
++    theArc.myQ2 = theB;
++  }
++  else
++  {
++    const double aChord = std::hypot(theA, theB);
++    if (theR < aChord / 2.)
++    {
++      return false;
++    }
++    const double aH = std::sqrt(theR * theR - aChord * aChord / 4.);
++    theArc.myCx     = theA / 2. + aH * theB / aChord;
++    theArc.myCy     = theB / 2. + aH * theA / aChord;
++    theArc.myQ1     = theA;
++    theArc.myQ2     = theB;
++  }
++  const double aTheta =
++    2. * std::asin(std::min(1., std::hypot(theArc.myQ1, theArc.myQ2) / (2. * theR)));
++  theArc.myArea = theArc.myQ1 * theArc.myQ2 / 2. - theR * theR / 2. * (aTheta - std::sin(aTheta));
++  return true;
++}
++
++//! Direction and width of a rectangular planar face from theEdge to the far edge, and its normal.
++bool rectangleWidth(const TopoDS_Face& theFace,
++                    const TopoDS_Edge& theEdge,
++                    const gp_Pnt&      theOrigin,
++                    const gp_Dir&      theAxis,
++                    gp_Dir&            theAcross,
++                    double&            theWidth,
++                    gp_Dir&            theNormal)
++{
++  BRepAdaptor_Surface aSurf(theFace);
++  if (aSurf.GetType() != GeomAbs_Plane)
++  {
++    return false;
++  }
++  gp_Pnt aPnt;
++  gp_Vec aDU, aDV;
++  aSurf.D1(0., 0., aPnt, aDU, aDV);
++  const gp_Vec aNorm = aDU.Crossed(aDV);
++  if (aNorm.SquareMagnitude() < gp::Resolution())
++  {
++    return false;
++  }
++  theNormal = gp_Dir(aNorm);
++  if (theFace.Orientation() == TopAbs_REVERSED)
++  {
++    theNormal.Reverse();
++  }
++  int aNbEdges = 0, aNbParallel = 0;
++  for (TopExp_Explorer anExp(theFace, TopAbs_EDGE); anExp.More(); anExp.Next())
++  {
++    const TopoDS_Edge& anEdge = TopoDS::Edge(anExp.Current());
++    BRepAdaptor_Curve  aCurve(anEdge);
++    ++aNbEdges;
++    if (aCurve.GetType() != GeomAbs_Line)
++    {
++      return false;
++    }
++    const double aDot = std::abs(aCurve.Line().Direction().Dot(theAxis));
++    if (aDot > 1. - 1.e-9)
++    {
++      if (anEdge.IsSame(theEdge))
++      {
++        continue;
++      }
++      ++aNbParallel;
++      const gp_Vec aVec(theOrigin, aCurve.Value(aCurve.FirstParameter()));
++      const gp_Vec aPerp = aVec - gp_Vec(theAxis) * aVec.Dot(gp_Vec(theAxis));
++      theWidth           = aPerp.Magnitude();
++      if (theWidth < Precision::Confusion())
++      {
++        return false;
++      }
++      theAcross = gp_Dir(aPerp);
++    }
++    else if (aDot > 1.e-9)
++    {
++      return false;
++    }
++  }
++  return aNbEdges == 4 && aNbParallel == 1;
++}
++
++//! Cuts the pivot fillet of theRadius on theEdge out of theShape, or returns a null shape.
++TopoDS_Shape pivotCut(const TopoDS_Shape& theShape,
++                      const TopoDS_Edge&  theEdge,
++                      const double        theRadius)
++{
++  BRepAdaptor_Curve aCurve(theEdge);
++  if (aCurve.GetType() != GeomAbs_Line)
++  {
++    return TopoDS_Shape();
++  }
++  int aNbSolids = 0;
++  for (TopExp_Explorer anExp(theShape, TopAbs_SOLID); anExp.More(); anExp.Next())
++  {
++    ++aNbSolids;
++  }
++  EdgeFaceMap anEdgeFaces;
++  TopExp::MapShapesAndAncestors(theShape, TopAbs_EDGE, TopAbs_FACE, anEdgeFaces);
++  if (aNbSolids != 1 || !anEdgeFaces.Contains(theEdge))
++  {
++    return TopoDS_Shape();
++  }
++  const NCollection_List<TopoDS_Shape>& aFaces = anEdgeFaces.FindFromKey(theEdge);
++  if (aFaces.Extent() != 2 || aFaces.First().IsSame(aFaces.Last()))
++  {
++    return TopoDS_Shape();
++  }
++  const gp_Dir aAxis   = aCurve.Line().Direction();
++  const gp_Pnt aOrigin = aCurve.Value(aCurve.FirstParameter());
++  const double aLength = aCurve.LastParameter() - aCurve.FirstParameter();
++  gp_Dir       aU, aV, aN1, aN2;
++  double       aA = 0., aB = 0.;
++  if (!rectangleWidth(TopoDS::Face(aFaces.First()), theEdge, aOrigin, aAxis, aU, aA, aN1)
++      || !rectangleWidth(TopoDS::Face(aFaces.Last()), theEdge, aOrigin, aAxis, aV, aB, aN2))
++  {
++    return TopoDS_Shape();
++  }
++  // A convex right angle: each face leads into the material side of the other.
++  if (std::abs(aU.Dot(aV)) > 1.e-7 || aU.Dot(aN2) > -0.5 || aV.Dot(aN1) > -0.5)
++  {
++    return TopoDS_Shape();
++  }
++  SectionArc anArc;
++  if (!pivotArc(aA, aB, theRadius, anArc))
++  {
++    return TopoDS_Shape();
++  }
++
++  // The tool: the region between the arc and the faces, enlarged and swept along the edge.
++  const double aMargin = 0.1 * (aA + aB + aLength);
++  const gp_Vec aStart  = gp_Vec(aAxis) * (-aMargin);
++  auto         aPoint  = [&](const double theU, const double theW) {
++    return aOrigin.Translated(gp_Vec(aU) * theU + gp_Vec(aV) * theW + aStart);
++  };
++  const gp_Pnt aQ1  = aPoint(anArc.myQ1, 0.);
++  const gp_Pnt aQ2  = aPoint(0., anArc.myQ2);
++  const gp_Pnt aCen = aPoint(anArc.myCx, anArc.myCy);
++  const gp_Pnt aMid = aPoint((anArc.myQ1) / 2., (anArc.myQ2) / 2.);
++  gp_Vec       aToMid(aCen, aMid);
++  if (aToMid.SquareMagnitude() < gp::Resolution())
++  {
++    return TopoDS_Shape();
++  }
++  aToMid.Normalize();
++  const gp_Pnt            aArcMid = aCen.Translated(aToMid * theRadius);
++  const gp_Pnt            aS1     = aPoint(anArc.myQ1 + aMargin, -aMargin);
++  const gp_Pnt            aS2     = aPoint(-aMargin, anArc.myQ2 + aMargin);
++  const gp_Pnt            aS0     = aPoint(-aMargin, -aMargin);
++  BRepBuilderAPI_MakeWire aWire;
++  aWire.Add(BRepBuilderAPI_MakeEdge(aS1, aQ1).Edge());
++  aWire.Add(BRepBuilderAPI_MakeEdge(GC_MakeArcOfCircle(aQ1, aArcMid, aQ2).Value()).Edge());
++  aWire.Add(BRepBuilderAPI_MakeEdge(aQ2, aS2).Edge());
++  aWire.Add(BRepBuilderAPI_MakeEdge(aS2, aS0).Edge());
++  aWire.Add(BRepBuilderAPI_MakeEdge(aS0, aS1).Edge());
++  if (!aWire.IsDone())
++  {
++    return TopoDS_Shape();
++  }
++  BRepBuilderAPI_MakeFace aFace(aWire.Wire(), true);
++  if (!aFace.IsDone())
++  {
++    return TopoDS_Shape();
++  }
++  TopoDS_Shape aTool =
++    BRepPrimAPI_MakePrism(aFace.Face(), gp_Vec(aAxis) * (aLength + 2. * aMargin)).Shape();
++  if (volumeOf(aTool) < 0.)
++  {
++    aTool.Reverse();
++  }
++  BRepAlgoAPI_Cut aCut(theShape, aTool);
++  if (!aCut.IsDone() || aCut.HasErrors() || !isClosedValidSolid(aCut.Shape()))
++  {
++    return TopoDS_Shape();
++  }
++  // The section is the same along the edge, so the volume that went is the area times the length.
++  const double aVolume  = volumeOf(theShape);
++  const double aRemoved = anArc.myArea * aLength;
++  if (std::abs(aVolume - volumeOf(aCut.Shape()) - aRemoved) > 1.e-6 * aRemoved + 1.e-10 * aVolume)
++  {
++    return TopoDS_Shape();
++  }
++  return aCut.Shape();
++}
++
++//! The fillet of the only contour of theBuilder when it is a single straight edge, or null.
++TopoDS_Shape pivotFillet(ChFi3d_FilBuilder& theBuilder)
++{
++  if (theBuilder.NbElements() != 1 || !theBuilder.IsConstant(1))
++  {
++    return TopoDS_Shape();
++  }
++  const occ::handle<ChFiDS_Spine> aSpine = theBuilder.Value(1);
++  if (aSpine.IsNull() || aSpine->NbEdges() != 1)
++  {
++    return TopoDS_Shape();
++  }
++  return pivotCut(theBuilder.InitialShape(), aSpine->Edges(1), theBuilder.Radius(1));
++}
++} // namespace
+ 
+ //=================================================================================================
+ 
+@@ -371,7 +672,30 @@ occ::handle<TopOpeBRepBuild_HBuilder> BRepFilletAPI_MakeFillet::Builder() const
+ void BRepFilletAPI_MakeFillet::Build(const Message_ProgressRange& /*theRange*/)
+ {
+   myBuilder.Compute();
+-  if (myBuilder.IsDone())
++  if (!myBuilder.IsDone())
++  {
++    // A fillet wider than its face has no start solution: see pivotCut.
++    TopoDS_Shape aPivot;
++    try
++    {
++      aPivot = pivotFillet(myBuilder);
++    }
++    catch (Standard_Failure const&)
++    {
++    }
++    if (!aPivot.IsNull())
++    {
++      myBuilder.Reset();
++      Done();
++      myShape = aPivot;
++      myMap.Clear();
++      for (TopExp_Explorer anExp(myShape, TopAbs_FACE); anExp.More(); anExp.Next())
++      {
++        myMap.Add(anExp.Current());
++      }
++    }
++  }
++  else
+   {
+     Done();
+     myShape = myBuilder.Shape();
+diff --git a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder.hxx b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder.hxx
+index ab5614b1af..cac84b8b2f 100644
+--- a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder.hxx
++++ b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder.hxx
+@@ -176,6 +176,9 @@ public:
+   //! in the state of the last acquisition to enable modification of contours or areas.
+   Standard_EXPORT void Reset();
+ 
++  //! Returns the shape on which the fillets are computed.
++  const TopoDS_Shape& InitialShape() const { return myShape; }
++
+   //! Returns the Builder of topologic operations.
+   Standard_EXPORT occ::handle<TopOpeBRepBuild_HBuilder> Builder() const;
+ 
+diff --git a/src/ModelingAlgorithms/TKFillet/EXTERNLIB.cmake b/src/ModelingAlgorithms/TKFillet/EXTERNLIB.cmake
+index 91e63cdb51..258ba44d80 100644
+--- a/src/ModelingAlgorithms/TKFillet/EXTERNLIB.cmake
++++ b/src/ModelingAlgorithms/TKFillet/EXTERNLIB.cmake
+@@ -11,4 +11,5 @@ set(OCCT_TKFillet_EXTERNAL_LIBS
+   TKBool
+   TKShHealing
+   TKBO
++  TKPrim
+ )
+diff --git a/src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_WiderThanFace_Test.cxx b/src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_WiderThanFace_Test.cxx
+new file mode 100644
+index 0000000000..4027e9f11c
+--- /dev/null
++++ b/src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_WiderThanFace_Test.cxx
+@@ -0,0 +1,102 @@
++// Copyright (c) 2026 OPEN CASCADE SAS
++//
++// This file is part of Open CASCADE Technology software library.
++//
++// This library is free software; you can redistribute it and/or modify it under
++// the terms of the GNU Lesser General Public License version 2.1 as published
++// by the Free Software Foundation, with special exception defined in the file
++// OCCT_LGPL_EXCEPTION.txt. Consult the file LICENSE_LGPL_21.txt included in OCCT
++// distribution for complete text of the license and disclaimer of any warranty.
++//
++// Alternatively, this file may be used under the terms of Open CASCADE
++// commercial license or contractual agreement.
++
++// A fillet wider than the face it sits on. Related report:
++// - https://github.com/Open-Cascade-SAS/OCCT/issues/1177
++
++#include <BRepAdaptor_Curve.hxx>
++#include <BRepCheck_Analyzer.hxx>
++#include <BRepFilletAPI_MakeFillet.hxx>
++#include <BRepGProp.hxx>
++#include <BRepPrimAPI_MakeBox.hxx>
++#include <GProp_GProps.hxx>
++#include <TopAbs_ShapeEnum.hxx>
++#include <TopExp_Explorer.hxx>
++#include <TopoDS.hxx>
++#include <TopoDS_Edge.hxx>
++#include <TopoDS_Shape.hxx>
++#include <gp_Pnt.hxx>
++
++#include <gtest/gtest.h>
++
++namespace
++{
++//! Returns the edge of the shape whose middle is at the given point.
++TopoDS_Edge findEdgeAt(const TopoDS_Shape& theShape, const gp_Pnt& theMiddle)
++{
++  for (TopExp_Explorer anExp(theShape, TopAbs_EDGE); anExp.More(); anExp.Next())
++  {
++    const TopoDS_Edge& anEdge = TopoDS::Edge(anExp.Current());
++    BRepAdaptor_Curve  aCurve(anEdge);
++    const gp_Pnt aMiddle = aCurve.Value(0.5 * (aCurve.FirstParameter() + aCurve.LastParameter()));
++    if (aMiddle.Distance(theMiddle) < 1.e-7)
++    {
++      return anEdge;
++    }
++  }
++  return TopoDS_Edge();
++}
++
++//! Volume of the shape.
++double volumeOf(const TopoDS_Shape& theShape)
++{
++  GProp_GProps aProps;
++  BRepGProp::VolumeProperties(theShape, aProps);
++  return aProps.Mass();
++}
++} // namespace
++
++// r = 5 on a 4 wide face: the arc is tangent to the side face and passes through the far edge of
++// the top face, centre (5, 6 - sqrt(2 w r - w^2)). Removed area 4.927428.
++TEST(BRepFilletAPI_MakeFilletTest, OCCT1177_FilletWiderThanItsFaceEndsAtTheFarEdge)
++{
++  const TopoDS_Shape       aBox = BRepPrimAPI_MakeBox(4.0, 10.0, 6.0).Shape();
++  BRepFilletAPI_MakeFillet aFillet(aBox);
++  aFillet.Add(5.0, findEdgeAt(aBox, gp_Pnt(0.0, 5.0, 6.0)));
++  ASSERT_NO_THROW(aFillet.Build());
++  ASSERT_TRUE(aFillet.IsDone());
++  EXPECT_TRUE(BRepCheck_Analyzer(aFillet.Shape()).IsValid());
++  EXPECT_NEAR(volumeOf(aFillet.Shape()), 240.0 - 10.0 * 4.927428, 1.e-4);
++}
++
++// r = 4.5 on the edge between a 4 wide face and a 3 high one: the arc passes through both far
++// edges. Removed area 3.426266.
++TEST(BRepFilletAPI_MakeFilletTest, OCCT1177_FilletWiderThanBothFacesEndsAtBothFarEdges)
++{
++  const TopoDS_Shape       aBox = BRepPrimAPI_MakeBox(4.0, 10.0, 3.0).Shape();
++  BRepFilletAPI_MakeFillet aFillet(aBox);
++  aFillet.Add(4.5, findEdgeAt(aBox, gp_Pnt(0.0, 5.0, 3.0)));
++  ASSERT_NO_THROW(aFillet.Build());
++  ASSERT_TRUE(aFillet.IsDone());
++  EXPECT_TRUE(BRepCheck_Analyzer(aFillet.Shape()).IsValid());
++  EXPECT_NEAR(volumeOf(aFillet.Shape()), 120.0 - 10.0 * 3.426266, 1.e-4);
++}
++
++// The same fillet again after a finished one: the second fillet pivots at the first one's
++// tangent edge, so the result depends on the order (213.812565 for 3 then 3 on the 4 wide face).
++TEST(BRepFilletAPI_MakeFilletTest, OCCT1177_FilletNextToAFinishedFilletPivotsAtItsTangentEdge)
++{
++  const TopoDS_Shape       aBox = BRepPrimAPI_MakeBox(4.0, 10.0, 6.0).Shape();
++  BRepFilletAPI_MakeFillet aFirst(aBox);
++  aFirst.Add(3.0, findEdgeAt(aBox, gp_Pnt(0.0, 5.0, 6.0)));
++  ASSERT_NO_THROW(aFirst.Build());
++  ASSERT_TRUE(aFirst.IsDone());
++  const TopoDS_Shape aRounded = aFirst.Shape();
++
++  BRepFilletAPI_MakeFillet aSecond(aRounded);
++  aSecond.Add(3.0, findEdgeAt(aRounded, gp_Pnt(4.0, 5.0, 6.0)));
++  ASSERT_NO_THROW(aSecond.Build());
++  ASSERT_TRUE(aSecond.IsDone());
++  EXPECT_TRUE(BRepCheck_Analyzer(aSecond.Shape()).IsValid());
++  EXPECT_NEAR(volumeOf(aSecond.Shape()), 213.812565, 1.e-4);
++}
+diff --git a/src/ModelingAlgorithms/TKFillet/GTests/FILES.cmake b/src/ModelingAlgorithms/TKFillet/GTests/FILES.cmake
+index 3ffc5fee6b..5a11a31f96 100644
+--- a/src/ModelingAlgorithms/TKFillet/GTests/FILES.cmake
++++ b/src/ModelingAlgorithms/TKFillet/GTests/FILES.cmake
+@@ -6,6 +6,7 @@ set(OCCT_TKFillet_GTests_FILES
+   BRepFilletAPI_MakeFillet_Obstacle_Test.cxx
+   BRepFilletAPI_MakeFillet_OppositeEdges_Test.cxx
+   BRepFilletAPI_MakeFillet_Test.cxx
++  BRepFilletAPI_MakeFillet_WiderThanFace_Test.cxx
+   ChFi3d_Builder_0_Test.cxx
+   ChFi3d_Hatching_Test.cxx
+   BRepFilletAPI_ShallowLoft_Test.cxx
