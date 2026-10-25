@@ -47,7 +47,7 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the fifty-four carried patches are documented in Scripts/patches/README.md
+// OCCT `IR` (53706f78a8, V8_0_1-76-g53706f78a8) plus the sixty-one carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target =
     isWASI
@@ -86,10 +86,23 @@ let occtTarget: Target =
             name: "OCCT",
             path: "Libraries/OCCT.xcframework"
         )
-        // OCCT V8_0_1 + the fifty carried patches listed below.
+        // OCCT V8_0_1 + the forty-six carried patches listed below.
         //
-        // Scripts/build-occt.sh builds V8_0_1, which absorbed ten of the previously carried patches (0001-0009 and 0013; their files are deleted,
-        // their writeups kept in Scripts/patches/README.md under "Retired patches"). The fifty that
+        // KERNEL REBASE (2026-10-25, phase 1). Scripts/build-occt.sh now builds the upstream `IR` commit
+        // 53706f78a8 (V8_0_1-76-g53706f78a8, OCCT_COMMIT), not the V8_0_1 tag, and Scripts/patches/ is the
+        // stack authored against it. THE PINNED ASSET BELOW IS STILL THE V8_0_1 KERNEL, built before
+        // that, so this block describes it and the lines that follow count against it. The list below
+        // holds the forty-six patches of that asset that are still in Scripts/patches/; the asset holds
+        // fifty, and the four the list no longer names were retired at the rebase and are in the asset:
+        // 0019 (OCCT#1418 merged), 0028 (upstream fixed it its own way), 0054 (replaced by 0079, the
+        // form submitted as OCCT#1623) and 0059 (IR plus 0079 to 0084 builds its cases). Ten of the
+        // forty-six were rebased and so differ in content from the asset's V8_0_1 form while keeping
+        // their name: 0010, 0014, 0015, 0036, 0043, 0048, 0053, 0070, 0073, 0074 and the two later ones
+        // 0076 and 0078 (the last four are in the unpinned set below). Nothing about the asset
+        // changes until the next repin, which is phase 2 and is not done here.
+        //
+        // Scripts/build-occt.sh built V8_0_1 until the rebase, which absorbed ten of the previously carried patches (0001-0009 and 0013; their files are deleted,
+        // their writeups kept in Scripts/patches/README.md under "Retired patches"). The forty-six that
         // survive, all present in Scripts/patches/, are:
         //
         //   0010  Intf_Interference O(1) tangent-zone lookup + checkpointed breaker            #319
@@ -101,7 +114,6 @@ let occtTarget: Target =
         //   0016  Resource_Manager::Debug atomic + Storage_Schema per-instance scratch    #374/#518
         //   0017  null ReShape context in ComposeShell/WireDivide                              #484
         //   0018  GCPnts degenerate count + duplicate end point                                #555
-        //   0019  AdvApp2Var Jacobi maxima workspace slot                                      #522
         //   0020  BRepFeat_MakeCylindricalHole tool-part selection                             #532
         //   0021  CPnts adaptive arc-length integration                                        #603
         //   0022  ChFi2d_Builder::AddChamfer connexion error check                             #705
@@ -110,7 +122,6 @@ let occtTarget: Target =
         //   0025  GeomFill_Sweep reports the achieved conversion error                         #597
         //   0026  BRepOffsetAPI_ThruSections refuses an uncappable non-planar extremity        #905
         //   0027  ThruSections CreateSmoothed section-edge-count guard                         #913
-        //   0028  GeomPlate_BuildPlateSurface's uninitialised G0/G1/G2 errors                #1018
         //   0029  XCAFDoc_Datum reads the datum point's X from the annotation plane's array  #1022
         //   0030  TopoDS_TShape::myState non-atomic flag-mutation data race                  #1154
         //   (0031, the BSplCLib_Cache/BSplSLib_Cache locks, #1153, is RETIRED at the
@@ -159,10 +170,6 @@ let occtTarget: Target =
         //         in the order it bound them, not in the order of a DataMap hashed on TShape
         //         addresses, so an arc-join offset is one result per input. Pinned by
         //         v4.0.0-kernel.5. Issue3003OffsetOrderTests is ungated by the same change
-        //   0054  ChFi3d_Builder::StartSol drops an obstacle whose neighbour face holds no     #2881
-        //         edge to follow instead of leaving an empty curve for the SurfRst walk to
-        //         dereference: the SIGSEGV inside BRepFilletAPI_MakeFillet::Build at a radius
-        //         of exactly 1.5 on the reporter's model. Pinned by v4.0.0-kernel.5
         //   0055  GProp_SelGProps / GProp_VelGProps Perform(gp_Cone) compute the matrix of     #3010
         //         inertia from the integral and the solid's centre of mass from the solid
         //   0056  BRepLib::Plane() creates its process-global plane as a function-local        #3039
@@ -175,9 +182,6 @@ let occtTarget: Target =
         //   0058  BRepOffsetAPI_MiddlePath::Build carries a path that has reached a vertex       #3105
         //         forward instead of casting it to an edge, and bounds the levels. Pinned by
         //         v4.0.0-kernel.6
-        //   0059  ChFi3d_Builder builds two fillets that meet exactly (radii summing to the      #3207
-        //         width of the face between them) instead of answering IsDone() == false.
-        //         Pinned by v4.0.0-kernel.6
         //   0064  TopOpeBRepBuild CorrectUnclosedWire collects the edges to remove before      #3335
         //         removing them, so BRepFilletAPI_MakeFillet no longer reads the list node a
         //         BRep_Builder::Remove freed under its TopoDS_Iterator. Pinned by
@@ -256,7 +260,7 @@ let occtTarget: Target =
         //     They are the only two patches in the tree with no CI coverage of any kind, which is
         //     worth knowing before trusting "the fix is in the kernel" about either.
         //
-        // Pinned to the v4.0.0-kernel.7 pre-release asset: upstream V8_0_1 plus the fifty patches listed above,
+        // Pinned to the v4.0.0-kernel.7 pre-release asset: upstream V8_0_1 plus the forty-six patches listed above (and the four retired at the IR rebase, named in the KERNEL REBASE paragraph),
         // and nothing else. That was NOT true of v4.0.0-kernel.1, which carried two patches that are
         // not in Scripts/patches/ at all, so read the next paragraph before treating any older asset's
         // enumeration as its contents.
@@ -294,9 +298,9 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The pinned asset lacks eight of them, 0070, 0071, 0072, 0073, 0074, 0076, 0077 and 0078: it
-        // holds fifty and Scripts/patches/ holds fifty-eight, so those eight are exercised by no CI
-        // job until the next repin.
+        // The pinned asset lacks fifteen of them, 0070, 0071, 0072, 0073, 0074, 0075, 0076, 0077, 0078 and
+        // 0079, 0080, 0081, 0082, 0083, 0084: it holds forty-six of the sixty-one and Scripts/patches/
+        // holds sixty-one, so those fifteen are exercised by no CI job until the next repin.
         // 0064 (#3335), 0065 (#3350), 0066 (#3464), 0068 (#3449) and
         // 0069 (#3330) were carried after v4.0.0-kernel.6 and are pinned by v4.0.0-kernel.7; the
         // rows for 0053 through 0069 below are history in the way the rows for 0044 through 0052
@@ -344,10 +348,10 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds fifty-eight patches and the pinned asset holds fifty of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 58 against a list of 50,
-        // and the eight that the list lacks are 0070, 0071, 0072, 0073, 0074, 0076, 0077 and 0078,
-        // written up below. The
+        // Scripts/patches/ holds sixty-one patches and the pinned asset holds forty-six of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 61 against a list of 46,
+        // and the fifteen that the list lacks are 0070, 0071, 0072, 0073, 0074, 0075, 0076, 0077, 0078
+        // and 0079 to 0084, written up below. The
         // v4.0.0-kernel.4 rebuild closed the divergence that 0044 had
         // opened and that 0045 through 0052 widened, the v4.0.0-kernel.5 rebuild closed the one that
         // 0053 through 0057 opened, the v4.0.0-kernel.6 rebuild closed the one that 0058 and 0059
@@ -639,6 +643,33 @@ let occtTarget: Target =
         //         report NoCurveOnSurface. NOT in v4.0.0-kernel.7;
         //         BREPKernelInconsistentShapeTests is gated on OCCTSWIFT_LOCAL=1 until the next
         //         repin (#3490).
+        //
+        //   0079  ChFi3d_Builder::StartSol drops an obstacle with no edge to follow: the form     #1623
+        //         submitted as OCCT#1623, which replaces 0054 (same three lines, plus the GTest
+        //         RimBlendEndingOnBottomRoundDoesNotCrash). NOT in v4.0.0-kernel.7 as such; the
+        //         asset holds 0054, so the fix itself is in it.
+        //
+        //   0080  BRepTools_WireExplorer ends the exploration on a pcurve too short to step       #1666
+        //         along, where it looped forever and BRepCheck_Analyzer never returned on a face
+        //         four fillets had consumed to a point. NOT in v4.0.0-kernel.7.
+        //
+        //   0081  ChFi3d_HasTransversalIntersection reads the crossing of two end-cap arcs         #1667
+        //         (reported as a segment, with no point) as a crossing, so fillets whose arcs
+        //         cross are refused rather than reported done with a solid BRepCheck rejects.
+        //         NOT in v4.0.0-kernel.7.
+        //
+        //   0082  BRepFilletAPI_MakeFillet builds a fillet wider than its face for a single       #1668
+        //         straight edge between two planar faces at a right angle, as a cut by the
+        //         prism between the arc and the faces. NOT in v4.0.0-kernel.7.
+        //
+        //   0083  BRepFilletAPI_MakeFillet reports a result that is not a valid solid as a        #1669
+        //         failure (chamfers keep theirs). NOT in v4.0.0-kernel.7.
+        //
+        //   0084  BRepFilletAPI_MakeFillet builds fillets on opposite edges whose arcs cross       #1670
+        //         as the intersection of the single-fillet shapes. NOT in v4.0.0-kernel.7.
+        //         0079 to 0084 are exercised by the GTests they carry in the kernel build
+        //         (78 fillet, chamfer and wire-explorer GTests pass on the patched IR tree); the
+        //         bridge's own tests for them are phase 2.
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
         // 2026-09-29 unbuilt, because OCCT 8.0.2 was days out and there is a standing hold on repinning

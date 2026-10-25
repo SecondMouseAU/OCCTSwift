@@ -15,13 +15,33 @@ that adds or moves an `<Exception>_Raise_if` or a `throw` changes it.
 `check-inventory-prose.py` fails when the map's provenance stamp and this directory disagree,
 which is what nothing did while `0042` sat in the kernel and not in the map for two pins (#2885).
 
+**The base is upstream `IR`, not `V8_0_1` (2026-10-25).** The stack in this directory is authored
+against `Open-Cascade-SAS/OCCT` branch `IR` at `53706f78a8640c4407bdcc6752df13a270b159f2`
+(`V8_0_1-76-g53706f78a8`, `Standard_Version` 8.1.0.dev1), and `Scripts/build-occt.sh` builds that
+commit (`OCCT_COMMIT`). Every patch was applied in numeric order to a pristine checkout of it with
+`git apply`, and the result was built in full (`cmake`, Release, `-DNo_Exception`, shared; 6051
+build steps; the GTest executable links) and run: see the pull request that moved the base for the
+counts. What changed relative to the `V8_0_1` stack:
+
+| Outcome | Patches |
+|---|---|
+| Retired, upstream merged it | `0019` (OCCT#1418) |
+| Retired, upstream fixed it its own way and documents the opposite | `0028` |
+| Retired, replaced by the form submitted upstream | `0054` by `0079` (OCCT#1623) |
+| Retired, `IR` plus the pieces builds its cases | `0059` |
+| Rebased, context drift only | `0014`, `0048`, `0070`, `0073`, `0074`, `0076`, `0078` |
+| Rebased, and something real moved under it | `0010` (the self-interference search now goes through `IntPatch_Intersection`), `0015` (a new `IR` GTest constructs the changed driver), `0036` (a tenth, new `errhand` user), `0043` (a new `IR` GTest pins the defect), `0053` (GTest hunks) |
+| Unchanged | every other patch from `0011` to `0077` |
+| New | `0079` to `0084`, the fillet pull requests (OCCT#1623, #1666, #1667, #1668, #1669, #1670) |
+
 **Numbers are never reused, with one recorded exception.** Re-pinning to OCCT `V8_0_1` on
 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry), and
 `0031` retired 2026-10-10 at the `v4.0.0-kernel.6` repin (#3065: the supported pattern is one
-adaptor per worker, so the lock it added is not needed).
-The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0066, 0068–0074, 0076–0078.
+adaptor per worker, so the lock it added is not needed), and `0019`, `0028`, `0054` and `0059`
+retired 2026-10-25 at the rebase onto upstream `IR` (see the next section).
+The carried sequence now reads 0010–0012, 0014–0018, 0020–0027, 0029–0030, 0033–0034, 0036–0048, 0050–0053, 0055–0058, 0064–0066, 0068–0084.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -41,6 +61,8 @@ this reason. **Do not reuse a number again, however short the number's life was*
 somehow must, record it here the way this paragraph does.
 
 ## 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319.patch
+
+**Rebased onto `IR` (2026-10-25).** `BOPAlgo_FaceSelfIntersect::Perform` on `IR` no longer calls `IntTools_FaceFace::Perform`: it calls `IntPatch_Intersection::Perform(surface, domain, tol, tol)`, whose single-surface form builds an `IntPatch_InterferencePolyhedron` (an `Intf_Interference`) in `IntPatch_PrmPrmIntersection`. The `Intf_*` hunks are byte-identical; the breaker scope is now opened around the `IntPatch_Intersection` call, under the same single-threaded condition. **Measured on `IR`** (`Scripts/repro/319-selfintersection/`, `dualskin_lateral.15.brep`, `BOPAlgo_ArgumentAnalyzer` with a cooperative deadline): with the wiring a 5 s deadline returns in 5.046 s (`HasFaulty` 1, breaker tripped) and a 0.5 s deadline in 1.161 s; with the `Intf_*` changes but the wiring removed, the same call with a 5 s deadline was still running when killed at 45 s. So the wiring has a target on `IR` and is needed.
 
 **Fixes the upstream OCCT hang behind [#319](https://github.com/SecondMouseAU/OCCTSwift/issues/319)**: `isSelfIntersecting`'s `hardTimeout:` bound could not actually interrupt the self-interference search on a pathological artifact, running 619s+ of CPU (and observed to run far longer, uninterrupted) against a 30s deadline. Reported upstream as [Open-Cascade-SAS/OCCT#1385](https://github.com/Open-Cascade-SAS/OCCT/issues/1385) (reproducer at
 [`Scripts/repro/319-selfintersection`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/319-selfintersection)), fix as [OCCT#1386](https://github.com/Open-Cascade-SAS/OCCT/pull/1386) (CI green on all 3 platforms, ready for review).
@@ -149,6 +171,8 @@ See [`Scripts/repro/344-cdf-directory/`](https://github.com/SecondMouseAU/OCCTSw
 
 ## 0014-CDF-driver-reentrancy-mutex-349.patch
 
+**Rebased onto `IR` (2026-10-25).** Context only: the `#include <UTL.hxx>` line the first hunk sat beside is gone.
+
 **Fixes the upstream OCCT crash behind [#349](https://github.com/SecondMouseAU/OCCTSwift/issues/349)**: an uncatchable SIGSEGV under concurrent `Save`/`SaveAs` of the same document format, surfaced during validation of the #344 fix (the third, architecturally distinct crash found in that pass, deliberately not folded into patch 0012).
 
 `CDF_Application::WriterFromFormat`/`ReaderFromFormat` cache one storage/retrieval driver instance per format (`myWriters`/`myReaders`, the map itself already made safe by #344) and hand the *same* cached instance back to every subsequent `Store()`/`Retrieve()` call for that format, including from different threads, different documents, concurrently. But `PCDM_StorageDriver`/`PCDM_Reader` subclasses (`BinLDrivers_DocumentStorageDriver` et al.) are not reentrant: `Write()`/`Read()` mutate instance-level scratch state, for `BinLDrivers_DocumentStorageDriver` alone: `myRelocTable`, `myTypesMap`, `myPAtt`, `myEmptyLabels`, `myMapUnsupported`, `mySizesToWrite`, `myFileName`, `myMsgDriver`, the lazily-initialized `myDrivers` table, plus the base class's `myIsError`/`myStoreStatus`, that gets clobbered when two threads call `Write()` on the same shared instance concurrently. `CDF_StoreList::Store`'s own comment already shows awareness the driver is shared across threads ("It has sense in multi-threaded access to the storage driver..."), but only the store-status was ever made safe; every other member raced freely. Structural, not BinLDrivers-specific: `XmlLDrivers`, `BinXCAFDrivers`/`XmlXCAFDrivers`, and `TObj` drivers all extend the same base classes and follow the identical per-instance-scratch-state pattern.
@@ -168,6 +192,8 @@ See [`Scripts/repro/349-ocaf-driver-reentrancy/`](https://github.com/SecondMouse
 **Retire** once the bundled OCCT includes this fix.
 
 ## 0015-CDM_Application-metadata-lookup-table-mutex-353.patch
+
+**Rebased onto `IR` (2026-10-25).** `CDF_FWOSDriver::MetaData` no longer calls `UTL::IsReadOnly`, so the `LookUp` call the patch passes the mutex to changed shape, and `IR` added `CDF_FWOSDriver_Test.cxx`, which constructs the driver with one argument; the test now declares a `std::mutex` and passes it. Both are in this patch.
 
 **Fixes the upstream OCCT crash behind [#353](https://github.com/SecondMouseAU/OCCTSwift/issues/353)**: a race surfaced while validating the #349 fix (patch 0014, shipped v1.15.9): post-#349-fix TSan runs consistently produced exactly one different, previously-masked warning, matching the "fixing one race exposes the next" pattern from #341→#344→#349.
 
@@ -283,35 +309,6 @@ verdicts unchanged from the numbers below.
 See [`Scripts/repro/555-gcpnts-count-contract/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/555-gcpnts-count-contract) for the reproducers and full writeup, and
 [`Scripts/repro/555-gcpnts-count-contract/upstream/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/555-gcpnts-count-contract/upstream)
 for the post-review commit and the reply, both of which went out on 2026-08-10. Filed upstream as [Open-Cascade-SAS/OCCT#1417](https://github.com/Open-Cascade-SAS/OCCT/pull/1417), a fix PR with no companion repro issue, per upstream's own guidance on [OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409#issuecomment-5124395058). Based on `b8f597c6`; the two touched files are byte-identical between upstream `master` and our `V8_0_0_p1` pin, so the patch is the same change on both. **The live PR is now [OCCT#1457](https://github.com/Open-Cascade-SAS/OCCT/pull/1457)**, same head branch and same fix: #1417 was closed on 2026-08-10 by a `git commit --amend` against a shallow clone, which GitHub reads as unrelated history, and reopening is not possible once that happens.
-
-**Retire** once the bundled OCCT includes this fix.
-
-## 0019-AdvApp2Var-jacobi-max-wrong-workspace-slot-522.patch
-
-**Fixes the upstream OCCT defect behind [#522](https://github.com/SecondMouseAU/OCCTSwift/issues/522)**, found while building [#491](https://github.com/SecondMouseAU/OCCTSwift/issues/491)'s surface-approximation parity tests: `GeomConvert_ApproxSurface` asked for `GeomAbs_C0` returned a surface nowhere near its input while reporting `IsDone()` and a `MaxError()` five orders of magnitude too small.
-
-`AdvApp2Var_ApproxF2var::mma2ce1_` requests one scratch allocation and partitions it into seven consecutive buffers, of which `ipt4` holds `XMAXJU` (the maxima of the U Jacobi polynomials) and `ipt5` holds `XMAXJV` (the V ones). Both `mma2jmx_` calls that fill them target `ipt5`:
-
-```c
-AdvApp2Var_ApproxF2var::mma2jmx_(ndjacu, iordru, &wrkar_off[ipt5]);   /* -> should be ipt4 */
-AdvApp2Var_ApproxF2var::mma2jmx_(ndjacv, iordrv, &wrkar_off[ipt5]);
-```
-
-So `XMAXJU` is never written. `mma2ce2_` still reads it at `ipt4`, where the allocation left whatever was there, in practice zeros, and passes it to `mma2er1_`/`mma2er2_`, whose entire error model is `|PATJAC(i,j)| * XMAXJU(i - 2*(IORDRU+1)) * XMAXJV(j - 2*(IORDRV+1))`. A zero `XMAXJU` zeroes every term, with two silent consequences: (1) the interior approximation error of a patch is reported as exactly 0 whatever the discarded coefficients are, so `mma2ce2_`'s tolerance test can never fire on it and `MaxError()` only ever reflects the boundary-iso errors `AdvApp2Var_Patch::AddErrors` adds afterwards; (2) `mma2er2_`, asked for the lowest degree whose truncation error still fits the tolerance, always answers `NDMINU`, the floor derived from the constraint order and the neighbouring isos, because every candidate scores 0.
-
-Where that floor is low the fit collapses onto it. C0 gives `IORDRU = 0`, and a full sphere's V-boundary isos degenerate to its two poles, one coefficient each, so `NDMINU` is 1: a radius-10 sphere at tolerance 1e-3 came back as a degree-1, 2-pole-in-U B-spline, a straight line across the full `2*pi` of longitude, deviating by the sphere's own diameter of 20, reporting `MaxError()` 1.07e-4. A bicubic Bezier at C0/C0 collapsed to a 2x2 bilinear patch reporting 4.08e-15, unchanged from tolerance 1e-1 down to 1e-7, because the requested tolerance was compared against a number that was always zero. C1 and C2 hid the collapse (their floor is already high) but not the misreported error.
-
-The write also overruns: `mma2jmx_` writes `ndjacu + 1 - 2*(IORDRU+1)` doubles and the `ipt5` slot is sized for the `ndjacv` equivalent, so a request with `MaxDegU` well above `MaxDegV` runs past `XMAXJV` into the `VECERR` slot behind it. Benign in practice, `VECERR` is re-zeroed on entry to `mma2ce2_` and the run stays inside the single allocation, but out of bounds for the buffer it was given.
-
-**Fix:** target `ipt4` from the U call. One character; the two lines then read symmetrically. `AdvApp2Var_Context`'s own two `mma2jmx_` calls (the only others in the tree) already write to separate per-direction arrays and were correct.
-
-**Validation** (fast path first, then the real binary, see the `#0001` entry above for the override-link technique, compiled with `-DNDEBUG -DNo_Exception` to match the production build): dumping `&wrkar_off[ipt4]` shows `xmaxju[8] = 0 0 0 0 0 0 0 0` on stock and `0.9682 0.986 1.078 1.173 1.265 1.352 1.434 1.513` after. Across a 98-case sweep (7 surface families x all 9 `(uCont, vCont)` combinations of C0/C1/C2, plus C0/C0 at five tolerances) the results whose real deviation exceeds the reported `MaxError` by more than 10x go from **12 to 0**, and those that exceed it at all from 17 to 1, the survivor being a Bezier reproduced exactly, reporting 9.95221e-15 against a measured 9.96978e-15. Reported errors rise slightly everywhere, which is the interior contribution being counted for the first time. Confirmed against the rebuilt xcframework with no override-linked TUs, matching the override-linked prediction line for line. Full `swift test` (4842 tests / 1346 suites) clean.
-
-`GeomConvert_ApproxSurface` is not a leaf. `GeomFill_Sweep`, `BRepOffset_Offset`, `GeomLib`, `ShapeCustom_BSplineRestriction`, `ShapeConstruct`, `ShapeUpgrade_UnifySameDomain` and `GeomConvert_1` (twice) all construct it, `ShapeCustom_ConvertToBSpline` reaches it through `ShapeConstruct`, and `GeomPlate_MakeApprox` drives `AdvApp2Var_ApproxAFunc2Var` directly. Most pass C1 or C2, where the collapse cannot happen, but the always-zero interior error affected all of them; and the healing paths reach C0 deliberately: `ShapeConstruct::ConvertSurfaceToBSpline` and `ShapeCustom_BSplineRestriction` both loop the requested continuity down to 0 on failure and then accept the result on `MaxError() <= tol`, and `ShapeCustom_ConvertToBSpline` *starts* at C0 for any offset surface (`ShapeCustom_ConvertToBSpline.cxx:148`) before handing off to the first of those. (`BRepFill_Sweep.cxx:1162` and `BRepFill_Filling.cxx:712` also name the class but are both inside comment blocks, so neither is a live caller; see #573.)
-
-See [`Scripts/repro/522-approx-c0-collapse/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/522-approx-c0-collapse) for the reproducers and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1418](https://github.com/Open-Cascade-SAS/OCCT/pull/1418), a fix PR with no companion repro issue, per upstream's own guidance on [OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409#issuecomment-5124395058). Based on `b8f597c6`; the touched file is byte-identical between upstream `master` and our `V8_0_0_p1` pin, so the patch is the same change on both. **Merged upstream 2026-08-10**, one file, 1 insertion and 1 deletion, and it is on `upstream/master` as `07e6d8d40`. It is not in any OCCT release yet, so this patch stays carried; retire it at the release that contains it, per the rule below.
-
-**Provenance (#756):** this is a regression, not an original defect. `3016a390713d2e893f4bfa797882b9f0266840e1` (2021, a UBSan coding-rules cleanup) renumbered every workspace offset in `mma2ce1_` down by one position and missed exactly one of the two `mma2jmx_` call sites; confirmed at the release-tag level, not just the commit diff, `V7_5_0` writes the U and V Jacobi maxima to two distinct slots and `V7_6_0` (the first release after the commit) already collapses them to one. Full mechanism is in [`Scripts/repro/522-approx-c0-collapse/README.md`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/522-approx-c0-collapse#upstream-provenance-756). The reply drafted to carry it upstream was never sent, and #1418 merged without it; that directory's `upstream/` files each say so at the top (#803).
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -898,127 +895,6 @@ the overrun, which of the two manifests is exactly the kind of detail this defec
 section says depends on process/allocator state, not something either transcript got wrong.
 
 Filed upstream as [OCCT#1466](https://github.com/Open-Cascade-SAS/OCCT/pull/1466).
-
-**Retire** once the bundled OCCT includes this fix.
-
-## 0028-GeomPlate_BuildPlateSurface-uninitialised-G0-G1-G2-errors-1018.patch
-
-**Fixes the upstream OCCT uninitialised read behind
-[#1018](https://github.com/SecondMouseAU/OCCTSwift/issues/1018)**: `GeomPlate_BuildPlateSurface`'s
-`G0Error()`, `G1Error()` and `G2Error()` return uninitialised members after a `Perform()` whose
-constraints were all point constraints.
-
-`myG0Error` / `myG1Error` / `myG2Error` have no in-class initialiser and none of the three
-constructors assigns them. `VerifSurface()` is their only writer, and `Perform()` calls it only on
-the branch that has at least one curve constraint (`GeomPlate_BuildPlateSurface.cxx:684`). The
-point-only branch (`:700-727`) ends with `VerifPoints(di, an, cu)`, which computes the same three
-deviations into locals and discards them. So a point-only plate leaves all three members untouched
-and all three accessors read whatever was in that memory.
-
-**Measured**, not inferred, at the pinned kernel
-([`Scripts/repro/1018-geomplate-uninitialised-errors/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1018-geomplate-uninitialised-errors)):
-placement-new the class over a buffer filled with `0x5A` and the pattern (`1.78388675173e+127` read
-back as a double) survives the constructor **and** a point-only `Perform()` in all three members,
-which is only possible if nothing wrote them. On the stack instead, the same fixture gives three
-builds that agree with each other inside one process and disagree with the next process's three, and
-the numbers change again on every run, which is what distinguishes an uninitialised read from a
-wrong computation. `stock.txt` and `stock-second-run.txt` are one such pair; no specific value is
-quoted here, because re-running the script produces different ones. That matches the three consecutive `Surface.plateErrors` calls #1018 quotes from before
-its deletion (`1.9355577472e-313`, `-3.105038551588571e+231`, `-nan`).
-
-**Fix, four parts.**
-
-1. The three members get in-class initialisers, so the accessors are defined before the first
-   `Perform()` rather than reading the caller's memory.
-2. `Perform()` clears them alongside the `myGeomPlateSurface.Nullify()` it already does on entry, so
-   a build that returns early does not report the previous build's deviations. Two early returns
-   precede `VerifSurface()` even on the curve branch (`UserBreak()`, and a `Plate_Plate` solve that
-   did not converge), and `Plate_Plate::Init()` leaves `IsDone()` true, so `IsDone()` does not warn
-   a caller off that case. **The first draft of this patch left that gap and argued for it**, on the
-   grounds that closing it meant deciding what `IsDone()` should report after a cancel. The PR's own
-   pre-PR review pointed out that the reset needs no such decision, and it does not: it changes
-   nothing on either successful path, since `VerifSurface()` zeroes the three on the curve branch
-   before its own max loop and the point-only branch assigns them below.
-
-   **What the reset does report is `0`, and `0` is not a measurement**, which is the
-   `Scripts/census-unmeasured-values.py` shape this same patch's part 3 exists to avoid. It is
-   defensible here for a reason that was checked rather than assumed: on every path that leaves the
-   three at `0`, `Surface()` is null too. `Perform()` nullifies it on the same entry, the
-   zero-constraint and `UserBreak` returns all precede the `myGeomPlateSurface = new
-   GeomPlate_Surface(...)` assignment, and a `UserBreak` on a later loop iteration leaves the
-   previous iteration's `VerifSurface()` values rather than the reset's. So "no result" stays
-   observable through the accessor callers already have, and `0` is never the only thing a caller is
-   given. A sentinel would have been the alternative, and it would change the accessors' return
-   contract for every existing caller, which is not this patch's to do.
-3. The point-only branch assigns the deviations `VerifPoints()` just measured instead of discarding
-   them. They are the only deviations that build produces, so this reports the measurement rather
-   than substituting a zero, which is the `Scripts/census-unmeasured-values.py` failure class
-   (#726). Measured on a 25-point wavy grid the real answer is `1.74210553841e-12` rather than `0`,
-   and on nine order-1 constraints off a sphere `8.00593208497e-16` (G0) and `6.0044719032e-16`
-   (G1).
-4. `VerifPoints()` accumulates each deviation as a maximum over the point constraints instead of
-   overwriting it. Without this, part 3 would put "the last constraint's deviation" behind an
-   accessor documented as "the max distance / angle / difference of curvature between the result and
-   the constraints", so it is required for part 3 to be correct rather than extra scope. Both of its
-   call sites discarded the values before, so nothing observable changes for the curve branch. The
-   fixture separates the two: max `1.74210553841e-12` against last `1.57145571589e-12` at order 0,
-   and max `6.0044719032e-16` against last `3.05083725475e-16` for the order-1 angle.
-
-**The curve branch is deliberately left alone.** `VerifSurface()` keeps writing the three members
-from the curve constraints only, and the `VerifPoints()` call the curve branch makes when it also
-has point constraints stays discarded. This is not an oversight: `BRepFill_Filling::Build()`
-consumes `G0Error()` for `dmax` (applied as a vertex tolerance via `BB.UpdateVertex`) and for
-`seuil` (the `GeomPlate_PlateG0Criterion` threshold), so folding point deviations into a mixed build
-would move real geometry, which is a separate behavioural question from the uninitialised read.
-The reproducer's section D is the control for that: a curve-only plate reports
-`2.08788369733e-05` and a curve-plus-points plate `0.00104645741524`, identical before and after.
-
-**Reachability here.** `BRepFill_Filling::G0Error()`/`G1Error()`/`G2Error()` forward straight to
-this class (`BRepFill_Filling.cxx:814-837`) and `OCCTFillingG0Error`/`G1Error`/`G2Error` read them
-for `FillingSurface.g0Error`/`g1Error`/`g2Error`. That path is safe today by a chain of three
-independent facts rather than by design: `Build()` returns early with `myIsDone = false` on an empty
-boundary, so its plate always has a curve constraint; `myIsDone` follows `myPlate.IsDone()`, so a
-failed solve also reports not done; and the three bridge functions check `IsDone()` before reading.
-None of the six bridge sites that construct a `GeomPlate_BuildPlateSurface` directly calls the
-accessors, and `OCCTGeomPlateErrors`, which did, was deleted by #999 (PR #1015). So this patch fixes nothing
-observable in OCCTSwift today; it is carried because the defect is live upstream and because that
-chain is the kind of accidental protection this project keeps finding on the wrong side of.
-
-**Validation.** Override-linked the patched translation unit ahead of the pinned archive (see
-`run.sh`): every value in the reproducer moves exactly as described above, and section D's curve
-branch is byte-identical. Four new GTests in the class's existing
-`GeomPlate_BuildPlateSurface_Test.cxx` (`PointOnlyConstraintsReportMeasuredErrors`,
-`PointOnlyErrorsAreMaximaNotTheLastConstraint`, `ErrorsAreZeroBeforePerform`,
-`CancelledRebuildDoesNotReportThePreviousErrors`), each recomputing the expected value from the
-built surface rather than hard-coding it, so none pins a platform-specific number. `run-gtest.sh`
-runs them both ways, unfiltered, so the file's six pre-existing cases are exercised on both sides
-too: **6 passed / 4 failed** against the unpatched sources and **10 passed** against the patched
-ones (`gtest.txt`). Both runs compile the class out of `Libraries/occt-src`, applying this patch to
-a scratch copy for the second, so neither depends on which branch the upstream checkout is sitting
-on; the GTest source is the only thing taken from that checkout, and the script checks it by name
-for all four cases before running. `ErrorsAreZeroBeforePerform` uses the `0x5A` placement-new buffer
-deliberately: an uninitialised member can read `0` by luck (it did, for `G2Error()`, in the
-unpatched GTest run), so a plain construction would be a test that passes for the wrong reason.
-Part 2 was isolated separately rather than trusted to the all-or-nothing run: with the patch applied
-and **only** the `Perform()`-entry reset removed, exactly one case fails, and it fails reporting
-`1.7421055384149805e-12`, the first build's own deviation, which is the stale-value mechanism itself
-rather than a coincidence.
-`clang-format --dry-run --Werror` against OCCT's own `.clang-format` reports zero violations on all
-three changed files. `GeomPlate_BuildPlateSurface.cxx` and `.hxx` are byte-identical between the
-pinned `V8_0_1` tree and current upstream `master` (`7d2efad9c`), checked rather than assumed.
-
-**Not in the pinned asset.** `Package.swift` pins the v3.0.0 release asset, which carries
-`0010`-`0012` and `0014`-`0027`, so `ci.yml`'s `build-and-test` never sees this patch. That is
-#585's shape and is stated here rather than left to be discovered. One narrowing, measured rather
-than assumed: `kernel-integration.yml` triggers on `Scripts/patches/**`, so the PR carrying this
-patch does get `V8_0_1` plus all nineteen built from source and the full suite run against that
-binary. It proves the patch applies, compiles and regresses nothing; it cannot prove the fix works,
-because the defect has no Swift-reachable path left after #999 (PR #1015) deleted
-`OCCTGeomPlateErrors`, and it does not run on any later PR that leaves `Scripts/patches/` alone. A
-rebuilt asset would buy no Swift-side coverage either, for the same reason: the upstream GTests are
-this patch's only coverage anywhere.
-
-Filed upstream as [OCCT#1481](https://github.com/Open-Cascade-SAS/OCCT/pull/1481).
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -1715,6 +1591,8 @@ in `TKShHealing`.
 
 ## 0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827.patch
 
+**Rebased onto `IR` (2026-10-25).** The source hunk is unchanged. `IR` ([#1640](https://github.com/Open-Cascade-SAS/OCCT/pull/1640)) added `BRepGPropTest.AdaptivePlaneLimitedInertia`, which pins the by-plane `MatrixOfInertia()` about the location (160, 104, 200, -72, -36, -48) and does not check the mass: it encodes this defect (the zero mass and centre make `GProp_GProps::MatrixOfInertia()`'s reduction to the centre of mass vanish). With the mass kept the matrix is centroidal, 40, 26, 50 on the diagonal and zero off it, which is m (b^2 + c^2) / 12 for the 3 x 4 x 2 solid of mass 24 and centre (1.5, 2, 1); the test is changed to assert the mass, the centre and those values. Found by running the full GTest suite of the patched `IR` tree (it failed with 40.000000000000043 for 160).
+
 **The by-plane mass is computed and then discarded**
 ([#2827](https://github.com/SecondMouseAU/OCCTSwift/issues/2827)),
 `src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Gauss.cxx:494-528` in the pinned tree:
@@ -2332,6 +2210,8 @@ Filed upstream as [OCCT#1598](https://github.com/Open-Cascade-SAS/OCCT/pull/1598
 
 ## 0048-BRepGProp-by-plane-offset-sign-2873.patch
 
+**Rebased onto `IR` (2026-10-25).** Context only.
+
 **The by-plane overloads measure about the plane mirrored through the origin**
 ([#2873](https://github.com/SecondMouseAU/OCCTSwift/issues/2873)). Every by-plane
 `BRepGProp_Vinert` and `BRepGProp_VinertGK` overload stores the plane the same way:
@@ -2763,6 +2643,8 @@ one-character fixes went with the hold on upstream PRs until 8.0.2, cancelled on
 
 ## 0053-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003.patch
 
+**Rebased onto `IR` (2026-10-25).** The source hunk is unchanged; the GTest hunks were redone because `IR` rearranged the includes and the end of `BRepOffset_MakeOffset_Test.cxx`.
+
 **An arc-join offset returns its faces in an order set by allocation addresses**
 ([#3003](https://github.com/SecondMouseAU/OCCTSwift/issues/3003)). `BRepOffset_MakeOffset::BuildOffsetByArc`
 keeps one `BRepOffset_Offset` per face, per convex edge (a tube) and per vertex (a sphere) in
@@ -2873,75 +2755,6 @@ this patch's own message.
 
 **Retire** once the bundled OCCT includes this fix.
 
-
-## 0054-ChFi3d_Builder-StartSol-drops-an-obstacle-with-no-edge-2881.patch
-
-**A fillet blend that reaches an obstacle with no edge to follow evaluates an empty curve**
-([#2881](https://github.com/SecondMouseAU/OCCTSwift/issues/2881), upstream
-[OCCT#1568](https://github.com/Open-Cascade-SAS/OCCT/issues/1568)),
-`src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_2.cxx:1530-1562` in the pinned tree.
-`ChFi3d_Builder::StartSol`, on reaching an obstacle face, sets `c1obstacle`, replaces `HC` with a
-fresh `BRepAdaptor_Curve2d`, and looks for the arc edge among the obstacle face's edges:
-
-```cpp
-HC = new BRepAdaptor_Curve2d();
-... find newedge among Fv's edges by IsSame(anArcEdge) ...
-if (!newedge.IsNull()) { HC->Initialize(newedge, Fv); ... return true; }
-else                   { prepareDefaultReturn(); return false; }   // HC is still the empty adaptor
-```
-
-When no edge matches, the `else` returns `false` and leaves `HC` as the default-constructed adaptor,
-which holds no curve, with `c1obstacle` still `true`. `PerformSetOfSurfOnElSpine` tests
-`!Ok && HC.IsNull()` for the end of the chain, an empty non-null `HC` passes that test, and
-`obstacleon1`/`obstacleon2` then select the obstacle path, which hands `HC` to
-`ChFi3d_FilBuilder::PerformSurf`. The `SurfRst` walk evaluates it through
-`Adaptor3d_CurveOnSurface::EvalD1` and `Geom2dAdaptor_Curve::D1` falls to its `default:` arm and
-dereferences a null curve. That is a SIGSEGV inside `Build()`, which `OCC_CATCH_SIGNALS` being inert
-in this build means no bridge `catch (...)` can reach, and `BRepFilletAPI_MakeFillet` is named in 96
-bridge sites.
-
-The fix is three lines in that `else`: `HC.Nullify(); c1obstacle = false;` before the existing
-return, which gives the caller the state it already handles for "no obstacle". The sibling failure
-in the same block, returning `false` when `HSref` or `HCref` is null, leaves `HC` null, which the
-caller does handle; it is left alone because no input reaches it.
-
-### How the cause was found, and what was ruled out
-
-`Scripts/repro/occt1568-fillet-opposite-edge/`, against the pinned macOS slice with override-linked
-copies of three kernel files (the unmodified file recompiled with the kernel's flags is the
-control, and each copy differs by a few logging lines):
-
-- **The first hypothesis was wrong.** #2881 guessed an edge with no pcurve on its reference face,
-  which would make `BRepAdaptor_Curve2d::Initialize` leave the adaptor empty. Logging every
-  `Initialize` call (494 calls at radius 1.49, 326 up to the fault at 1.5) shows it never sees a null
-  pcurve on this model.
-- **The faulting adaptor was identified by address.** `Adaptor3d_CurveOnSurface::EvalD1` is called
-  once before the fault, on a `BRepAdaptor_Curve2d` that appears in the log as a default
-  construction and never as an `Initialize`.
-- **The branch fires exactly where the crash is.** Logging it gives two hits at radius 1.5 and none
-  at 1.49 or 1.5000001. What it sees: the blend's face is a plane, the neighbour face found at the
-  vertex is a four-edged B-spline surface, and the arc edge is in the blend's face but in none of the
-  neighbour's edges under any orientation.
-
-### Measured, macOS arm64, before and after
-
-`BRepFilletAPI_MakeFillet` on the model attached to OCCT#1568 (19 faces, 42 edges), one edge at a
-time, `ChFi3d_Rational` with `BRepTest_FilletCommands`' parameters, the patched file override-linked.
-
-| radius | unpatched | patched |
-|---|---|---|
-| 0.3 and 1.0 | 20 done, 22 raise "no suitable edges" | identical |
-| 1.5 | 12 done, **8 SIGSEGV**, 22 raise | 12 done, 8 not done (`NbFaultyContours = 1`), 22 raise |
-
-Across 42 edges and nine radii (0.3, 0.8, 1.0, 1.2, 1.4999999, 1.5, 1.5000001, 1.8, 2.5), 378 cases,
-exactly eight outcomes change, edges 12 to 19 at 1.5, each from SIGSEGV to a normal completion with
-`IsDone() == false`. The other 370 are identical, 170 completed and 200 raising the same exception.
-The eight now behave as radius 1.4999999 already did.
-
-**Filed upstream as [OCCT#1591](https://github.com/Open-Cascade-SAS/OCCT/pull/1591) against `master`**; the report is [OCCT#1568](https://github.com/Open-Cascade-SAS/OCCT/issues/1568). Upstream's GTests are organised per toolkit and every PR is asked for
-one; the reproducer needs the 19-face model, and plain boxes with radii at their face widths (372
-cases) never reach the branch, so a small programmatic input is still to be found. OCCT#1568 carries
-our minimisation and a note that we would report the cause.
 
 ## 0055-GProp_SelGProps-GProp_VelGProps-cone-matrix-of-inertia-3010.patch
 
@@ -3412,20 +3225,6 @@ prism, faces 0 and 2) and the contract above stated in its description.
 
 **Retire** once the bundled OCCT includes this fix.
 
-## 0059-ChFi3d-Builder-fillets-that-meet-exactly-are-built-not-refused-3207.patch
-
-**Two fillets that meet exactly are built instead of refused** ([#3207](https://github.com/SecondMouseAU/OCCTSwift/issues/3207), upstream [OCCT#1177](https://github.com/Open-Cascade-SAS/OCCT/issues/1177) and `tests/bugs/modalg_7/bug25478_1`), `src/ModelingAlgorithms/TKFillet/ChFi3d/` in the pinned tree. **Candidate: no PR, nothing reported upstream.**
-
-On a 4 x 10 x 6 box, fillets on the two top edges along Y give `IsDone() == false` at r = 2 (half the 4 wide face) and valid solids up to 1.99999999. The refusal is the OCC119 guard against intersecting fillets, in two places that both throw `StdFail_NotDone("... fillets have too big radiuses")`: `PerformOneCorner` (the end caps on the end face touch at a point) and `ChFi3d_StripeEdgeInter` (the two contact curves on the top face coincide). With both lifted, r = 2 builds, but the top face between the stripes is left with no width and the result is BRepCheck-invalid (8 faces, one of area 0).
-
-The change lets exactly that through: `ChFi3d_IsEndContact` (the caps only touch end to end, and the first end is not past the second's), a `ChFi3d_StripeEdgeInter` that returns true when one segment spans both curves, then `ShapeFix_FixSmallFace::FixStripFace` on the result and a `BRepCheck_Analyzer` guard that turns a not-valid answer back into "not done". The two quarter cylinders end up sharing one edge: a semicircle.
-
-**What it does not do.** A radius above half the width is refused as before. The fillet surfaces cross, and the stripe builder only knows how to cut a face with a stripe, not how to trim two stripes at the curve where they cross: with the checks lifted for r = 2.2 the result is "done" with volume 330 for a 240 box. The right construction is the intersection of the single-edge fillets (`BRepAlgoAPI_Common`), which matches the analytic volume on 2.0 to 3.99999 in `Scripts/repro/fillet-exact-meeting-fix/`; it is a different algorithm and is not carried here.
-
-Known limits: `Modified()`/`Generated()` return the faces from before `FixStripFace`; a meeting exact only up to rounding noise (random rotations of the box) fails cleanly 18 times in 40; `BRepFilletAPI_MakeChamfer` at d = w/2 is still refused; `Generated` history for the removed top face reads as deleted.
-
-Measured against the `v4.0.0-kernel.5` asset with the three changed files override-linked (`Scripts/repro/fillet-exact-meeting-fix/README.md`): 715 box cases before and after, none regressed and none newly invalid; 16 `IsDone` false now valid with the analytic volume.
-
 ## 0064-TopOpeBRepBuild-CorrectUnclosedWire-collects-the-edges-before-removing-them-3335.patch
 
 **A fillet whose ends meet in the face merge no longer reads a freed list node** ([#3335](https://github.com/SecondMouseAU/OCCTSwift/issues/3335), upstream [OCCT#1619](https://github.com/Open-Cascade-SAS/OCCT/issues/1619), same site as OCCT#1430).
@@ -3532,6 +3331,8 @@ Measured on 1586 generated files (every prefix of the first 400 bytes plus a str
 
 ## 0070-BinObjMgt_Persistent-compares-a-size-from-the-file-without-overflow-3489.patch
 
+**Rebased onto `IR` (2026-10-25).** Context only.
+
 **A tag count read from a binary OCAF file no longer overflows the room check** ([#3489](https://github.com/SecondMouseAU/OCCTSwift/issues/3489), follow-up to [#3486](https://github.com/SecondMouseAU/OCCTSwift/issues/3486) and [#3477](https://github.com/SecondMouseAU/OCCTSwift/issues/3477)).
 
 `BinObjMgt_Persistent::GetLabel` reads a count of tags and asks `noMoreData(aLen * BP_INTSIZE)` whether that many ints are left. Both the product and `noMoreData`'s own `Position() + theSize > mySize` are `int` arithmetic on values from the file. A count of 2^29 makes the product `INT_MIN`, 2^30 makes it 0 and `INT_MAX` makes it -4, and each passes the test; the loop that follows then appends a tag list node per count and walks `myData` past its last piece. A `TDF_Reference` record whose payload is the single int 2^30 does not return in 60 s on the `v4.0.0-kernel.7` macOS slice (2^28, whose product fits, is refused at once). `GetIntArray`, `GetRealArray`, `GetShortRealArray` and `GetExtCharArray` form the same product, and `GetByteArray` and `GetCharArray` pass the length unscaled into the same `Position() + theSize`.
@@ -3582,6 +3383,8 @@ The binary documents this project saves do not contain a `SHAPE_SECTION_POS` ent
 **Retire** once the bundled OCCT includes this fix.
 
 ## 0073-Text-shape-readers-bound-a-token-and-stop-at-a-failed-stream-3490.patch
+
+**Rebased onto `IR` (2026-10-25).** Context only in `GeomTools_Curve2dSet.cxx`: `Geom2d_TrimmedCurve`'s constructor takes two more arguments there on `IR` (`true, false`).
 
 **The text BREP readers take no more than their buffer holds and stop at a stream that has failed** ([#3490](https://github.com/SecondMouseAU/OCCTSwift/issues/3490), follow-up to [#3487](https://github.com/SecondMouseAU/OCCTSwift/issues/3487) and [#3489](https://github.com/SecondMouseAU/OCCTSwift/issues/3489); upstream [OCCT#1560](https://github.com/Open-Cascade-SAS/OCCT/issues/1560) and [OCCT#1608](https://github.com/Open-Cascade-SAS/OCCT/issues/1608)).
 
@@ -3645,6 +3448,8 @@ What each part buys, removed from the whole in turn (the same 5,156 thinned case
 **Retire** once the bundled OCCT includes this fix.
 
 ## 0074-Shape-readers-refuse-a-count-the-stream-cannot-supply-3490.patch
+
+**Rebased onto `IR` (2026-10-25).** Context only (`BinTools_LocationSet.cxx` and its neighbours drifted).
 
 **The shape readers refuse a count the stream cannot supply, and a reference outside its table** ([#3490](https://github.com/SecondMouseAU/OCCTSwift/issues/3490), follow-up to [#3487](https://github.com/SecondMouseAU/OCCTSwift/issues/3487), [#3489](https://github.com/SecondMouseAU/OCCTSwift/issues/3489) and `0073`; not filed upstream).
 
@@ -3754,6 +3559,8 @@ Reached from the text and binary BREP readers (`GeomTools_{Curve,Curve2d,Surface
 **Retire** once the bundled OCCT includes this fix.
 
 ## 0076-BinTools_ShapeReader-refuses-a-position-reference-that-leaves-the-stream-3495.patch
+
+**Rebased onto `IR` (2026-10-25).** Context only.
 **`BinTools_ShapeReader` refuses a position reference that leaves the stream, loops, or names the wrong kind of record** ([#3495](https://github.com/SecondMouseAU/OCCTSwift/issues/3495), follow-up to [#3490](https://github.com/SecondMouseAU/OCCTSwift/issues/3490) and `0074`; not filed upstream).
 `BinTools_ShapeReader` (behind `Shape.fromBinaryData` and `Shape.loadBinary`) reads a shape, location, curve, surface, polygon or triangulation either inline or from a position earlier in the file (`BinTools_IStream::ReadReference`, then `GoTo`). `0074` left its position references open, with the measured symptom: 11 cases of `x_located` in the `bin` count matrix returned a shape whose `TopExp_Explorer` faulted, 10 faults and 1 spin. The issue proposed refusing a position at or beyond the end of the stream and a position already being read. Probing the cases first, they are **not** one defect but five, and only two of them are the proposed pair:
 1. **A delta past the start of the stream wraps.** `ReadReference` returns `position - delta - 1` in `uint64_t`. A reference always names a record *before* itself, so "at or beyond the end" cannot happen; what happens is a delta larger than the position, which wraps to a position near 2^64. `GoTo` fails the stream and the reader goes on over end-of-file bytes (type 255). Refused when the delta is zero or `>= position`.
@@ -3806,18 +3613,9 @@ The spins that remain are a tolerance or coordinate of the wrong size (a value, 
 | `anEdgeWithoutA3DCurveOnAPlanarFaceIsInvalidNotAFault` | SIGSEGV | pass |
 | `aFaceWithoutASurfaceIsInvalidNotAFault` | SIGSEGV | pass |
 **Upstream checked 2026-10-20:** the last commit on `master` to `BRepCheck_Edge.cxx` is `1db802567` (2026-04-29, clang-tidy fixes); the open PRs that match `BRepCheck` are fillet and offset work (#1462, #1592, #1600, #1624, #1642) and none touches `InContext`. **Not filed upstream.**
-# Retired patches
-
-The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so
-re-applying it would fail (the change is already in the source tree) and `build-occt.sh` would abort.
-The writeups are kept because for several of these they are the only record of the root cause at
-this depth; read them as history, not as a description of anything the build still does.
-
-Before each file was deleted its hunks were checked against the as-merged upstream form in the
-pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
-Each section opens with that verdict.
-
 ## 0078-BinLDrivers-ReadSubTree-refuses-a-label-nested-too-deeply-3489.patch
+
+**Rebased onto `IR` (2026-10-25).** Context only.
 
 **A binary OCAF file whose labels nest past 512 levels is refused, not read until the stack is gone** ([#3489](https://github.com/SecondMouseAU/OCCTSwift/issues/3489), follow-up to [#3486](https://github.com/SecondMouseAU/OCCTSwift/issues/3486)).
 
@@ -3830,6 +3628,378 @@ Measured after, same harness: 100 and 400 levels load with status ok; 600, 4000 
 **Upstream checked 2026-10-20:** `BinLDrivers_DocumentRetrievalDriver.cxx` on `IR` has no depth bound; its last change is the deep-XBF-references fix of 2026-09-04 (#1528). **Not yet filed upstream.**
 
 **Retire** once the bundled OCCT includes this fix.
+
+## 0079-ChFi3d_StartSol-drops-an-obstacle-with-no-edge-1623.patch
+
+**A fillet blend that reaches an obstacle with no edge to follow no longer evaluates an empty curve** ([#2881](https://github.com/SecondMouseAU/OCCTSwift/issues/2881), upstream [OCCT#1568](https://github.com/Open-Cascade-SAS/OCCT/issues/1568), fix [OCCT#1623](https://github.com/Open-Cascade-SAS/OCCT/pull/1623), fork branch `SecondMouseAU/OCCT` `fix/chfi3d-startsol-obstacle`). **Replaces `0054`**: the same three lines in `ChFi3d_Builder::StartSol` (`HC.Nullify(); c1obstacle = false;` in the branch that found no edge on the obstacle face, so the caller sees the "no obstacle" state it already handles instead of an empty non-null adaptor whose `Geom2dAdaptor_Curve::D1` dereferences a null curve), plus the GTest `BRepFilletAPI_MakeFilletTest.RimBlendEndingOnBottomRoundDoesNotCrash` (a pocketed plate built in code, its rim rounded over a bottom round). The root-cause writeup is in the retired `0054` entry below.
+
+**Verification.** The GTest passes on the full patched `IR` tree. Not independently re-broken here: the pull request's own fail-before is the evidence, and the fix is byte-identical to `0054`'s, which was measured on `V8_0_1`.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0080-BRepTools_WireExplorer-pcurve-too-short-to-step-1666.patch
+
+**`BRepTools_WireExplorer` ends the exploration on a pcurve too short to step along** (upstream [OCCT#1568](https://github.com/Open-Cascade-SAS/OCCT/issues/1568), fix [OCCT#1666](https://github.com/Open-Cascade-SAS/OCCT/pull/1666), fork branch `fix/wireexplorer-pcurve-step`).
+
+`GetNextParamOnPC` steps along a pcurve in thousandths of its range to find a point that differs from the reference. On a pcurve whose range is a few units of the last place wide (a face that its fillets consumed down to a point has four of them, at parameter 2.0) the step is below the spacing of the parameter, so `startPar` never changes and the loop never ends. `BRepCheck_Wire` reaches it through `Closed2d`, so `BRepCheck_Analyzer` never returned. The loop now stops when a step does not move the parameter, which gives the same answer as running out of range: the pcurve has no second point, the explorer reports the wire as not continuing, and the analyzer reports a defect. Found with four r = 2 fillets on a 4 x 4 face of a cube.
+
+This is the piece `0083` depends on: the validity check it adds must return on every result the builder can produce, and the four-fillet case is one it did not return on.
+
+**Verification.** `BRepTools_WireExplorerTest.OCCT1568_PCurvesShorterThanTheParameterSpacingTerminate` passes on the full patched `IR` tree (a wire of such pcurves, run under a deadline).
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0081-ChFi3d-fillets-whose-arcs-cross-are-not-a-touching-pair-1667.patch
+
+**Fillets whose end-cap arcs cross are no longer taken for a touching pair** (upstream [OCCT#1568](https://github.com/Open-Cascade-SAS/OCCT/issues/1568) and [#1177](https://github.com/Open-Cascade-SAS/OCCT/issues/1177), fix [OCCT#1667](https://github.com/Open-Cascade-SAS/OCCT/pull/1667), fork branch `fix/chfi3d-crossing-arcs`).
+
+Two fillets on the opposite edges of a face whose radii add up to more than its width (a 4 x 10 x 6 box, 3 and 3) were reported done with a solid that `BRepCheck` rejects and whose volume is above the box's (315 for 240). The `V8_0_1` builder refused them. Upstream's part 2 of the fillet handling ([#1449](https://github.com/Open-Cascade-SAS/OCCT/pull/1449)) accepts tangential contacts and rejects transversal ones, but a crossing of the end-cap arcs is reported by `Geom2dInt_GInter` as a segment about the tolerance long, with no point, and `ChFi3d_HasTransversalIntersection` looked at points only. A segment is now a crossing when the two curves are not tangent at it, unless it joins the ends of both curves, and the fillets are refused again, as on `V8_0_1`. Touching arcs (`0059`'s exact-meeting case) are tangent and join end to end, so they stay outside the crossing test.
+
+**Verification.** `OCCT1568_OppositeFilletsThatTouchAreValid` and `OCCT1568_OverlappingOppositeFilletsAreNotAnInvalidSolid` (in `BRepFilletAPI_MakeFillet_OppositeEdges_Test.cxx`) pass on the full patched `IR` tree. The DRAW case `blend complex H4` that the pull request changes is not part of the patch (the build has no Draw).
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0082-BRepFilletAPI_MakeFillet-builds-a-fillet-wider-than-its-face-1668.patch
+
+**`BRepFilletAPI_MakeFillet` builds a fillet wider than its face** (upstream [OCCT#1177](https://github.com/Open-Cascade-SAS/OCCT/issues/1177), related to [#1568](https://github.com/Open-Cascade-SAS/OCCT/issues/1568), fix [OCCT#1668](https://github.com/Open-Cascade-SAS/OCCT/pull/1668), fork branch `fix/fillet-wider-than-face`).
+
+A fillet whose radius is above the width of the face it sits on (r > 4 on a 4 mm face) has no start solution in the stripe builder: the contact line on the far face lies outside the face. When `Compute()` fails for a single straight edge between two planar rectangles at a right angle, `Build()` now cuts the shape by the prism of the region between the arc and the faces. The arc stays tangent to the face that lasts and passes through the far edge of the face that runs out (the pivot), or through both far edges when both run out. The cut must give one valid closed solid and remove exactly the section area times the edge length; otherwise the failure stands. `ChFi3d_Builder` gains the inline accessor `InitialShape()` (there is exactly one in this series, and `0084` uses it), and `TKFillet` links `TKPrim`.
+
+**Verification.** `OCCT1177_FilletWiderThanItsFaceEndsAtTheFarEdge`, `OCCT1177_FilletWiderThanBothFacesEndsAtBothFarEdges` and `OCCT1177_FilletNextToAFinishedFilletPivotsAtItsTangentEdge` pass on the full patched `IR` tree.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0083-BRepFilletAPI_MakeFillet-invalid-result-is-a-failure-1669.patch
+
+**A `BRepFilletAPI_MakeFillet` result that is not a valid solid is a failure** (upstream [OCCT#1568](https://github.com/Open-Cascade-SAS/OCCT/issues/1568) and [#1177](https://github.com/Open-Cascade-SAS/OCCT/issues/1177), fix [OCCT#1669](https://github.com/Open-Cascade-SAS/OCCT/pull/1669), fork branch `fix/fillet-invalid-result-is-failure`; its commits for `0080` and `0081` are those patches).
+
+Fillets that meet within the 2D tolerance (radii 2 + 1e-9 on a 4 wide face), fillets that meet a finished fillet exactly (r = 5 after r = 5 on a 10 wide face) and fillets at the width of a face on adjacent edges (r = 4 on a 4 wide face) were reported done with solids that `BRepCheck` rejects (volume 333 for a box of 240). `Build()` now checks the result with `BRepCheck_Analyzer` and reports the failure if it is not valid; a result that is invalid only until `SameParameter` is applied to it, as callers do next (DRAW test bug140), is accepted. The check is in the fillet API and not in `ChFi3d_Builder::Compute`, which the chamfer builder shares: chamfers keep their results.
+
+**How it stacks with `0082`, which also rewrites `Build()`.** The pull requests conflict in `BRepFilletAPI_MakeFillet.cxx` (the includes, the anonymous namespace and the head of `Build()`) and were resolved here as one condition: `Build()` falls through to the fallbacks of `0082` (and `0084`) when `Compute()` failed **or** its result is not a valid solid, and takes the builder's result otherwise. The fallbacks validate their own result, so a done-but-invalid builder result is replaced by a valid built one where `0082` or `0084` can make one, and stays a failure otherwise. The test of radii that meet within the tolerance, `OCCT1568_OppositeFilletsMeetingWithinToleranceAreNotInvalid`, accepts a refusal or a valid solid; with all of `0079` to `0084` the radii 2 + 1e-12 to 2 + 1e-4 on the 4 wide face are built valid (volumes 222.83185 and below) rather than refused.
+
+**Verification.** `OCCT1568_OppositeFilletsMeetingWithinToleranceAreNotInvalid`, `OCCT1177_SecondFilletThatMeetsTheFirstExactlyIsValid`, `OCCT1177_AdjacentFilletsAtTheFaceWidthAreNotAnInvalidSolid` and `OCCT1568_FourFilletsThatConsumeTheirFaceReturn` (the last under a 10 s deadline, which needs `0080`) pass on the full patched `IR` tree.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0084-BRepFilletAPI_MakeFillet-opposite-edges-whose-arcs-cross-1670.patch
+
+**`BRepFilletAPI_MakeFillet` builds fillets on opposite edges whose arcs cross** (upstream [OCCT#1177](https://github.com/Open-Cascade-SAS/OCCT/issues/1177), related to [#1568](https://github.com/Open-Cascade-SAS/OCCT/issues/1568), fix [OCCT#1670](https://github.com/Open-Cascade-SAS/OCCT/pull/1670), fork branch `fix/fillet-opposite-edges-wide-radii`; its commits for `0081` and `0082` are those patches).
+
+Two fillets on the opposite edges of a face with r1 + r2 > w (a 4 mm face, 3 and 3) are refused by the stripe builder, which has no section curve for stripes that cross. When `Compute()` fails for contours that share no vertex and are all of constant radius, `Build()` now returns the intersection (`BRepAlgoAPI_Common`) of the shape filleted on each contour alone: each arc stays tangent to the face it starts on and the arcs cross on the face between them. The result must be one valid closed solid that removes at least the largest and at most the sum of what each contour removes; otherwise the failure stands. At most eight contours are tried.
+
+**Stacking.** Depends on `0082` (the fallback structure and `InitialShape()`) and `0081`. Its `Build()` hunk is applied on top of `0083`'s condition, so the intersection fallback also replaces a done-but-invalid result. Its GTests share a file with `0081` and `0083`; the merge keeps every test of the three.
+
+**Verification.** `OCCT1568_OppositeFilletsWhoseArcsCrossAreTheIntersection` (r = 3: volume 240 - 10 x 3.749792368679, to 1e-6) and `OCCT1568_OppositeFilletsOfDifferentRadiiCross` (r1 = 1, r2 = 3.5) pass on the full patched `IR` tree, and the box battery of `Scripts/repro/fillet-exact-meeting-fix/` builds r = 3 on the 4 wide face to 202.502076313, the analytic value, where `V8_0_1` and `0059` refused it.
+
+**Retire** once the bundled OCCT includes this fix.
+
+# Retired patches
+
+The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so
+re-applying it would fail (the change is already in the source tree) and `build-occt.sh` would abort.
+The writeups are kept because for several of these they are the only record of the root cause at
+this depth; read them as history, not as a description of anything the build still does.
+
+Before each file was deleted its hunks were checked against the as-merged upstream form in the
+pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
+Each section opens with that verdict.
+
+## 0019-AdvApp2Var-jacobi-max-wrong-workspace-slot-522.patch
+
+**RETIRED 2026-10-25, at the rebase onto upstream `IR` (53706f78a8). The `.patch` file is deleted:
+upstream merged the fix.** `IR` carries
+[OCCT#1418](https://github.com/Open-Cascade-SAS/OCCT/pull/1418) as `07e6d8d40e` ("Fix AdvApp2Var
+Jacobi maxima written to the wrong workspace slot"), and `git apply --check --reverse` of this patch
+against a pristine `IR` checkout succeeds, so every line of it is already in the tree. Re-applying it
+fails, which is what `build-occt.sh` would abort on. The section below is the original writeup.
+
+**Fixes the upstream OCCT defect behind [#522](https://github.com/SecondMouseAU/OCCTSwift/issues/522)**, found while building [#491](https://github.com/SecondMouseAU/OCCTSwift/issues/491)'s surface-approximation parity tests: `GeomConvert_ApproxSurface` asked for `GeomAbs_C0` returned a surface nowhere near its input while reporting `IsDone()` and a `MaxError()` five orders of magnitude too small.
+
+`AdvApp2Var_ApproxF2var::mma2ce1_` requests one scratch allocation and partitions it into seven consecutive buffers, of which `ipt4` holds `XMAXJU` (the maxima of the U Jacobi polynomials) and `ipt5` holds `XMAXJV` (the V ones). Both `mma2jmx_` calls that fill them target `ipt5`:
+
+```c
+AdvApp2Var_ApproxF2var::mma2jmx_(ndjacu, iordru, &wrkar_off[ipt5]);   /* -> should be ipt4 */
+AdvApp2Var_ApproxF2var::mma2jmx_(ndjacv, iordrv, &wrkar_off[ipt5]);
+```
+
+So `XMAXJU` is never written. `mma2ce2_` still reads it at `ipt4`, where the allocation left whatever was there, in practice zeros, and passes it to `mma2er1_`/`mma2er2_`, whose entire error model is `|PATJAC(i,j)| * XMAXJU(i - 2*(IORDRU+1)) * XMAXJV(j - 2*(IORDRV+1))`. A zero `XMAXJU` zeroes every term, with two silent consequences: (1) the interior approximation error of a patch is reported as exactly 0 whatever the discarded coefficients are, so `mma2ce2_`'s tolerance test can never fire on it and `MaxError()` only ever reflects the boundary-iso errors `AdvApp2Var_Patch::AddErrors` adds afterwards; (2) `mma2er2_`, asked for the lowest degree whose truncation error still fits the tolerance, always answers `NDMINU`, the floor derived from the constraint order and the neighbouring isos, because every candidate scores 0.
+
+Where that floor is low the fit collapses onto it. C0 gives `IORDRU = 0`, and a full sphere's V-boundary isos degenerate to its two poles, one coefficient each, so `NDMINU` is 1: a radius-10 sphere at tolerance 1e-3 came back as a degree-1, 2-pole-in-U B-spline, a straight line across the full `2*pi` of longitude, deviating by the sphere's own diameter of 20, reporting `MaxError()` 1.07e-4. A bicubic Bezier at C0/C0 collapsed to a 2x2 bilinear patch reporting 4.08e-15, unchanged from tolerance 1e-1 down to 1e-7, because the requested tolerance was compared against a number that was always zero. C1 and C2 hid the collapse (their floor is already high) but not the misreported error.
+
+The write also overruns: `mma2jmx_` writes `ndjacu + 1 - 2*(IORDRU+1)` doubles and the `ipt5` slot is sized for the `ndjacv` equivalent, so a request with `MaxDegU` well above `MaxDegV` runs past `XMAXJV` into the `VECERR` slot behind it. Benign in practice, `VECERR` is re-zeroed on entry to `mma2ce2_` and the run stays inside the single allocation, but out of bounds for the buffer it was given.
+
+**Fix:** target `ipt4` from the U call. One character; the two lines then read symmetrically. `AdvApp2Var_Context`'s own two `mma2jmx_` calls (the only others in the tree) already write to separate per-direction arrays and were correct.
+
+**Validation** (fast path first, then the real binary, see the `#0001` entry above for the override-link technique, compiled with `-DNDEBUG -DNo_Exception` to match the production build): dumping `&wrkar_off[ipt4]` shows `xmaxju[8] = 0 0 0 0 0 0 0 0` on stock and `0.9682 0.986 1.078 1.173 1.265 1.352 1.434 1.513` after. Across a 98-case sweep (7 surface families x all 9 `(uCont, vCont)` combinations of C0/C1/C2, plus C0/C0 at five tolerances) the results whose real deviation exceeds the reported `MaxError` by more than 10x go from **12 to 0**, and those that exceed it at all from 17 to 1, the survivor being a Bezier reproduced exactly, reporting 9.95221e-15 against a measured 9.96978e-15. Reported errors rise slightly everywhere, which is the interior contribution being counted for the first time. Confirmed against the rebuilt xcframework with no override-linked TUs, matching the override-linked prediction line for line. Full `swift test` (4842 tests / 1346 suites) clean.
+
+`GeomConvert_ApproxSurface` is not a leaf. `GeomFill_Sweep`, `BRepOffset_Offset`, `GeomLib`, `ShapeCustom_BSplineRestriction`, `ShapeConstruct`, `ShapeUpgrade_UnifySameDomain` and `GeomConvert_1` (twice) all construct it, `ShapeCustom_ConvertToBSpline` reaches it through `ShapeConstruct`, and `GeomPlate_MakeApprox` drives `AdvApp2Var_ApproxAFunc2Var` directly. Most pass C1 or C2, where the collapse cannot happen, but the always-zero interior error affected all of them; and the healing paths reach C0 deliberately: `ShapeConstruct::ConvertSurfaceToBSpline` and `ShapeCustom_BSplineRestriction` both loop the requested continuity down to 0 on failure and then accept the result on `MaxError() <= tol`, and `ShapeCustom_ConvertToBSpline` *starts* at C0 for any offset surface (`ShapeCustom_ConvertToBSpline.cxx:148`) before handing off to the first of those. (`BRepFill_Sweep.cxx:1162` and `BRepFill_Filling.cxx:712` also name the class but are both inside comment blocks, so neither is a live caller; see #573.)
+
+See [`Scripts/repro/522-approx-c0-collapse/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/522-approx-c0-collapse) for the reproducers and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1418](https://github.com/Open-Cascade-SAS/OCCT/pull/1418), a fix PR with no companion repro issue, per upstream's own guidance on [OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409#issuecomment-5124395058). Based on `b8f597c6`; the touched file is byte-identical between upstream `master` and our `V8_0_0_p1` pin, so the patch is the same change on both. **Merged upstream 2026-08-10**, one file, 1 insertion and 1 deletion, and it is on `upstream/master` as `07e6d8d40`. It is not in any OCCT release yet, so this patch stays carried; retire it at the release that contains it, per the rule below.
+
+**Provenance (#756):** this is a regression, not an original defect. `3016a390713d2e893f4bfa797882b9f0266840e1` (2021, a UBSan coding-rules cleanup) renumbered every workspace offset in `mma2ce1_` down by one position and missed exactly one of the two `mma2jmx_` call sites; confirmed at the release-tag level, not just the commit diff, `V7_5_0` writes the U and V Jacobi maxima to two distinct slots and `V7_6_0` (the first release after the commit) already collapses them to one. Full mechanism is in [`Scripts/repro/522-approx-c0-collapse/README.md`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/522-approx-c0-collapse#upstream-provenance-756). The reply drafted to carry it upstream was never sent, and #1418 merged without it; that directory's `upstream/` files each say so at the top (#803).
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0028-GeomPlate_BuildPlateSurface-uninitialised-G0-G1-G2-errors-1018.patch
+
+**RETIRED 2026-10-25, at the rebase onto upstream `IR` (53706f78a8). The `.patch` file is deleted:
+upstream fixed the uninitialised read its own way and documents the opposite of the rest of this
+patch.** `IR` initialises `myG0Error`, `myG1Error` and `myG2Error` to `0.0` in the class (upstream
+#1620, the first of this patch's four parts), and its header now states that `G0Error()`,
+`G1Error()` and `G2Error()` return "the maximum distance for curve constraints, **excluding point
+constraints**" and zero "before computation or when there are no curve constraints". Its GTest
+`GeomPlate_BuildPlateSurface.PointOnlyCurveDiagnosticsAreZero` asserts exactly the value this
+patch's parts 3 and 4 replaced with a measurement. Parts 3 and 4 (the point-only branch keeps what
+`VerifPoints()` measured, and `VerifPoints()` accumulates a maximum) therefore contradict the
+documented contract and the upstream test, and the patch cannot be carried in any part: it does not
+apply to `IR` (`GeomPlate_BuildPlateSurface.cxx` and `.hxx` both reject) and a rebase would be a
+different patch. The consequence for this repo: a point-only plate now reports `0` from the three
+accessors, which upstream documents as "no curve constraints", where the patched `V8_0_1` kernel
+reported the point deviations. The bridge reaches the accessors only through
+`BRepFill_Filling::G0Error()` and friends, whose plate always has a curve constraint (see
+"Reachability here" below), so no bridge output changes. The section below is the original writeup.
+
+**Fixes the upstream OCCT uninitialised read behind
+[#1018](https://github.com/SecondMouseAU/OCCTSwift/issues/1018)**: `GeomPlate_BuildPlateSurface`'s
+`G0Error()`, `G1Error()` and `G2Error()` return uninitialised members after a `Perform()` whose
+constraints were all point constraints.
+
+`myG0Error` / `myG1Error` / `myG2Error` have no in-class initialiser and none of the three
+constructors assigns them. `VerifSurface()` is their only writer, and `Perform()` calls it only on
+the branch that has at least one curve constraint (`GeomPlate_BuildPlateSurface.cxx:684`). The
+point-only branch (`:700-727`) ends with `VerifPoints(di, an, cu)`, which computes the same three
+deviations into locals and discards them. So a point-only plate leaves all three members untouched
+and all three accessors read whatever was in that memory.
+
+**Measured**, not inferred, at the pinned kernel
+([`Scripts/repro/1018-geomplate-uninitialised-errors/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1018-geomplate-uninitialised-errors)):
+placement-new the class over a buffer filled with `0x5A` and the pattern (`1.78388675173e+127` read
+back as a double) survives the constructor **and** a point-only `Perform()` in all three members,
+which is only possible if nothing wrote them. On the stack instead, the same fixture gives three
+builds that agree with each other inside one process and disagree with the next process's three, and
+the numbers change again on every run, which is what distinguishes an uninitialised read from a
+wrong computation. `stock.txt` and `stock-second-run.txt` are one such pair; no specific value is
+quoted here, because re-running the script produces different ones. That matches the three consecutive `Surface.plateErrors` calls #1018 quotes from before
+its deletion (`1.9355577472e-313`, `-3.105038551588571e+231`, `-nan`).
+
+**Fix, four parts.**
+
+1. The three members get in-class initialisers, so the accessors are defined before the first
+   `Perform()` rather than reading the caller's memory.
+2. `Perform()` clears them alongside the `myGeomPlateSurface.Nullify()` it already does on entry, so
+   a build that returns early does not report the previous build's deviations. Two early returns
+   precede `VerifSurface()` even on the curve branch (`UserBreak()`, and a `Plate_Plate` solve that
+   did not converge), and `Plate_Plate::Init()` leaves `IsDone()` true, so `IsDone()` does not warn
+   a caller off that case. **The first draft of this patch left that gap and argued for it**, on the
+   grounds that closing it meant deciding what `IsDone()` should report after a cancel. The PR's own
+   pre-PR review pointed out that the reset needs no such decision, and it does not: it changes
+   nothing on either successful path, since `VerifSurface()` zeroes the three on the curve branch
+   before its own max loop and the point-only branch assigns them below.
+
+   **What the reset does report is `0`, and `0` is not a measurement**, which is the
+   `Scripts/census-unmeasured-values.py` shape this same patch's part 3 exists to avoid. It is
+   defensible here for a reason that was checked rather than assumed: on every path that leaves the
+   three at `0`, `Surface()` is null too. `Perform()` nullifies it on the same entry, the
+   zero-constraint and `UserBreak` returns all precede the `myGeomPlateSurface = new
+   GeomPlate_Surface(...)` assignment, and a `UserBreak` on a later loop iteration leaves the
+   previous iteration's `VerifSurface()` values rather than the reset's. So "no result" stays
+   observable through the accessor callers already have, and `0` is never the only thing a caller is
+   given. A sentinel would have been the alternative, and it would change the accessors' return
+   contract for every existing caller, which is not this patch's to do.
+3. The point-only branch assigns the deviations `VerifPoints()` just measured instead of discarding
+   them. They are the only deviations that build produces, so this reports the measurement rather
+   than substituting a zero, which is the `Scripts/census-unmeasured-values.py` failure class
+   (#726). Measured on a 25-point wavy grid the real answer is `1.74210553841e-12` rather than `0`,
+   and on nine order-1 constraints off a sphere `8.00593208497e-16` (G0) and `6.0044719032e-16`
+   (G1).
+4. `VerifPoints()` accumulates each deviation as a maximum over the point constraints instead of
+   overwriting it. Without this, part 3 would put "the last constraint's deviation" behind an
+   accessor documented as "the max distance / angle / difference of curvature between the result and
+   the constraints", so it is required for part 3 to be correct rather than extra scope. Both of its
+   call sites discarded the values before, so nothing observable changes for the curve branch. The
+   fixture separates the two: max `1.74210553841e-12` against last `1.57145571589e-12` at order 0,
+   and max `6.0044719032e-16` against last `3.05083725475e-16` for the order-1 angle.
+
+**The curve branch is deliberately left alone.** `VerifSurface()` keeps writing the three members
+from the curve constraints only, and the `VerifPoints()` call the curve branch makes when it also
+has point constraints stays discarded. This is not an oversight: `BRepFill_Filling::Build()`
+consumes `G0Error()` for `dmax` (applied as a vertex tolerance via `BB.UpdateVertex`) and for
+`seuil` (the `GeomPlate_PlateG0Criterion` threshold), so folding point deviations into a mixed build
+would move real geometry, which is a separate behavioural question from the uninitialised read.
+The reproducer's section D is the control for that: a curve-only plate reports
+`2.08788369733e-05` and a curve-plus-points plate `0.00104645741524`, identical before and after.
+
+**Reachability here.** `BRepFill_Filling::G0Error()`/`G1Error()`/`G2Error()` forward straight to
+this class (`BRepFill_Filling.cxx:814-837`) and `OCCTFillingG0Error`/`G1Error`/`G2Error` read them
+for `FillingSurface.g0Error`/`g1Error`/`g2Error`. That path is safe today by a chain of three
+independent facts rather than by design: `Build()` returns early with `myIsDone = false` on an empty
+boundary, so its plate always has a curve constraint; `myIsDone` follows `myPlate.IsDone()`, so a
+failed solve also reports not done; and the three bridge functions check `IsDone()` before reading.
+None of the six bridge sites that construct a `GeomPlate_BuildPlateSurface` directly calls the
+accessors, and `OCCTGeomPlateErrors`, which did, was deleted by #999 (PR #1015). So this patch fixes nothing
+observable in OCCTSwift today; it is carried because the defect is live upstream and because that
+chain is the kind of accidental protection this project keeps finding on the wrong side of.
+
+**Validation.** Override-linked the patched translation unit ahead of the pinned archive (see
+`run.sh`): every value in the reproducer moves exactly as described above, and section D's curve
+branch is byte-identical. Four new GTests in the class's existing
+`GeomPlate_BuildPlateSurface_Test.cxx` (`PointOnlyConstraintsReportMeasuredErrors`,
+`PointOnlyErrorsAreMaximaNotTheLastConstraint`, `ErrorsAreZeroBeforePerform`,
+`CancelledRebuildDoesNotReportThePreviousErrors`), each recomputing the expected value from the
+built surface rather than hard-coding it, so none pins a platform-specific number. `run-gtest.sh`
+runs them both ways, unfiltered, so the file's six pre-existing cases are exercised on both sides
+too: **6 passed / 4 failed** against the unpatched sources and **10 passed** against the patched
+ones (`gtest.txt`). Both runs compile the class out of `Libraries/occt-src`, applying this patch to
+a scratch copy for the second, so neither depends on which branch the upstream checkout is sitting
+on; the GTest source is the only thing taken from that checkout, and the script checks it by name
+for all four cases before running. `ErrorsAreZeroBeforePerform` uses the `0x5A` placement-new buffer
+deliberately: an uninitialised member can read `0` by luck (it did, for `G2Error()`, in the
+unpatched GTest run), so a plain construction would be a test that passes for the wrong reason.
+Part 2 was isolated separately rather than trusted to the all-or-nothing run: with the patch applied
+and **only** the `Perform()`-entry reset removed, exactly one case fails, and it fails reporting
+`1.7421055384149805e-12`, the first build's own deviation, which is the stale-value mechanism itself
+rather than a coincidence.
+`clang-format --dry-run --Werror` against OCCT's own `.clang-format` reports zero violations on all
+three changed files. `GeomPlate_BuildPlateSurface.cxx` and `.hxx` are byte-identical between the
+pinned `V8_0_1` tree and current upstream `master` (`7d2efad9c`), checked rather than assumed.
+
+**Not in the pinned asset.** `Package.swift` pins the v3.0.0 release asset, which carries
+`0010`-`0012` and `0014`-`0027`, so `ci.yml`'s `build-and-test` never sees this patch. That is
+#585's shape and is stated here rather than left to be discovered. One narrowing, measured rather
+than assumed: `kernel-integration.yml` triggers on `Scripts/patches/**`, so the PR carrying this
+patch does get `V8_0_1` plus all nineteen built from source and the full suite run against that
+binary. It proves the patch applies, compiles and regresses nothing; it cannot prove the fix works,
+because the defect has no Swift-reachable path left after #999 (PR #1015) deleted
+`OCCTGeomPlateErrors`, and it does not run on any later PR that leaves `Scripts/patches/` alone. A
+rebuilt asset would buy no Swift-side coverage either, for the same reason: the upstream GTests are
+this patch's only coverage anywhere.
+
+Filed upstream as [OCCT#1481](https://github.com/Open-Cascade-SAS/OCCT/pull/1481).
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0054-ChFi3d_Builder-StartSol-drops-an-obstacle-with-no-edge-2881.patch
+
+**RETIRED 2026-10-25, at the rebase onto upstream `IR` (53706f78a8). The `.patch` file is deleted:
+it is replaced by [`0079`](#0079-chfi3d_startsol-drops-an-obstacle-with-no-edge-1623patch), which
+carries the same three lines as the pull request upstream.** [OCCT#1623](https://github.com/Open-Cascade-SAS/OCCT/pull/1623)
+(`SecondMouseAU/OCCT` branch `fix/chfi3d-startsol-obstacle`) is the same change to
+`ChFi3d_Builder_2.cxx` with a new in-code GTest, `RimBlendEndingOnBottomRoundDoesNotCrash`, which
+this patch lacked; `0054` applied to `IR` unchanged and nothing else about it was wrong, so the
+swap is for the test and for the numbering that follows the upstream pull request. The section
+below is the original writeup.
+
+**A fillet blend that reaches an obstacle with no edge to follow evaluates an empty curve**
+([#2881](https://github.com/SecondMouseAU/OCCTSwift/issues/2881), upstream
+[OCCT#1568](https://github.com/Open-Cascade-SAS/OCCT/issues/1568)),
+`src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_2.cxx:1530-1562` in the pinned tree.
+`ChFi3d_Builder::StartSol`, on reaching an obstacle face, sets `c1obstacle`, replaces `HC` with a
+fresh `BRepAdaptor_Curve2d`, and looks for the arc edge among the obstacle face's edges:
+
+```cpp
+HC = new BRepAdaptor_Curve2d();
+... find newedge among Fv's edges by IsSame(anArcEdge) ...
+if (!newedge.IsNull()) { HC->Initialize(newedge, Fv); ... return true; }
+else                   { prepareDefaultReturn(); return false; }   // HC is still the empty adaptor
+```
+
+When no edge matches, the `else` returns `false` and leaves `HC` as the default-constructed adaptor,
+which holds no curve, with `c1obstacle` still `true`. `PerformSetOfSurfOnElSpine` tests
+`!Ok && HC.IsNull()` for the end of the chain, an empty non-null `HC` passes that test, and
+`obstacleon1`/`obstacleon2` then select the obstacle path, which hands `HC` to
+`ChFi3d_FilBuilder::PerformSurf`. The `SurfRst` walk evaluates it through
+`Adaptor3d_CurveOnSurface::EvalD1` and `Geom2dAdaptor_Curve::D1` falls to its `default:` arm and
+dereferences a null curve. That is a SIGSEGV inside `Build()`, which `OCC_CATCH_SIGNALS` being inert
+in this build means no bridge `catch (...)` can reach, and `BRepFilletAPI_MakeFillet` is named in 96
+bridge sites.
+
+The fix is three lines in that `else`: `HC.Nullify(); c1obstacle = false;` before the existing
+return, which gives the caller the state it already handles for "no obstacle". The sibling failure
+in the same block, returning `false` when `HSref` or `HCref` is null, leaves `HC` null, which the
+caller does handle; it is left alone because no input reaches it.
+
+### How the cause was found, and what was ruled out
+
+`Scripts/repro/occt1568-fillet-opposite-edge/`, against the pinned macOS slice with override-linked
+copies of three kernel files (the unmodified file recompiled with the kernel's flags is the
+control, and each copy differs by a few logging lines):
+
+- **The first hypothesis was wrong.** #2881 guessed an edge with no pcurve on its reference face,
+  which would make `BRepAdaptor_Curve2d::Initialize` leave the adaptor empty. Logging every
+  `Initialize` call (494 calls at radius 1.49, 326 up to the fault at 1.5) shows it never sees a null
+  pcurve on this model.
+- **The faulting adaptor was identified by address.** `Adaptor3d_CurveOnSurface::EvalD1` is called
+  once before the fault, on a `BRepAdaptor_Curve2d` that appears in the log as a default
+  construction and never as an `Initialize`.
+- **The branch fires exactly where the crash is.** Logging it gives two hits at radius 1.5 and none
+  at 1.49 or 1.5000001. What it sees: the blend's face is a plane, the neighbour face found at the
+  vertex is a four-edged B-spline surface, and the arc edge is in the blend's face but in none of the
+  neighbour's edges under any orientation.
+
+### Measured, macOS arm64, before and after
+
+`BRepFilletAPI_MakeFillet` on the model attached to OCCT#1568 (19 faces, 42 edges), one edge at a
+time, `ChFi3d_Rational` with `BRepTest_FilletCommands`' parameters, the patched file override-linked.
+
+| radius | unpatched | patched |
+|---|---|---|
+| 0.3 and 1.0 | 20 done, 22 raise "no suitable edges" | identical |
+| 1.5 | 12 done, **8 SIGSEGV**, 22 raise | 12 done, 8 not done (`NbFaultyContours = 1`), 22 raise |
+
+Across 42 edges and nine radii (0.3, 0.8, 1.0, 1.2, 1.4999999, 1.5, 1.5000001, 1.8, 2.5), 378 cases,
+exactly eight outcomes change, edges 12 to 19 at 1.5, each from SIGSEGV to a normal completion with
+`IsDone() == false`. The other 370 are identical, 170 completed and 200 raising the same exception.
+The eight now behave as radius 1.4999999 already did.
+
+**Filed upstream as [OCCT#1591](https://github.com/Open-Cascade-SAS/OCCT/pull/1591) against `master`**; the report is [OCCT#1568](https://github.com/Open-Cascade-SAS/OCCT/issues/1568). Upstream's GTests are organised per toolkit and every PR is asked for
+one; the reproducer needs the 19-face model, and plain boxes with radii at their face widths (372
+cases) never reach the branch, so a small programmatic input is still to be found. OCCT#1568 carries
+our minimisation and a note that we would report the cause.
+
+## 0059-ChFi3d-Builder-fillets-that-meet-exactly-are-built-not-refused-3207.patch
+
+**RETIRED 2026-10-25, at the rebase onto upstream `IR` (53706f78a8). The `.patch` file is deleted:
+`IR` with the pieces `0079` to `0084` builds every case it built.** `git apply` refuses it against `IR` (`ChFi3d_Builder_0.cxx` and
+`ChFi3d_Builder_0.hxx` reject, and `patch -F3` rejects four hunks across `ChFi3d_Builder_0.cxx` and
+`ChFi3d_Builder_C1.cxx`), because `IR` rewrote the code they sit in: upstream's part 2
+of the fillet handling ([OCCT#1449](https://github.com/Open-Cascade-SAS/OCCT/pull/1449)) accepts
+tangential contacts and rejects transversal ones (`ChFi3d_HasTransversalIntersection` and a
+neighbour for curve ends), which is what `ChFi3d_IsEndContact` and `spansCurve` here added by hand.
+The question for a written reason was whether the retirement loses a case. It does not, measured on
+the tree `0079` to `0084` build on `IR` (the 61 carried patches, built with `cmake`, Release,
+`-DNo_Exception`), with the repro of this patch, `fillet-exact-meeting-fix/`, as the arbiter:
+
+- **The 16 cases this patch turned from `IsDone() == false` to valid are valid, with the same face
+  count and the same volume** (`C1` r = 2 and 2 - 1 ulp: 7 faces, 222.831853072 against the analytic
+  222.831853072; `C2`, `C3`, `C9` likewise, `add` and `add2` modes).
+- **Of the 715 box cases of `battery.py`, none that were valid are less than valid.** The tally
+  against the 0059-patched `V8_0_1` column of `results/battery-before-after.tsv`:
+  296 valid and valid, 16 refused-now-built and built, 82 refused and now built (the crossing-arcs
+  and wider-than-face cases that `0081` to `0084` build, e.g. `C1` r = 3: valid, 202.502076313,
+  the analytic value), 279 refused and still refused, 42 invalid and now refused (`0083`).
+  Two sequential adjacent-edge cases at r = 4 - 1e-8 are valid in both and differ by 2.4e-5 and
+  6.6e-6 in volume.
+- The upstream GTest `OCCT1177_SecondFilletThatMeetsTheFirstExactlyIsValid` passes. It accepts a
+  refusal as well as a valid solid, so it is the weaker arbiter; the battery is the stronger.
+
+The other half of this patch's behaviour, refusing a radius above half the width, is superseded:
+`0081` refuses crossing arcs again, `0083` reports any result that is not a valid solid as a failure,
+and `0084` builds opposite fillets whose arcs cross as the intersection of the two single-fillet
+shapes, which is what the section below said needed "a different algorithm". Known limits of this
+patch that the pieces do not have: none measured. Known limits the pieces have that this patch did
+not: see `0082` to `0084`. The section below is the original writeup.
+
+**Two fillets that meet exactly are built instead of refused** ([#3207](https://github.com/SecondMouseAU/OCCTSwift/issues/3207), upstream [OCCT#1177](https://github.com/Open-Cascade-SAS/OCCT/issues/1177) and `tests/bugs/modalg_7/bug25478_1`), `src/ModelingAlgorithms/TKFillet/ChFi3d/` in the pinned tree. **Candidate: no PR, nothing reported upstream.**
+
+On a 4 x 10 x 6 box, fillets on the two top edges along Y give `IsDone() == false` at r = 2 (half the 4 wide face) and valid solids up to 1.99999999. The refusal is the OCC119 guard against intersecting fillets, in two places that both throw `StdFail_NotDone("... fillets have too big radiuses")`: `PerformOneCorner` (the end caps on the end face touch at a point) and `ChFi3d_StripeEdgeInter` (the two contact curves on the top face coincide). With both lifted, r = 2 builds, but the top face between the stripes is left with no width and the result is BRepCheck-invalid (8 faces, one of area 0).
+
+The change lets exactly that through: `ChFi3d_IsEndContact` (the caps only touch end to end, and the first end is not past the second's), a `ChFi3d_StripeEdgeInter` that returns true when one segment spans both curves, then `ShapeFix_FixSmallFace::FixStripFace` on the result and a `BRepCheck_Analyzer` guard that turns a not-valid answer back into "not done". The two quarter cylinders end up sharing one edge: a semicircle.
+
+**What it does not do.** A radius above half the width is refused as before. The fillet surfaces cross, and the stripe builder only knows how to cut a face with a stripe, not how to trim two stripes at the curve where they cross: with the checks lifted for r = 2.2 the result is "done" with volume 330 for a 240 box. The right construction is the intersection of the single-edge fillets (`BRepAlgoAPI_Common`), which matches the analytic volume on 2.0 to 3.99999 in `Scripts/repro/fillet-exact-meeting-fix/`; it is a different algorithm and is not carried here.
+
+Known limits: `Modified()`/`Generated()` return the faces from before `FixStripFace`; a meeting exact only up to rounding noise (random rotations of the box) fails cleanly 18 times in 40; `BRepFilletAPI_MakeChamfer` at d = w/2 is still refused; `Generated` history for the removed top face reads as deleted.
+
+Measured against the `v4.0.0-kernel.5` asset with the three changed files override-linked (`Scripts/repro/fillet-exact-meeting-fix/README.md`): 715 box cases before and after, none regressed and none newly invalid; 16 `IsDone` false now valid with the analytic volume.
 
 ## 0031-bspline-adaptor-cache-thread-safety-1153.patch
 
@@ -4047,6 +4217,8 @@ or none of it.
 arrives on its own. Tracked as [#2056](https://github.com/SecondMouseAU/OCCTSwift/issues/2056).
 
 ## 0036-IFSelect_WorkSession-per-instance-error-guard-1403.patch
+
+**Rebased onto `IR` (2026-10-25).** `IR` ([#1406](https://github.com/Open-Cascade-SAS/OCCT/pull/1406), stream based I/O) added `IFSelect_WorkSession::SendAll(Standard_OStream&, ...)`, a tenth function that guards on the file-scope `errhand`; the patch removed that name, so the tree did not compile. The new overload now uses the per-instance `myInErrorHandler` the same way as its nine siblings. Found by the full compile of the patched `IR` tree.
 
 **`errhand` is a recursion sentinel, and sharing it loses a thread's exception handling.** Every one
 of the nine guarded blocks in `IFSelect_WorkSession` has this shape:

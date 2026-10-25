@@ -46,7 +46,11 @@ OCCT_WASM_ASSET_BYTES=40256920
 # The carried patches are Scripts/patches/NNNN-*.patch. FIRST and LAST are the numbers, not an
 # assertion that every number between them exists: the gate reads the actual file list.
 OCCT_VERSION=V8_0_1
-OCCT_WASM_PATCH_COUNT=50
+# 46, not 50: the asset holds fifty, and four of them (0019, 0028, 0054, 0059) were retired from
+# Scripts/patches/ at the rebase onto upstream IR (kernel rebase, phase 1). The gate compares this
+# against Package.swift's enumeration, which counts the asset's patches that are still on disk, so
+# both sides moved together. The asset itself is unchanged until the phase 2 rebuild.
+OCCT_WASM_PATCH_COUNT=46
 OCCT_WASM_PATCH_FIRST=0010
 OCCT_WASM_PATCH_LAST=0069
 # The WASI-only source changes, Scripts/patches-wasi/*.patch, which only build-occt-wasm.sh applies.
