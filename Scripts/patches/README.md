@@ -21,7 +21,7 @@ retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), a
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry), and
 `0031` retired 2026-10-10 at the `v4.0.0-kernel.6` repin (#3065: the supported pattern is one
 adaptor per worker, so the lock it added is not needed).
-The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0066, 0068–0074, 0076–0077.
+The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0066, 0068–0074, 0076–0078.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -3816,6 +3816,20 @@ this depth; read them as history, not as a description of anything the build sti
 Before each file was deleted its hunks were checked against the as-merged upstream form in the
 pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
 Each section opens with that verdict.
+
+## 0078-BinLDrivers-ReadSubTree-refuses-a-label-nested-too-deeply-3489.patch
+
+**A binary OCAF file whose labels nest past 512 levels is refused, not read until the stack is gone** ([#3489](https://github.com/SecondMouseAU/OCCTSwift/issues/3489), follow-up to [#3486](https://github.com/SecondMouseAU/OCCTSwift/issues/3486)).
+
+`BinLDrivers_DocumentRetrievalDriver::ReadSubTree` reads a label and then calls itself once for each child label, so a file chooses how deep the call stack goes. Measured on the macOS arm64 slice of `v4.0.0-kernel.7` with `0070` to `0074` applied, through `TDocStd_Application::Open` (`Scripts/repro/3486/probe.mm`): 1000, 3000, 9000 and 12000 levels load, 16000 and 20000 levels (a 320 KB file) overflow the 8 MB stack of the thread that opened the file and the process dies with SIGSEGV. Roughly 600 bytes of stack are used per level (8 MB over the 12000 to 16000 levels where it gives out), so a thread with a smaller stack overflows sooner: nothing a caller can do about the depth short of reading the file first. The bridge cannot bound it: `occtOcafDeclaredSizesFit` walks the storage sections, and the nesting is in the document data after them, which only the per-attribute and per-label layout of `BinLDrivers` describes.
+
+The reader now counts the levels it is nested in on the calling thread (a function-local `thread_local` in `BinLDrivers_DocumentRetrievalDriver.cxx`, so no header and no class layout changes, and a subclass that overrides `ReadSubTree` and calls this one is counted too) and, at the 513th, sends "labels nested too deeply" as a `Message_Fail`, sets `PCDM_RS_UnrecognizedFileFormat` and returns -1, which both call sites in `Read` and the recursion already treat as a failed read. An explicit stack was weighed and not taken: the read keeps a progress scope, a filter position and a skip flag per level, and `ReadSubTree` is `virtual` so a subclass cannot follow a rewrite. The bound had to come from the smallest stack a caller is likely to read on, not the main thread's. Measured with `ulimit -s 512` (the size of a dispatch or Swift concurrency worker's stack): 700 levels load, 1000 overflow. A first version bounded at 4096 passed on the 8 MB stack and still killed the Swift test process, which runs on such a worker. 512 levels take about 300 KB, which that worker holds, and a document is nested far less deeply than that. It remains a constant: it bounds the file and not the thread, and a thread with a stack under about 400 KB can still overflow below it.
+
+Measured after, same harness: 100 and 400 levels load with status ok; 600, 4000 and 20000 are refused at once with status `PCDM_RS_UnrecognizedFileFormat` (12). `XmlMDF::ReadSubTree`, the XML counterpart, also recurses per label; it is not touched and its depth limit was not measured.
+
+**Upstream checked 2026-10-20:** `BinLDrivers_DocumentRetrievalDriver.cxx` on `IR` has no depth bound; its last change is the deep-XBF-references fix of 2026-09-04 (#1528). **Not yet filed upstream.**
+
+**Retire** once the bundled OCCT includes this fix.
 
 ## 0031-bspline-adaptor-cache-thread-safety-1153.patch
 
