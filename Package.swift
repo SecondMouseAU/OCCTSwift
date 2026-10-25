@@ -95,10 +95,10 @@ let occtTarget: Target =
         // holds the forty-six patches of that asset that are still in Scripts/patches/; the asset holds
         // fifty, and the four the list no longer names were retired at the rebase and are in the asset:
         // 0019 (OCCT#1418 merged), 0028 (upstream fixed it its own way), 0054 (replaced by 0079, the
-        // form submitted as OCCT#1623) and 0059 (IR plus 0079 to 0084 builds its cases). Ten of the
+        // form submitted as OCCT#1623) and 0059 (IR plus 0079 to 0084 builds its cases). Seven of the
         // forty-six were rebased and so differ in content from the asset's V8_0_1 form while keeping
-        // their name: 0010, 0014, 0015, 0036, 0043, 0048, 0053, 0070, 0073, 0074 and the two later ones
-        // 0076 and 0078 (the last four are in the unpinned set below). Nothing about the asset
+        // their name: 0010, 0014, 0015, 0036, 0043, 0048 and 0053 (0070, 0073, 0074, 0076 and 0078 were
+        // rebased too, and are in the unpinned set below). Nothing about the asset
         // changes until the next repin, which is phase 2 and is not done here.
         //
         // Scripts/build-occt.sh built V8_0_1 until the rebase, which absorbed ten of the previously carried patches (0001-0009 and 0013; their files are deleted,

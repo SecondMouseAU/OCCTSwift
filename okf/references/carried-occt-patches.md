@@ -140,7 +140,7 @@ are the counts `CLAUDE.md` used to restate and no longer does** (#2954); both ar
 `Scripts/patches/` and `Package.swift` by `check-inventory-prose.py`, which fails the PR that lets
 this page and the tree disagree. The v4.0.0-kernel.7 asset `Package.swift` pins lacks fifteen of them, `0070` to `0078` and `0079` to `0084`, so **there are fifteen native
 divergences**, written up below, per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md). It was
-built from a `V8_0_1` tree whose only modifications are the fifty patches it holds (forty-six of them still in `Scripts/patches/`, ten of those rebased since and so different in content from the asset's form) (the
+built from a `V8_0_1` tree whose only modifications are the fifty patches it holds (forty-six of them still in `Scripts/patches/`, seven of those rebased since and so different in content from the asset's form) (the
 modified-file set was computed against the patches' own file lists, see `Package.swift`), so none of
 a retired patch's edits is in it.
 `0031` left at v4.0.0-kernel.6 and is not in either asset.
@@ -161,9 +161,9 @@ same change, and no bridge test gates the others yet (phase 2).
 `v4.0.0-kernel.7` asset is the `V8_0_1` kernel. `Scripts/patches/` is now authored against upstream
 `IR` (53706f78a8, `V8_0_1-76-g53706f78a8`) and `Scripts/build-occt.sh` builds that commit. Relative
 to the asset: `0019`, `0028`, `0054` and `0059` were retired at the rebase (they are in the asset and
-not on disk, so the counts above name forty-six of its fifty); ten patches were rebased and keep their
-names with different content (`0010`, `0014`, `0015`, `0036`, `0043`, `0048`, `0053`, `0070`, `0073`,
-`0074`, and `0076` and `0078` in the unpinned set); six are new. The asset does not change until the
+not on disk, so the counts above name forty-six of its fifty); twelve patches were rebased and keep their
+names with different content (`0010`, `0014`, `0015`, `0036`, `0043`, `0048`, `0053`, and `0070`, `0073`,
+`0074`, `0076`, `0078` in the unpinned set); six are new. The asset does not change until the
 phase 2 rebuild, so every sentence below about what the shipped kernel does is about `V8_0_1`.
 
 | Unpinned | What it leaves exposed |
