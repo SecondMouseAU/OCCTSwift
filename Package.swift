@@ -617,6 +617,15 @@ let occtTarget: Target =
         //         v4.0.0-kernel.7; BREPKernelRecordCountTests is gated on OCCTSWIFT_LOCAL=1 until
         //         the next repin (#3490).
         //
+        //   0075  A trimmed curve or surface took its parameters on trust: a nan or an infinity
+        //         failed every comparison against the range, or looped ElCLib::AdjustPeriodic on
+        //         a periodic basis, and Geom_TrimmedCurve, Geom2d_TrimmedCurve and
+        //         Geom_RectangularTrimmedSurface never returned, recursed to the end of the stack,
+        //         or built an object with nan bounds. SetTrim refuses a parameter that is not
+        //         finite with Standard_ConstructionError, which the BREP readers turn into a
+        //         refused record. NOT in v4.0.0-kernel.7; BREPKernelTrimParameterTests is gated
+        //         on OCCTSWIFT_LOCAL=1 until the next repin (#3496).
+        //
         //   0076  BinTools_ShapeReader trusted the position a reference names and the byte
         //         after it: a delta past the start of the stream wrapped to a position near 2^64,
         //         a reference to a shape or location still being read recursed until the stack
@@ -624,14 +633,12 @@ let occtTarget: Target =
         //         of the wrong kind in a slot was read as an empty one. NOT in v4.0.0-kernel.7;
         //         BinToolsPositionReferenceTests is gated on OCCTSWIFT_LOCAL=1 until the next
         //         repin (#3495).
-        //
         //   0077  BRepCheck_Edge::InContext used the surface of a face that had none, and
         //         projected "the 3D curve" of an edge that had only a curve on a surface onto a
         //         planar face, through a null handle. Both fault BRepCheck_Analyzer; both now
         //         report NoCurveOnSurface. NOT in v4.0.0-kernel.7;
         //         BREPKernelInconsistentShapeTests is gated on OCCTSWIFT_LOCAL=1 until the next
         //         repin (#3490).
-        //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
         // 2026-09-29 unbuilt, because OCCT 8.0.2 was days out and there is a standing hold on repinning

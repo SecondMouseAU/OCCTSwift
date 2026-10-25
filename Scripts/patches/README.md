@@ -3734,33 +3734,42 @@ The classes of `Scripts/repro/3487` that `0073` was measured on, unthinned on `0
 
 **Retire** once the bundled OCCT includes this fix.
 
+## 0075-Trimmed-curve-and-surface-refuse-a-parameter-that-is-not-a-number-3496.patch
+
+**A trimmed curve or surface refuses a parameter that is not a finite number** ([#3496](https://github.com/SecondMouseAU/OCCTSwift/issues/3496), follow-up to [#3490](https://github.com/SecondMouseAU/OCCTSwift/issues/3490) and `0074`; not filed upstream).
+
+`Geom_TrimmedCurve::SetTrim`, `Geom2d_TrimmedCurve::SetTrim` and the eight argument `Geom_RectangularTrimmedSurface::SetTrim` take their parameters on trust. Their range checks (`U1 == U2`, parameters out of range) compare them, and a `nan` fails every comparison; an infinity is refused only by a basis whose own bound is finite. The consequences, by basis:
+
+1. **Periodic.** `Geom_RectangularTrimmedSurface::SetTrim` always hands the parameters to `ElCLib::AdjustPeriodic`, and the curves do when `theAdjustPeriodic` is set; a `nan` or an infinity is never in range. The surface recurses through `UReverse` and `VReverse` (each calls `SetTrim` again) to the end of the stack: `10 nan nan 0 4` in the `Surfaces` table of a complete BREP faults `BRepTools::Read`. Without the adjustment the curves are built with the parameter as it is.
+2. **Not periodic.** Neither the order of the two parameters nor the range check fires for a `nan`, so an object with `nan` bounds is built and faults or never returns on use (`10 inf 5 0 4` returns a shape that faults on use).
+
+Reached from the text and binary BREP readers (`GeomTools_{Curve,Curve2d,Surface}Set`, `BinTools_{Curve,Curve2d,Surface}Set`: 34 of 185,040 cases of the `BinTools::Read` count matrix of `Scripts/repro/3494/counts.py` and 60 of 156,474 of `BinTools_ShapeReader` were the four bytes of a trim parameter) and from any caller of the constructors.
+
+**The rule**, one for every site: a parameter that is not finite (`std::isfinite`) is refused with `Standard_ConstructionError` before anything is compared or adjusted. It is a `throw` statement, which the build's `No_Exception` does not remove ([`okf/policies/occt-validation-is-compiled-out.md`](../../okf/policies/occt-validation-is-compiled-out.md)), and the neighbouring checks throw the same. The readers already turn it into a null record, so the file is refused. `Precision::Infinite()` (2e100), which unbounded curves and surfaces report for their bounds, is finite and is accepted as before. The surface checks a direction only when that direction is trimmed.
+
+**Measured** on the `v4.0.0-kernel.7` slice with the three translation units recompiled with its flags (`-O2 -DNDEBUG -DNo_Exception`) from the unpatched and from the patched source and swapped into a copy with `ar r`; `BREPKernelTrimParameterTests` (a box plus one trimmed record in a table nothing refers to). Without the patch: the control (finite parameters) passes, the periodic test ends the test process (exit -4) and the non-periodic test does not return within 90 s. With the patch: all three pass, the damaged record is dropped (the reader catches `Standard_ConstructionError` and the record is null) and the box reads as before.
+
+**Upstream checked 2026-10-20:** `Geom_TrimmedCurve.cxx`, `Geom2d_TrimmedCurve.cxx` and `Geom_RectangularTrimmedSurface.cxx` carry no finiteness check on `upstream/IR`. **Not yet filed upstream.**
+
+**Retire** once the bundled OCCT includes this fix.
+
 ## 0076-BinTools_ShapeReader-refuses-a-position-reference-that-leaves-the-stream-3495.patch
-
 **`BinTools_ShapeReader` refuses a position reference that leaves the stream, loops, or names the wrong kind of record** ([#3495](https://github.com/SecondMouseAU/OCCTSwift/issues/3495), follow-up to [#3490](https://github.com/SecondMouseAU/OCCTSwift/issues/3490) and `0074`; not filed upstream).
-
 `BinTools_ShapeReader` (behind `Shape.fromBinaryData` and `Shape.loadBinary`) reads a shape, location, curve, surface, polygon or triangulation either inline or from a position earlier in the file (`BinTools_IStream::ReadReference`, then `GoTo`). `0074` left its position references open, with the measured symptom: 11 cases of `x_located` in the `bin` count matrix returned a shape whose `TopExp_Explorer` faulted, 10 faults and 1 spin. The issue proposed refusing a position at or beyond the end of the stream and a position already being read. Probing the cases first, they are **not** one defect but five, and only two of them are the proposed pair:
-
 1. **A delta past the start of the stream wraps.** `ReadReference` returns `position - delta - 1` in `uint64_t`. A reference always names a record *before* itself, so "at or beyond the end" cannot happen; what happens is a delta larger than the position, which wraps to a position near 2^64. `GoTo` fails the stream and the reader goes on over end-of-file bytes (type 255). Refused when the delta is zero or `>= position`.
 2. **A reference to a record that is being read recurses without end.** The position table is written when a record *ends*, so a reference to a shape or location that has begun and not ended is not found and the record is read again from inside itself. The `3679 = 100000000` case of `x_located` is a compound whose sub-shape list ran on to a reference to the compound that holds it: the same shape is read 1,630 times, each from inside the last, then the stack ends (a hand-written two-record stream does the same, below). `BinTools_ShapeReader` now keeps the positions it is reading (`myActivePos`, a member of the class, cleared by `Clear`) and refuses a reference to one of them. Not a depth bound: a written file nests as deep as its shape does.
 3. **A chain of references to references recurses once per link**, and the writer never writes one (a reference names the start of the record it wrote). Refused when the target is itself a reference, which also makes curves, surfaces, polygons and triangulations (which have no nesting of their own) constant depth.
 4. **The byte after a shape reference is an orientation and was cast unchecked.** `TopAbs_Orientation(theStream.ReadByte())`: 9 of the 10 faults are a byte of 4 or more (`x_located@3660=-1`, `@3680=-1`, `@3701=-1` and the other values at the same three offsets), which reach `TopAbs::Compose` in `TopoDS_Iterator::updateCurrentShape` (`ori=-1660838384` in the shape the explorer faulted on). The continuity byte of an edge (`GeomAbs_Shape`) is cast the same way. Both are checked against their enumerations.
 5. **A record of the wrong kind in a slot was read as an empty one.** `ReadLocation` took any type byte that was not a reference, `EmptyLocation`, `LocationEnd`, `SimpleLocation` or `Location` as the identity, consuming nothing; the curve, curve 2d, surface, polygon, polygon on triangulation and triangulation readers returned a null for any type that was not theirs. A damaged byte therefore kept the rest of the file in step with a structure the writer never wrote, which is the `x_located` cases that returned a shape and then faulted in `BRepCheck_Analyzer` (`@2699`, `@3135`, `@3571`, `@3613`, each two values), and 34 more in `box`, `compound`, `cylinder` and `x_meshes`. A slot now accepts its own type, the type for a null of its kind and a reference, and nothing else. A reference to a null shape (`EmptyShape`, `EndShape`) is refused too: the caller took the null for the end of its list.
-
 **The rule**, one for every site: a reference names the start of a record before itself, in the stream, that is not a reference and is not being read; a type or enumeration byte is one its slot can hold. A file `BinTools_ShapeWriter` wrote is read as before: it never references a reference, a record it is inside or a position that holds no record, and it writes only valid bytes. Failure is `Standard_Failure`, as the reader reports a damaged record already, and the bridge catches it.
-
 **Why a member and not a depth bound or a static.** The check has to know which records are open, which no function of the stream position alone says. A member keeps the reader reentrant (two readers in two threads share nothing), and `BinMNaming_NamedShapeDriver` and `BinMXCAFDoc_LocationDriver`, which hold a `BinTools_ShapeReader` for a whole document, recompile with the new header like every unit that includes it. The OCAF drivers read through `ReadLocation` across many attributes, so the set is empty between calls (an RAII guard removes a position on return and on throw).
-
 **Measured**, `Scripts/repro/3494` (`counts.py`, mode `bin`, 156,474 cases of 15 files), macOS arm64, the baseline being `v4.0.0-kernel.7` with the changed units of `0070` to `0074` compiled from the patched tree and swapped in with `ar r` (not a `build-occt.sh` run; `kernel-integration.yml` is the full build):
-
 | build | reader faulted | reader spun | returned, then faulted | returned, then spun |
 |---|---|---|---|---|
 | `0074` | 29 (27 SIGSEGV, 2 SIGBUS) | 41 | 44 | 796 |
 | `0076` | 20 | 40 | 0 | 708 |
-
 `x_located` has nothing left (9 faults, 1 spin and 10 returned-then-faulted before; `#3495` counted 11 of the first two, and a stack overflow is classed SIGSEGV or SIGBUS from one run to the next), all 44 returned-then-faulted cases are gone, and 88 returned-then-spun cases with them (`compound`, `x_tiny_mesh`: a structure the analyzer then walked for ever). What is left is **not** a position: the 20 faults and 40 spins are a trim parameter that is not a number in `x_surfaces` (#3496), and the 708 spins are a tolerance or coordinate of the wrong size in `BRepCheck_Analyzer` (`USE-HANG`, 584 in `compound`, 124 in `x_tiny_mesh`). Fifteen undamaged binary files (the 3487 corpus and the 3494 fixtures) read identically on both builds (faces, validity); `OCCTXCAFTests` (520 tests, binary OCAF documents read through `BinMNaming_NamedShapeDriver`) and `OCCTIOTests` (256) pass.
-
 **Verification.** `BinToolsPositionReferenceTests` (9 tests, `OCCTIOTests`, gated on `OCCTSWIFT_LOCAL=1` until the pinned asset carries this), each test its own process. Streams are written by hand from the format, a compound being `C8 07 00 ...  C7` and a reference `01 <delta> 07 <orientation>`. "Unpatched" is the `0074` baseline above:
-
 | test | unpatched | patched |
 |---|---|---|
 | `aShapeThatTheWriterWroteReadsBack` (control: box, a located copy and a shared one) | pass | pass |
@@ -3772,28 +3781,16 @@ The classes of `Scripts/repro/3487` that `0073` was measured on, unthinned on `0
 | `aReferenceToTheEndOfAListIsRefused` | fails (read) | pass |
 | `aLocationSlotHoldingAnotherKindOfRecordIsRefused` | fails (read as the identity) | pass |
 | `aReferenceBeforeTheStartOfTheStreamIsRefused` | **pass** | pass |
-
 The last test passes on the baseline too: a wrapped position fails the stream, and the next read throws on the type 255. It is kept as the boundary of the new delta check (a delta of 4 or more at position 4, and zero), not as a proof of failure. A sweep that replaced four bytes at every offset of a located compound with -1, `Int32.min`, `Int32.max` and 10^8 was tried as a further test and **also passed on the baseline** (22 s, no fault on that shape: the faults of `x_located` need its particular layout), so it was dropped rather than kept as a test that cannot fail.
-
 **Upstream checked 2026-10-20:** the last commit on `master` to `BinTools_ShapeReader.cxx` and `BinTools_IStream.cxx` is `1db802567` (2026-04-29, clang-tidy fixes), and no open PR matches `BinTools`. **Not filed upstream.**
-
-**Retire** once the bundled OCCT includes this fix.
-
 ## 0077-BRepCheck_Edge-InContext-copes-with-a-face-without-a-surface-and-an-edge-without-a-3D-curve-3490.patch
-
 **`BRepCheck_Edge::InContext` copes with a face that has no surface and with an edge that has no 3D curve** ([#3490](https://github.com/SecondMouseAU/OCCTSwift/issues/3490) item 3, the root cause of [#2746](https://github.com/SecondMouseAU/OCCTSwift/issues/2746)/[#2750](https://github.com/SecondMouseAU/OCCTSwift/issues/2750) and [#2789](https://github.com/SecondMouseAU/OCCTSwift/issues/2789); not filed upstream).
-
 `0074` closed with one class open: "a structurally inconsistent shape the reader returns and `BRepCheck` then faults on", 2,209 cases of the text count class and 92 of the struct class. Grouping the faults by site (`Scripts/repro/3487/sites.py`, 150 of 359 sampled cases of the thinned set, then the rest by the same frame) gives **one site for all of them**, `BRepCheck_Edge::InContext(face)`, and two preconditions, both already known to this repository from files that did not need a reader:
-
 1. **The face has no surface** (#2789, `Su->DynamicType()` in the `!pcurvefound` branch). A face index outside the `Surfaces` table builds a face without a surface (the readers skip a reference outside its table, `0074`). `pcurvefound` is set only by a representation whose surface is handle-equal to `Su`, and a null `Su` equals none, so such a face always takes the `!pcurvefound` branch and dies on `Su->DynamicType()`; `Su->Transformed(...)` in the geometric control is the same dereference.
 2. **The edge has no 3D curve and its reference is a curve on a surface** (#2746). `Minimum()` then makes that curve on a surface `myCref` and sets `myHCurve` to an `Adaptor3d_CurveOnSurface`, which is not a `GeomAdaptor_Curve`. The loop over the edge's representations skips `myCref` itself, so a planar face finds no other curve on its surface and projects "the 3D curve" onto the plane through `occ::down_cast<GeomAdaptor_Curve>(myHCurve)->Curve()`, a null handle. A curve index outside the `Curves` table is how a file loses the 3D curve; `BRep_Builder::UpdateEdge(E, Handle(Geom_Curve)(), tol)` on a box face does it with no file at all (`Scripts/repro/3495`).
-
 Both are one line each: a face without a surface reports `BRepCheck_NoCurveOnSurface` for its edge and stops, and a planar face whose reference is a curve on a surface reports the same, which is what the edge already reported on a face that is not a plane. Both shapes are invalid, as they were whenever they did not fault.
-
 **The bridge guards stay.** `occtShapeHasPCurveOnlyEdge` and `occtShapeHasSurfacelessFace` (#2750, #2789) refuse the same two shapes in front of `BRepCheck_Analyzer` at 20 bridge sites, and their tests cannot tell that the kernel no longer needs them. They are retired, with a regression that fails if they come back, at the repin that pins this patch, not before: the pinned asset does not carry it.
-
 **Measured**, `Scripts/repro/3494` `counts.py` mode `str` (`BRepTools::Read` on a stream), 99,620 cases of 31 files, and `Scripts/repro/3487` `matrix.py` mode `str`, on the `0074` baseline and with `0076` and `0077`:
-
 | class | `0074` | `0076` + `0077` |
 |---|---|---|
 | count, returned then faulted | 2,208 | 0 |
@@ -3801,21 +3798,14 @@ Both are one line each: a face without a surface reports `BRepCheck_NoCurveOnSur
 | struct (`ref`), returned then faulted | 92 | 0 |
 | byte, returned then faulted | 407 | 0 |
 | byte, returned then spun | 12 | 12 |
-
 The spins that remain are a tolerance or coordinate of the wrong size (a value, not a structure). The binary matrix (`bin`, 156,474 cases) is the table of `0076`.
-
 **Verification.** `BREPKernelInconsistentShapeTests` (3 tests, `OCCTIOTests`, gated on `OCCTSWIFT_LOCAL=1` until the pinned asset carries this), each test its own process, a box whose first edge's 3D curve index or first face's surface index is 999. `Shape.isValid` is guarded by the bridge (above), so the tests reach the analyzer through `Shape.connectedEdges`, which runs `BRepCheck_Analyzer` on its input unguarded:
-
 | test | unpatched | patched |
 |---|---|---|
 | `theUndamagedBoxIsValid` (control) | pass | pass |
 | `anEdgeWithoutA3DCurveOnAPlanarFaceIsInvalidNotAFault` | SIGSEGV | pass |
 | `aFaceWithoutASurfaceIsInvalidNotAFault` | SIGSEGV | pass |
-
 **Upstream checked 2026-10-20:** the last commit on `master` to `BRepCheck_Edge.cxx` is `1db802567` (2026-04-29, clang-tidy fixes); the open PRs that match `BRepCheck` are fillet and offset work (#1462, #1592, #1600, #1624, #1642) and none touches `InContext`. **Not filed upstream.**
-
-**Retire** once the bundled OCCT includes this fix.
-
 # Retired patches
 
 The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so
