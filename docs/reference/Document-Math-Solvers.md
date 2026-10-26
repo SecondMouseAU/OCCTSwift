@@ -262,7 +262,7 @@ public static func size(path: String = "/") -> Int64
 - **Returns:** Total disk capacity in KB.
 - **OCCT:** `OSD_Disk::DiskSize` via `OCCTDiskSize`.
 - **Example:**
-  ```swift
+  ```swift no-typecheck: DiskInfo is unavailable against the upstream IR kernel (OSD_Disk deleted in OCCT 8.1)
   let totalKB = DiskInfo.size()
   ```
 
@@ -279,7 +279,7 @@ public static func freeSpace(path: String = "/") -> Int64
 - **Returns:** Available free space in KB.
 - **OCCT:** `OSD_Disk::DiskFree` via `OCCTDiskFree`.
 - **Example:**
-  ```swift
+  ```swift no-typecheck: DiskInfo is unavailable against the upstream IR kernel (OSD_Disk deleted in OCCT 8.1)
   let freeKB = DiskInfo.freeSpace(path: "/tmp")
   ```
 
@@ -313,7 +313,7 @@ public static func name(path: String = "/") -> String?
 - **Returns:** Volume label string, or `nil` if unavailable.
 - **OCCT:** `OSD_Disk` name query via `OCCTDiskName`.
 - **Example:**
-  ```swift
+  ```swift no-typecheck: DiskInfo is unavailable against the upstream IR kernel (OSD_Disk deleted in OCCT 8.1)
   if let vol = DiskInfo.name() { print(vol) }
   ```
 

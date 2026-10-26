@@ -939,97 +939,109 @@ struct MeshCacheWriteTests {
         #expect(Triangulation.create(nodes: nodes, triangles: [0, 1]) == nil)
     }
 
-    @Test("Create triangulation rep and bind it to a face")
-    func createAndBindTriangulationRep() throws {
-        let nodes: [SIMD3<Double>] = [
-            SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(1, 1, 0),
-        ]
-        let triangles = [0, 1, 2, 1, 3, 2]
-        let tri = try #require(Triangulation.create(nodes: nodes, triangles: triangles))
-        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
-        let graph = try #require(BRepGraph(shape: box))
-        // Unmeshed: face 0 has no triangulation until one is bound.
-        #expect(graph.meshFaceActiveTriangulationRepId(0) == nil)
-        let repId = try #require(graph.createTriangulationRep(tri))
-        #expect(repId == 0)
-        graph.appendCachedTriangulation(faceIndex: 0, triRepId: repId)
-        graph.setCachedActiveIndex(faceIndex: 0, activeIndex: 0)
-        // After append, MeshView should report the rep as the active triangulation for face 0.
-        #expect(graph.meshFaceActiveTriangulationRepId(0) != nil)
-    }
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("Create triangulation rep and bind it to a face")
+        func createAndBindTriangulationRep() throws {
+            let nodes: [SIMD3<Double>] = [
+                SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(1, 1, 0),
+            ]
+            let triangles = [0, 1, 2, 1, 3, 2]
+            let tri = try #require(Triangulation.create(nodes: nodes, triangles: triangles))
+            let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+            let graph = try #require(BRepGraph(shape: box))
+            // Unmeshed: face 0 has no triangulation until one is bound.
+            #expect(graph.meshFaceActiveTriangulationRepId(0) == nil)
+            let repId = try #require(graph.createTriangulationRep(tri))
+            #expect(repId == 0)
+            graph.appendCachedTriangulation(faceIndex: 0, triRepId: repId)
+            graph.setCachedActiveIndex(faceIndex: 0, activeIndex: 0)
+            // After append, MeshView should report the rep as the active triangulation for face 0.
+            #expect(graph.meshFaceActiveTriangulationRepId(0) != nil)
+        }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
-    @Test("Create polygon3D rep and bind it to an edge")
-    func createAndBindPolygon3DRep() throws {
-        let pts: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(2, 0, 0)]
-        let poly = try #require(Polygon3D.create(points: pts))
-        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
-        let graph = try #require(BRepGraph(shape: box))
-        #expect(graph.meshEdgePolygon3DRepId(0) == nil)
-        let repId = try #require(graph.createPolygon3DRep(poly))
-        #expect(repId == 0)
-        graph.setCachedPolygon3D(edgeIndex: 0, polyRepId: repId)
-        #expect(graph.meshEdgePolygon3DRepId(0) != nil)
-    }
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("Create polygon3D rep and bind it to an edge")
+        func createAndBindPolygon3DRep() throws {
+            let pts: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(2, 0, 0)]
+            let poly = try #require(Polygon3D.create(points: pts))
+            let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+            let graph = try #require(BRepGraph(shape: box))
+            #expect(graph.meshEdgePolygon3DRepId(0) == nil)
+            let repId = try #require(graph.createPolygon3DRep(poly))
+            #expect(repId == 0)
+            graph.setCachedPolygon3D(edgeIndex: 0, polyRepId: repId)
+            #expect(graph.meshEdgePolygon3DRepId(0) != nil)
+        }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 }
 
 @Suite("v0.158 MeshView two-tier mesh storage")
 struct MeshViewCountsTests {
     // Every count here was checked `>= 0`, which a count cannot fail. An unmeshed box's graph holds
     // no mesh at all, so each is exactly 0.
-    @Test("Mesh count properties are non-negative on a fresh graph")
-    func meshCountsZeroOnFreshGraph() throws {
-        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
-        let graph = try #require(BRepGraph(shape: box))
-        #expect(graph.triangulationCount == 0)
-        #expect(graph.polygon3DCount == 0)
-        #expect(graph.polygon2DCount == 0)
-        #expect(graph.polygonOnTriCount == 0)
-        #expect(graph.activeTriangulationCount == 0)
-        #expect(graph.activePolygon3DCount == 0)
-        #expect(graph.activePolygon2DCount == 0)
-        #expect(graph.activePolygonOnTriCount == 0)
-    }
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("Mesh count properties are non-negative on a fresh graph")
+        func meshCountsZeroOnFreshGraph() throws {
+            let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+            let graph = try #require(BRepGraph(shape: box))
+            #expect(graph.triangulationCount == 0)
+            #expect(graph.polygon3DCount == 0)
+            #expect(graph.polygon2DCount == 0)
+            #expect(graph.polygonOnTriCount == 0)
+            #expect(graph.activeTriangulationCount == 0)
+            #expect(graph.activePolygon3DCount == 0)
+            #expect(graph.activePolygon2DCount == 0)
+            #expect(graph.activePolygonOnTriCount == 0)
+        }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
-    @Test("Mesh rep id queries return nil when no mesh is present")
-    func meshRepIdsAbsentBeforeMeshing() throws {
-        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
-        let graph = try #require(BRepGraph(shape: box))
-        // No incremental mesh has run; cache and persistent tiers are empty.
-        #expect(graph.meshFaceActiveTriangulationRepId(0) == nil)
-        #expect(graph.meshEdgePolygon3DRepId(0) == nil)
-        #expect(graph.meshCoEdgeHasMesh(0) == false)
-    }
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("Mesh rep id queries return nil when no mesh is present")
+        func meshRepIdsAbsentBeforeMeshing() throws {
+            let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+            let graph = try #require(BRepGraph(shape: box))
+            // No incremental mesh has run; cache and persistent tiers are empty.
+            #expect(graph.meshFaceActiveTriangulationRepId(0) == nil)
+            #expect(graph.meshEdgePolygon3DRepId(0) == nil)
+            #expect(graph.meshCoEdgeHasMesh(0) == false)
+        }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
-    @Test("Mesh counts after incremental meshing")
-    func meshCountsAfterIncrementalMesh() throws {
-        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
-        // Generate triangulation via incremental mesher BEFORE building the graph: construction
-        // ingests the existing triangulation into the persistent tier, not the runtime cache.
-        _ = box.mesh(linearDeflection: 0.5, angularDeflection: 0.5)
-        let graph = try #require(BRepGraph(shape: box))
-        // One triangulation per face, and one polygon-on-triangulation per coedge (4 per face).
-        // The sum `triangulationCount + polygon3DCount >= 0` this replaced could not fail.
-        #expect(graph.triangulationCount == 6)
-        #expect(graph.polygonOnTriCount == 24)
-        // #1547: meshFaceActiveTriangulationRepId must resolve mesh data that lives only in
-        // the persistent tier, matching faceHasTriangulation (which already does).
-        #expect(graph.faceHasTriangulation(0) == true)
-        #expect(graph.meshFaceActiveTriangulationRepId(0) != nil)
-    }
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("Mesh counts after incremental meshing")
+        func meshCountsAfterIncrementalMesh() throws {
+            let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+            // Generate triangulation via incremental mesher BEFORE building the graph: construction
+            // ingests the existing triangulation into the persistent tier, not the runtime cache.
+            _ = box.mesh(linearDeflection: 0.5, angularDeflection: 0.5)
+            let graph = try #require(BRepGraph(shape: box))
+            // One triangulation per face, and one polygon-on-triangulation per coedge (4 per face).
+            // The sum `triangulationCount + polygon3DCount >= 0` this replaced could not fail.
+            #expect(graph.triangulationCount == 6)
+            #expect(graph.polygonOnTriCount == 24)
+            // #1547: meshFaceActiveTriangulationRepId must resolve mesh data that lives only in
+            // the persistent tier, matching faceHasTriangulation (which already does).
+            #expect(graph.faceHasTriangulation(0) == true)
+            #expect(graph.meshFaceActiveTriangulationRepId(0) != nil)
+        }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
-    @Test("Mesh edge polygon3D rep id resolves the persistent tier (#1547)")
-    func meshEdgePolygon3DRepIdResolvesPersistentTier() throws {
-        let pts: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(2, 0, 0)]
-        let poly = try #require(Polygon3D.create(points: pts))
-        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
-        let graph = try #require(BRepGraph(shape: box))
-        let repId = try #require(graph.createPolygon3DRep(poly))
-        // Write directly into the persistent-tier slot (EdgeDef.Polygon3DRepId) rather than
-        // the runtime cache (contrast createAndBindPolygon3DRep's setCachedPolygon3D above).
-        graph.setEdgePolygon3DRepId(0, polygon3DRepId: repId)
-        #expect(graph.edgeHasPolygon3D(0) == true)
-        #expect(graph.meshEdgePolygon3DRepId(0) != nil)
-    }
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("Mesh edge polygon3D rep id resolves the persistent tier (#1547)")
+        func meshEdgePolygon3DRepIdResolvesPersistentTier() throws {
+            let pts: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(2, 0, 0)]
+            let poly = try #require(Polygon3D.create(points: pts))
+            let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+            let graph = try #require(BRepGraph(shape: box))
+            let repId = try #require(graph.createPolygon3DRep(poly))
+            // Write directly into the persistent-tier slot (EdgeDef.Polygon3DRepId) rather than
+            // the runtime cache (contrast createAndBindPolygon3DRep's setCachedPolygon3D above).
+            graph.setEdgePolygon3DRepId(0, polygon3DRepId: repId)
+            #expect(graph.edgeHasPolygon3D(0) == true)
+            #expect(graph.meshEdgePolygon3DRepId(0) != nil)
+        }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 }
 
 // MARK: - Poly copy / mutators. OCCT 8.0.0p1

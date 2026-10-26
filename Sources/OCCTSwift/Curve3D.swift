@@ -1440,13 +1440,16 @@ extension Curve3D {
 
     /// Convert a closed BSpline curve to periodic form.
     ///
-    /// The curve must be closed (first point == last point). The result is a periodic
-    /// BSpline curve that seamlessly wraps around.
+    /// Unavailable in this build: ShapeCustom_Curve was deleted in OCCT 8.1 and the upstream IR kernel has no replacement; Surface.convertToPeriodic (ShapeCustom_Surface) is unaffected.
     ///
     /// - Returns: Periodic curve, or nil if conversion is not possible
+    @available(
+        *, unavailable,
+        message:
+            "ShapeCustom_Curve was deleted in OCCT 8.1 and the upstream IR kernel has no replacement; Surface.convertToPeriodic (ShapeCustom_Surface) is unaffected."
+    )
     public func convertToPeriodic() -> Curve3D? {
-        guard let ref = OCCTCurve3DConvertToPeriodic(handle) else { return nil }
-        return Curve3D(handle: ref)
+        fatalError("unavailable")
     }
 
     /// Split result containing the two curve segments.
@@ -1791,17 +1794,18 @@ extension Curve3D {
     }
 
     /// Project this curve onto a surface, returning BSpline approximation.
+    ///
+    /// Unavailable in this build: ProjLib_ProjectOnSurface was deleted in OCCT 8.1; use Surface.projectCurve3D(_:) (GeomProjLib::Project) or Surface.projectCurve(_:tolerance:) for the UV curve.
+    @available(
+        *, unavailable,
+        message:
+            "ProjLib_ProjectOnSurface was deleted in OCCT 8.1; use Surface.projectCurve3D(_:) (GeomProjLib::Project) or Surface.projectCurve(_:tolerance:) for the UV curve."
+    )
     public func projectOnSurface(
         _ surface: Surface, range: ClosedRange<Double>? = nil,
         tolerance: Double = 1e-3
     ) -> Curve3D? {
-        let d = range ?? domain
-        guard
-            let h = OCCTProjLibProjectOnSurface(
-                handle, d.lowerBound, d.upperBound,
-                surface.handle, tolerance)
-        else { return nil }
-        return Curve3D(handle: h)
+        fatalError("unavailable")
     }
 
     /// Create a circle through 3 points (gce_MakeCirc).

@@ -93,48 +93,50 @@ struct PerfMeterTests {
     }
 }
 
-@Suite("OSD_Disk")
-struct OSDDiskTests {
-    // #1987: `size >= 0` and `free >= 0` passed a bridge returning 0. OSD_Disk::DiskSize() is
-    // f_blocks * (f_frsize / 512) 512-byte blocks, which the bridge halves to KB; total size does
-    // not move between two reads, so it is compared exactly. DiskUnicodeOSDUtilitiesTests
-    // holds the finer regression coverage for #1442.
-    @Test func diskSize() {
-        var vfs = statvfs()
-        #expect(statvfs("/", &vfs) == 0)
-        let blocks = UInt64(vfs.f_blocks) * (UInt64(vfs.f_frsize) / 512)
-        #expect(DiskInfo.size() == Int64(blocks / 2))
-    }
+#if OCCTSWIFT_OCCT_80_CLASSES
+    @Suite("OSD_Disk")
+    struct OSDDiskTests {
+        // #1987: `size >= 0` and `free >= 0` passed a bridge returning 0. OSD_Disk::DiskSize() is
+        // f_blocks * (f_frsize / 512) 512-byte blocks, which the bridge halves to KB; total size does
+        // not move between two reads, so it is compared exactly. DiskUnicodeOSDUtilitiesTests
+        // holds the finer regression coverage for #1442.
+        @Test func diskSize() {
+            var vfs = statvfs()
+            #expect(statvfs("/", &vfs) == 0)
+            let blocks = UInt64(vfs.f_blocks) * (UInt64(vfs.f_frsize) / 512)
+            #expect(DiskInfo.size() == Int64(blocks / 2))
+        }
 
-    @Test func diskFreeSpace() {
-        let free = DiskInfo.freeSpace()
-        #expect(free > 0)
-        #expect(free <= DiskInfo.size())
-    }
+        @Test func diskFreeSpace() {
+            let free = DiskInfo.freeSpace()
+            #expect(free > 0)
+            #expect(free <= DiskInfo.size())
+        }
 
-    @Test func diskIsValid() {
-        let valid = DiskInfo.isValid(path: "/")
-        #expect(valid)
-        // The host agrees that the same path is a mount, and the temporary directory is on a
-        // disk too, so the answer is the path's and not a constant.
-        var vfs = statvfs()
-        #expect(statvfs("/", &vfs) == 0)
-        #expect(DiskInfo.isValid(path: NSTemporaryDirectory()))
+        @Test func diskIsValid() {
+            let valid = DiskInfo.isValid(path: "/")
+            #expect(valid)
+            // The host agrees that the same path is a mount, and the temporary directory is on a
+            // disk too, so the answer is the path's and not a constant.
+            var vfs = statvfs()
+            #expect(statvfs("/", &vfs) == 0)
+            #expect(DiskInfo.isValid(path: NSTemporaryDirectory()))
 
-        // A path that is not on any disk is refused, by the host's own account as well.
-        let missing = "/nonexistent-3332-\(UUID().uuidString)/x"
-        var absent = statvfs()
-        #expect(statvfs(missing, &absent) != 0)
-        #expect(!DiskInfo.isValid(path: missing), "\(missing) is not a disk path")
-    }
+            // A path that is not on any disk is refused, by the host's own account as well.
+            let missing = "/nonexistent-3332-\(UUID().uuidString)/x"
+            var absent = statvfs()
+            #expect(statvfs(missing, &absent) != 0)
+            #expect(!DiskInfo.isValid(path: missing), "\(missing) is not a disk path")
+        }
 
-    // #1987: `name != nil` passed any string. OSD_Disk built from an OSD_Path, as the bridge
-    // does, has an empty name on macOS because OSD_Path never fills its disk component (#1442);
-    // pinned to what the kernel returns.
-    @Test func diskName() {
-        #expect(DiskInfo.name() == "")
+        // #1987: `name != nil` passed any string. OSD_Disk built from an OSD_Path, as the bridge
+        // does, has an empty name on macOS because OSD_Path never fills its disk component (#1442);
+        // pinned to what the kernel returns.
+        @Test func diskName() {
+            #expect(DiskInfo.name() == "")
+        }
     }
-}
+#endif  // OCCTSWIFT_OCCT_80_CLASSES
 
 @Suite("OSD Chronometer Tests")
 struct OSDChronometerTests {
@@ -222,53 +224,55 @@ struct OSDHostTests {
     }
 }
 
-// The two #1442 tests whose oracle is `statvfs`, which wasi-libc does not have, lifted out of
-// `DiskUnicodeOSDUtilitiesTests.swift` by #2928. The suite name is new because they were
-// two of six tests in one suite there, and the other four, the two UTF-8 encoding ones and the two
-// `DiskInfo.isValid` ones, need no host oracle and run for wasm.
-@Suite("Disk size and free space are KB, against statvfs")
-struct DiskKBAgainstStatvfsTests {
+#if OCCTSWIFT_OCCT_80_CLASSES
+    // The two #1442 tests whose oracle is `statvfs`, which wasi-libc does not have, lifted out of
+    // `DiskUnicodeOSDUtilitiesTests.swift` by #2928. The suite name is new because they were
+    // two of six tests in one suite there, and the other four, the two UTF-8 encoding ones and the two
+    // `DiskInfo.isValid` ones, need no host oracle and run for wasm.
+    @Suite("Disk size and free space are KB, against statvfs")
+    struct DiskKBAgainstStatvfsTests {
 
-    @Test("Disk total size is reported in KB, matching a direct statvfs computation")
-    func diskSizeMatchesStatvfsInKB() throws {
-        var vfs = statvfs()
-        let rc = statvfs("/", &vfs)
-        #expect(rc == 0)
-        guard rc == 0 else { return }
+        @Test("Disk total size is reported in KB, matching a direct statvfs computation")
+        func diskSizeMatchesStatvfsInKB() throws {
+            var vfs = statvfs()
+            let rc = statvfs("/", &vfs)
+            #expect(rc == 0)
+            guard rc == 0 else { return }
 
-        // OSD_Disk::DiskSize() computes total blocks as f_blocks * (f_frsize / 512)
-        // (OSD_Disk.cxx); this bridge fn is documented in KB, and 1 block (512 bytes) is
-        // 0.5 KB. Total capacity does not fluctuate between the two statvfs-driven reads
-        // (ours here, OCCT's inside the bridge call below), so this can be an exact
-        // comparison, unlike free space below.
-        let blocks = UInt64(vfs.f_blocks) * (UInt64(vfs.f_frsize) / 512)
-        let expectedKB = Int64(blocks / 2)
+            // OSD_Disk::DiskSize() computes total blocks as f_blocks * (f_frsize / 512)
+            // (OSD_Disk.cxx); this bridge fn is documented in KB, and 1 block (512 bytes) is
+            // 0.5 KB. Total capacity does not fluctuate between the two statvfs-driven reads
+            // (ours here, OCCT's inside the bridge call below), so this can be an exact
+            // comparison, unlike free space below.
+            let blocks = UInt64(vfs.f_blocks) * (UInt64(vfs.f_frsize) / 512)
+            let expectedKB = Int64(blocks / 2)
 
-        let actual = DiskInfo.size(path: "/")
-        #expect(actual == expectedKB)
-        // Directly rules out the original (undivided, raw block count) answer too, for any
-        // disk large enough to tell the two apart.
-        if blocks > 0 {
-            #expect(actual != Int64(blocks))
+            let actual = DiskInfo.size(path: "/")
+            #expect(actual == expectedKB)
+            // Directly rules out the original (undivided, raw block count) answer too, for any
+            // disk large enough to tell the two apart.
+            if blocks > 0 {
+                #expect(actual != Int64(blocks))
+            }
+        }
+
+        @Test("Disk free space is reported in KB, matching a statvfs computation")
+        func diskFreeMatchesStatvfsInKB() throws {
+            var vfs = statvfs()
+            let rc = statvfs("/", &vfs)
+            #expect(rc == 0)
+            guard rc == 0 else { return }
+
+            let blocks = UInt64(vfs.f_bavail) * (UInt64(vfs.f_frsize) / 512)
+            let expectedKB = Int64(blocks / 2)
+
+            let actual = DiskInfo.freeSpace(path: "/")
+
+            // Free space can drift slightly between the two statvfs-driven reads under real disk
+            // activity; a 10% tolerance is generous for that while still firmly rejecting the
+            // original 2x-too-large (undivided block count) answer.
+            let tolerance = max(expectedKB / 10, 1024)
+            #expect(abs(actual - expectedKB) <= tolerance)
         }
     }
-
-    @Test("Disk free space is reported in KB, matching a statvfs computation")
-    func diskFreeMatchesStatvfsInKB() throws {
-        var vfs = statvfs()
-        let rc = statvfs("/", &vfs)
-        #expect(rc == 0)
-        guard rc == 0 else { return }
-
-        let blocks = UInt64(vfs.f_bavail) * (UInt64(vfs.f_frsize) / 512)
-        let expectedKB = Int64(blocks / 2)
-
-        let actual = DiskInfo.freeSpace(path: "/")
-
-        // Free space can drift slightly between the two statvfs-driven reads under real disk
-        // activity; a 10% tolerance is generous for that while still firmly rejecting the
-        // original 2x-too-large (undivided block count) answer.
-        let tolerance = max(expectedKB / 10, 1024)
-        #expect(abs(actual - expectedKB) <= tolerance)
-    }
-}
+#endif  // OCCTSWIFT_OCCT_80_CLASSES

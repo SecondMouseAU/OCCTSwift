@@ -109,42 +109,46 @@ struct ConstructionContextTests {
         #expect(ctx.count.points == 1)
     }
 
-    @Test("Resolve entities against a graph")
-    func resolveAgainstGraph() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("Resolve entities against a graph")
+        func resolveAgainstGraph() {
+            guard let box = Shape.box(width: 10, height: 10, depth: 10),
+                let graph = BRepGraph(shape: box)
+            else {
+                Issue.record("graph nil")
+                return
+            }
+            let ctx = ConstructionContext()
+            let pID = ctx.add(.absolute(origin: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1)))
+            switch ctx.resolve(pID, in: graph) {
+            case .success(let placement):
+                #expect(placement.origin == SIMD3(1, 2, 3))
+            case .failure: Issue.record("resolve failed")
+            }
         }
-        let ctx = ConstructionContext()
-        let pID = ctx.add(.absolute(origin: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1)))
-        switch ctx.resolve(pID, in: graph) {
-        case .success(let placement):
-            #expect(placement.origin == SIMD3(1, 2, 3))
-        case .failure: Issue.record("resolve failed")
-        }
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
-    @Test("allBroken detects unregistered references")
-    func allBrokenDetection() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
-        }
-        let ctx = ConstructionContext()
-        // Add a plane referencing a face by TopologyRef.createdBy for an op
-        // that was never recorded, resolution will fail with .operationNotFound.
-        let brokenFace = TopologyRef.createdBy(operationName: "NeverHappened", kind: .face)
-        ctx.add(ConstructionPlane.offsetFromFace(face: brokenFace, distance: 5))
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("allBroken detects unregistered references")
+        func allBrokenDetection() {
+            guard let box = Shape.box(width: 10, height: 10, depth: 10),
+                let graph = BRepGraph(shape: box)
+            else {
+                Issue.record("graph nil")
+                return
+            }
+            let ctx = ConstructionContext()
+            // Add a plane referencing a face by TopologyRef.createdBy for an op
+            // that was never recorded, resolution will fail with .operationNotFound.
+            let brokenFace = TopologyRef.createdBy(operationName: "NeverHappened", kind: .face)
+            ctx.add(ConstructionPlane.offsetFromFace(face: brokenFace, distance: 5))
 
-        let broken = ctx.allBroken(in: graph)
-        #expect(broken.planes.count == 1)
-        #expect(broken.axes.isEmpty)
-        #expect(broken.points.isEmpty)
-    }
+            let broken = ctx.allBroken(in: graph)
+            #expect(broken.planes.count == 1)
+            #expect(broken.axes.isEmpty)
+            #expect(broken.points.isEmpty)
+        }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
     @Test("Remove an entity")
     func removal() {
@@ -188,51 +192,55 @@ struct ConstructionContextTests {
 
     // #886: `resolve(_ id: AxisID, in:)`/`resolve(_ id: PointID, in:)` had no equivalent to
     // `resolveAgainstGraph` above (plane only).
-    @Test("Resolve axis and point entities against a graph")
-    func resolveAxisAndPointAgainstGraph() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
-        }
-        let ctx = ConstructionContext()
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("Resolve axis and point entities against a graph")
+        func resolveAxisAndPointAgainstGraph() {
+            guard let box = Shape.box(width: 10, height: 10, depth: 10),
+                let graph = BRepGraph(shape: box)
+            else {
+                Issue.record("graph nil")
+                return
+            }
+            let ctx = ConstructionContext()
 
-        let aID = ctx.add(.absolute(origin: SIMD3(1, 2, 3), direction: SIMD3(1, 0, 0)))
-        switch ctx.resolve(aID, in: graph) {
-        case .success(let resolved): #expect(resolved.origin == SIMD3(1, 2, 3))
-        case .failure: Issue.record("axis resolve failed")
-        }
+            let aID = ctx.add(.absolute(origin: SIMD3(1, 2, 3), direction: SIMD3(1, 0, 0)))
+            switch ctx.resolve(aID, in: graph) {
+            case .success(let resolved): #expect(resolved.origin == SIMD3(1, 2, 3))
+            case .failure: Issue.record("axis resolve failed")
+            }
 
-        let ptID = ctx.add(ConstructionPoint.absolute(SIMD3(4, 5, 6)))
-        switch ctx.resolve(ptID, in: graph) {
-        case .success(let point): #expect(point == SIMD3(4, 5, 6))
-        case .failure: Issue.record("point resolve failed")
+            let ptID = ctx.add(ConstructionPoint.absolute(SIMD3(4, 5, 6)))
+            switch ctx.resolve(ptID, in: graph) {
+            case .success(let point): #expect(point == SIMD3(4, 5, 6))
+            case .failure: Issue.record("point resolve failed")
+            }
         }
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
     // #886: `allBrokenDetection` above only ever drove a broken *plane* through `allBroken`,
     // so its axis/point branches were only ever trivially satisfied (asserted empty), never
     // actually exercised by a genuinely broken axis/point reference.
-    @Test("allBroken detects unregistered axis and point references")
-    func allBrokenDetectsAxisAndPoint() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
-        }
-        let ctx = ConstructionContext()
-        let brokenEdge = TopologyRef.createdBy(operationName: "NeverHappened", kind: .edge)
-        let brokenVertex = TopologyRef.createdBy(operationName: "NeverHappened", kind: .vertex)
-        ctx.add(ConstructionAxis.alongEdge(brokenEdge))
-        ctx.add(ConstructionPoint.atVertex(brokenVertex))
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("allBroken detects unregistered axis and point references")
+        func allBrokenDetectsAxisAndPoint() {
+            guard let box = Shape.box(width: 10, height: 10, depth: 10),
+                let graph = BRepGraph(shape: box)
+            else {
+                Issue.record("graph nil")
+                return
+            }
+            let ctx = ConstructionContext()
+            let brokenEdge = TopologyRef.createdBy(operationName: "NeverHappened", kind: .edge)
+            let brokenVertex = TopologyRef.createdBy(operationName: "NeverHappened", kind: .vertex)
+            ctx.add(ConstructionAxis.alongEdge(brokenEdge))
+            ctx.add(ConstructionPoint.atVertex(brokenVertex))
 
-        let broken = ctx.allBroken(in: graph)
-        #expect(broken.planes.isEmpty)
-        #expect(broken.axes.count == 1)
-        #expect(broken.points.count == 1)
-    }
+            let broken = ctx.allBroken(in: graph)
+            #expect(broken.planes.isEmpty)
+            #expect(broken.axes.count == 1)
+            #expect(broken.points.count == 1)
+        }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
     @Test("Document exposes a lazy construction context")
     func documentIntegration() {
@@ -253,76 +261,82 @@ struct ConstructionContextTests {
 
 @Suite("v0.142 Sketch buildProfile")
 struct SketchBuildProfileTests {
-    @Test("Profile excludes construction elements")
-    func excludesConstruction() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
-        }
-        let ctx = ConstructionContext()
-        let planeID = ctx.add(.absolute(origin: .zero, normal: SIMD3(0, 0, 1)))
-        var sketch = Sketch(hostPlane: planeID)
-        sketch.add(SketchElement(curve: .line(from: SIMD2(0, 0), to: SIMD2(10, 0))))
-        sketch.add(SketchElement(curve: .line(from: SIMD2(10, 0), to: SIMD2(10, 10))))
-        sketch.add(SketchElement(curve: .line(from: SIMD2(10, 10), to: SIMD2(0, 10))))
-        sketch.add(SketchElement(curve: .line(from: SIMD2(0, 10), to: SIMD2(0, 0))))
-        sketch.add(
-            SketchElement(
-                curve: .line(from: SIMD2(0, 0), to: SIMD2(10, 10)),
-                isConstruction: true))
-        #expect(sketch.elements.count == 5)
-        #expect(sketch.profileElementCount == 4)
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("Profile excludes construction elements")
+        func excludesConstruction() {
+            guard let box = Shape.box(width: 10, height: 10, depth: 10),
+                let graph = BRepGraph(shape: box)
+            else {
+                Issue.record("graph nil")
+                return
+            }
+            let ctx = ConstructionContext()
+            let planeID = ctx.add(.absolute(origin: .zero, normal: SIMD3(0, 0, 1)))
+            var sketch = Sketch(hostPlane: planeID)
+            sketch.add(SketchElement(curve: .line(from: SIMD2(0, 0), to: SIMD2(10, 0))))
+            sketch.add(SketchElement(curve: .line(from: SIMD2(10, 0), to: SIMD2(10, 10))))
+            sketch.add(SketchElement(curve: .line(from: SIMD2(10, 10), to: SIMD2(0, 10))))
+            sketch.add(SketchElement(curve: .line(from: SIMD2(0, 10), to: SIMD2(0, 0))))
+            sketch.add(
+                SketchElement(
+                    curve: .line(from: SIMD2(0, 0), to: SIMD2(10, 10)),
+                    isConstruction: true))
+            #expect(sketch.elements.count == 5)
+            #expect(sketch.profileElementCount == 4)
 
-        // #1989: this used to assert only `wire != nil`, which a profile that kept the construction
-        // diagonal also satisfies. The closed 10 x 10 square is 40 long; with the diagonal left in
-        // it is 54.14 (both measured in Scripts/repro/766-misc-interp-construction-sketch-angle/).
-        guard let wire = sketch.buildProfile(in: ctx, graph: graph) else {
-            Issue.record("buildProfile returned nil for a closed four-line profile")
-            return
+            // #1989: this used to assert only `wire != nil`, which a profile that kept the construction
+            // diagonal also satisfies. The closed 10 x 10 square is 40 long; with the diagonal left in
+            // it is 54.14 (both measured in Scripts/repro/766-misc-interp-construction-sketch-angle/).
+            guard let wire = sketch.buildProfile(in: ctx, graph: graph) else {
+                Issue.record("buildProfile returned nil for a closed four-line profile")
+                return
+            }
+            let length = wire.length ?? -1
+            #expect(abs(length - 40) < 1e-9, "profile length \(length)")
         }
-        let length = wire.length ?? -1
-        #expect(abs(length - 40) < 1e-9, "profile length \(length)")
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
-    @Test("buildProfile returns nil if no profile elements present")
-    func emptyProfileNil() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("buildProfile returns nil if no profile elements present")
+        func emptyProfileNil() {
+            guard let box = Shape.box(width: 10, height: 10, depth: 10),
+                let graph = BRepGraph(shape: box)
+            else {
+                Issue.record("graph nil")
+                return
+            }
+            let ctx = ConstructionContext()
+            let planeID = ctx.add(.absolute(origin: .zero, normal: SIMD3(0, 0, 1)))
+            var sketch = Sketch(hostPlane: planeID)
+            sketch.add(
+                SketchElement(
+                    curve: .line(from: SIMD2(0, 0), to: SIMD2(1, 1)),
+                    isConstruction: true))
+            #expect(sketch.buildProfile(in: ctx, graph: graph) == nil)
         }
-        let ctx = ConstructionContext()
-        let planeID = ctx.add(.absolute(origin: .zero, normal: SIMD3(0, 0, 1)))
-        var sketch = Sketch(hostPlane: planeID)
-        sketch.add(
-            SketchElement(
-                curve: .line(from: SIMD2(0, 0), to: SIMD2(1, 1)),
-                isConstruction: true))
-        #expect(sketch.buildProfile(in: ctx, graph: graph) == nil)
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
-    @Test("buildProfile returns nil when host plane is unresolvable")
-    func brokenHostPlane() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("buildProfile returns nil when host plane is unresolvable")
+        func brokenHostPlane() {
+            guard let box = Shape.box(width: 10, height: 10, depth: 10),
+                let graph = BRepGraph(shape: box)
+            else {
+                Issue.record("graph nil")
+                return
+            }
+            let ctx = ConstructionContext()
+            let planeID = ctx.add(
+                .offsetFromFace(
+                    face: .createdBy(operationName: "NeverHappened", kind: .face),
+                    distance: 5))
+            var sketch = Sketch(hostPlane: planeID)
+            sketch.add(SketchElement(curve: .line(from: SIMD2(0, 0), to: SIMD2(10, 0))))
+            sketch.add(SketchElement(curve: .line(from: SIMD2(10, 0), to: SIMD2(0, 10))))
+            sketch.add(SketchElement(curve: .line(from: SIMD2(0, 10), to: SIMD2(0, 0))))
+            #expect(sketch.buildProfile(in: ctx, graph: graph) == nil)
         }
-        let ctx = ConstructionContext()
-        let planeID = ctx.add(
-            .offsetFromFace(
-                face: .createdBy(operationName: "NeverHappened", kind: .face),
-                distance: 5))
-        var sketch = Sketch(hostPlane: planeID)
-        sketch.add(SketchElement(curve: .line(from: SIMD2(0, 0), to: SIMD2(10, 0))))
-        sketch.add(SketchElement(curve: .line(from: SIMD2(10, 0), to: SIMD2(0, 10))))
-        sketch.add(SketchElement(curve: .line(from: SIMD2(0, 10), to: SIMD2(0, 0))))
-        #expect(sketch.buildProfile(in: ctx, graph: graph) == nil)
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 }
 
 // MARK: - v0.143 M3: Angle helpers
@@ -399,39 +413,43 @@ struct AngleHelperTests {
         #expect(unsignedAngle(between: zero, and: zero) == nil)
     }
 
-    @Test("ConstructionAxis angle between resolved axes")
-    func constructionAxisAngle() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("ConstructionAxis angle between resolved axes")
+        func constructionAxisAngle() {
+            guard let box = Shape.box(width: 10, height: 10, depth: 10),
+                let graph = BRepGraph(shape: box)
+            else {
+                Issue.record("graph nil")
+                return
+            }
+            let xAxis = ConstructionAxis.absolute(origin: .zero, direction: SIMD3(1, 0, 0))
+            let yAxis = ConstructionAxis.absolute(origin: .zero, direction: SIMD3(0, 1, 0))
+            if let a = xAxis.angle(to: yAxis, in: graph) {
+                #expect(abs(a - .pi / 2) < 1e-9)
+            } else {
+                Issue.record("angle nil")
+            }
         }
-        let xAxis = ConstructionAxis.absolute(origin: .zero, direction: SIMD3(1, 0, 0))
-        let yAxis = ConstructionAxis.absolute(origin: .zero, direction: SIMD3(0, 1, 0))
-        if let a = xAxis.angle(to: yAxis, in: graph) {
-            #expect(abs(a - .pi / 2) < 1e-9)
-        } else {
-            Issue.record("angle nil")
-        }
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
-    @Test("ConstructionPlane angle between normals")
-    func constructionPlaneAngle() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("ConstructionPlane angle between normals")
+        func constructionPlaneAngle() {
+            guard let box = Shape.box(width: 10, height: 10, depth: 10),
+                let graph = BRepGraph(shape: box)
+            else {
+                Issue.record("graph nil")
+                return
+            }
+            let xy = ConstructionPlane.absolute(origin: .zero, normal: SIMD3(0, 0, 1))
+            let xz = ConstructionPlane.absolute(origin: .zero, normal: SIMD3(0, 1, 0))
+            if let a = xy.angle(to: xz, in: graph) {
+                #expect(abs(a - .pi / 2) < 1e-9)
+            } else {
+                Issue.record("angle nil")
+            }
         }
-        let xy = ConstructionPlane.absolute(origin: .zero, normal: SIMD3(0, 0, 1))
-        let xz = ConstructionPlane.absolute(origin: .zero, normal: SIMD3(0, 1, 0))
-        if let a = xy.angle(to: xz, in: graph) {
-            #expect(abs(a - .pi / 2) < 1e-9)
-        } else {
-            Issue.record("angle nil")
-        }
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 }
 
 // MARK: - #888: Edge fraction→parameter helper
@@ -603,102 +621,113 @@ struct FaceUVMidpointSampleTests {
 
 @Suite("v0.143 Multi-leaf createdBy")
 struct MultiLeafCreatedByTests {
-    @Test("leafOccurrence picks among split descendants")
-    func leafOccurrencePicksNth() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
-        }
-        graph.isHistoryEnabled = true
-        graph.clearHistory()
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("leafOccurrence picks among split descendants")
+        func leafOccurrencePicksNth() {
+            guard let box = Shape.box(width: 10, height: 10, depth: 10),
+                let graph = BRepGraph(shape: box)
+            else {
+                Issue.record("graph nil")
+                return
+            }
+            graph.isHistoryEnabled = true
+            graph.clearHistory()
 
-        // Create → op1, then split into two leaves via op2.
-        let seed = BRepGraph.NodeRef(kind: .face, index: 1)
-        let leaf1 = BRepGraph.NodeRef(kind: .face, index: 11)
-        let leaf2 = BRepGraph.NodeRef(kind: .face, index: 22)
-        graph.recordHistory(operationName: "Op1", original: .sentinel, replacements: [seed])
-        graph.recordHistory(operationName: "Op2", original: seed, replacements: [leaf1, leaf2])
+            // Create → op1, then split into two leaves via op2.
+            let seed = BRepGraph.NodeRef(kind: .face, index: 1)
+            let leaf1 = BRepGraph.NodeRef(kind: .face, index: 11)
+            let leaf2 = BRepGraph.NodeRef(kind: .face, index: 22)
+            graph.recordHistory(operationName: "Op1", original: .sentinel, replacements: [seed])
+            graph.recordHistory(operationName: "Op2", original: seed, replacements: [leaf1, leaf2])
 
-        let first = graph.resolve(.createdBy(operationName: "Op1", kind: .face, leafOccurrence: 0))
-        let second = graph.resolve(.createdBy(operationName: "Op1", kind: .face, leafOccurrence: 1))
-        switch (first, second) {
-        case (.success(let a), .success(let b)):
-            #expect(a != b)
-            #expect([leaf1, leaf2].contains(a))
-            #expect([leaf1, leaf2].contains(b))
-        default:
-            Issue.record("expected both leaves")
+            let first = graph.resolve(
+                .createdBy(operationName: "Op1", kind: .face, leafOccurrence: 0))
+            let second = graph.resolve(
+                .createdBy(operationName: "Op1", kind: .face, leafOccurrence: 1))
+            switch (first, second) {
+            case (.success(let a), .success(let b)):
+                #expect(a != b)
+                #expect([leaf1, leaf2].contains(a))
+                #expect([leaf1, leaf2].contains(b))
+            default:
+                Issue.record("expected both leaves")
+            }
         }
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
-    @Test("currentForms returns both leaves of a split")
-    func currentFormsReturnsAll() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("currentForms returns both leaves of a split")
+        func currentFormsReturnsAll() {
+            guard let box = Shape.box(width: 10, height: 10, depth: 10),
+                let graph = BRepGraph(shape: box)
+            else {
+                Issue.record("graph nil")
+                return
+            }
+            graph.isHistoryEnabled = true
+            graph.clearHistory()
+            let seed = BRepGraph.NodeRef(kind: .edge, index: 3)
+            let a = BRepGraph.NodeRef(kind: .edge, index: 30)
+            let b = BRepGraph.NodeRef(kind: .edge, index: 31)
+            graph.recordHistory(operationName: "Split", original: seed, replacements: [a, b])
+            let leaves = Set(graph.currentForms(of: seed))
+            #expect(leaves.isSuperset(of: [a, b]))
         }
-        graph.isHistoryEnabled = true
-        graph.clearHistory()
-        let seed = BRepGraph.NodeRef(kind: .edge, index: 3)
-        let a = BRepGraph.NodeRef(kind: .edge, index: 30)
-        let b = BRepGraph.NodeRef(kind: .edge, index: 31)
-        graph.recordHistory(operationName: "Split", original: seed, replacements: [a, b])
-        let leaves = Set(graph.currentForms(of: seed))
-        #expect(leaves.isSuperset(of: [a, b]))
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
-    @Test("leafOccurrence: nil returns seed without forward-walk")
-    func leafOccurrenceNil() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("leafOccurrence: nil returns seed without forward-walk")
+        func leafOccurrenceNil() {
+            guard let box = Shape.box(width: 10, height: 10, depth: 10),
+                let graph = BRepGraph(shape: box)
+            else {
+                Issue.record("graph nil")
+                return
+            }
+            graph.isHistoryEnabled = true
+            graph.clearHistory()
+            let seed = BRepGraph.NodeRef(kind: .face, index: 1)
+            let leaf = BRepGraph.NodeRef(kind: .face, index: 11)
+            graph.recordHistory(operationName: "Op", original: .sentinel, replacements: [seed])
+            graph.recordHistory(operationName: "Mod", original: seed, replacements: [leaf])
+            let result = graph.resolve(
+                .createdBy(operationName: "Op", kind: .face, leafOccurrence: nil))
+            switch result {
+            case .success(let r): #expect(r == seed)
+            case .failure: Issue.record("unexpected failure")
+            }
         }
-        graph.isHistoryEnabled = true
-        graph.clearHistory()
-        let seed = BRepGraph.NodeRef(kind: .face, index: 1)
-        let leaf = BRepGraph.NodeRef(kind: .face, index: 11)
-        graph.recordHistory(operationName: "Op", original: .sentinel, replacements: [seed])
-        graph.recordHistory(operationName: "Mod", original: seed, replacements: [leaf])
-        let result = graph.resolve(
-            .createdBy(operationName: "Op", kind: .face, leafOccurrence: nil))
-        switch result {
-        case .success(let r): #expect(r == seed)
-        case .failure: Issue.record("unexpected failure")
-        }
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
-    @Test("leafOccurrence out of range fails with occurrenceOutOfRange")
-    func leafOccurrenceOutOfRange() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
-        }
-        graph.isHistoryEnabled = true
-        graph.clearHistory()
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("leafOccurrence out of range fails with occurrenceOutOfRange")
+        func leafOccurrenceOutOfRange() {
+            guard let box = Shape.box(width: 10, height: 10, depth: 10),
+                let graph = BRepGraph(shape: box)
+            else {
+                Issue.record("graph nil")
+                return
+            }
+            graph.isHistoryEnabled = true
+            graph.clearHistory()
 
-        // Same fixture as leafOccurrencePicksNth: two leaves, requested occurrence beyond them.
-        let seed = BRepGraph.NodeRef(kind: .face, index: 1)
-        let leaf1 = BRepGraph.NodeRef(kind: .face, index: 11)
-        let leaf2 = BRepGraph.NodeRef(kind: .face, index: 22)
-        graph.recordHistory(operationName: "Op1", original: .sentinel, replacements: [seed])
-        graph.recordHistory(operationName: "Op2", original: seed, replacements: [leaf1, leaf2])
+            // Same fixture as leafOccurrencePicksNth: two leaves, requested occurrence beyond them.
+            let seed = BRepGraph.NodeRef(kind: .face, index: 1)
+            let leaf1 = BRepGraph.NodeRef(kind: .face, index: 11)
+            let leaf2 = BRepGraph.NodeRef(kind: .face, index: 22)
+            graph.recordHistory(operationName: "Op1", original: .sentinel, replacements: [seed])
+            graph.recordHistory(operationName: "Op2", original: seed, replacements: [leaf1, leaf2])
 
-        let result = graph.resolve(.createdBy(operationName: "Op1", kind: .face, leafOccurrence: 5))
-        if case .failure(.occurrenceOutOfRange(_, let available, let requested)) = result {
-            #expect(available == 2)
-            #expect(requested == 5)
-        } else {
-            Issue.record("expected occurrenceOutOfRange")
+            let result = graph.resolve(
+                .createdBy(operationName: "Op1", kind: .face, leafOccurrence: 5))
+            if case .failure(.occurrenceOutOfRange(_, let available, let requested)) = result {
+                #expect(available == 2)
+                #expect(requested == 5)
+            } else {
+                Issue.record("expected occurrenceOutOfRange")
+            }
         }
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 }
 
 // MARK: - v0.143 D1: Construction layer persistence
@@ -732,65 +761,69 @@ struct ConstructionLayerTests {
         #expect(Set(doc.constructionShapeLabels) == [id, second])
     }
 
-    @Test("Materialize all ConstructionContext entities as shapes on the CONSTRUCTION layer")
-    func materializeAll() {
-        guard let doc = Document.create(),
-            let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("setup nil")
-            return
-        }
-        let ctx = doc.constructionContext
-        ctx.add(.absolute(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)), name: "XY")
-        ctx.add(.absolute(origin: SIMD3(5, 5, 5), direction: SIMD3(1, 0, 0)), name: "X-line")
-        ctx.add(.absolute(SIMD3(1, 2, 3)), name: "origin")
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("Materialize all ConstructionContext entities as shapes on the CONSTRUCTION layer")
+        func materializeAll() {
+            guard let doc = Document.create(),
+                let box = Shape.box(width: 10, height: 10, depth: 10),
+                let graph = BRepGraph(shape: box)
+            else {
+                Issue.record("setup nil")
+                return
+            }
+            let ctx = doc.constructionContext
+            ctx.add(.absolute(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)), name: "XY")
+            ctx.add(.absolute(origin: SIMD3(5, 5, 5), direction: SIMD3(1, 0, 0)), name: "X-line")
+            ctx.add(.absolute(SIMD3(1, 2, 3)), name: "origin")
 
-        let result = ctx.materialize(in: doc, graph: graph)
-        #expect(result.totalMaterialized == 3)
-        #expect(result.failures.isEmpty)
-        // Each materialized shape shows up on the CONSTRUCTION layer.
-        #expect(doc.constructionShapeLabels.count >= 3)
-    }
+            let result = ctx.materialize(in: doc, graph: graph)
+            #expect(result.totalMaterialized == 3)
+            #expect(result.failures.isEmpty)
+            // Each materialized shape shows up on the CONSTRUCTION layer.
+            #expect(doc.constructionShapeLabels.count >= 3)
+        }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
     // #886: no test asserted on a `MaterializationFailure` case by name anywhere in `Tests/`,
     // `materializeAll` above only ever exercised the success path.
-    @Test("materialize reports a resolve failure for each entity kind")
-    func materializeReportsResolveFailuresByKind() {
-        guard let doc = Document.create(),
-            let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("setup nil")
-            return
-        }
-        let ctx = doc.constructionContext
-        let brokenFace = TopologyRef.createdBy(operationName: "NeverHappened", kind: .face)
-        let brokenEdge = TopologyRef.createdBy(operationName: "NeverHappened", kind: .edge)
-        let brokenVertex = TopologyRef.createdBy(operationName: "NeverHappened", kind: .vertex)
-        ctx.add(ConstructionPlane.offsetFromFace(face: brokenFace, distance: 5))
-        ctx.add(ConstructionAxis.alongEdge(brokenEdge))
-        ctx.add(ConstructionPoint.atVertex(brokenVertex))
-
-        let result = ctx.materialize(in: doc, graph: graph)
-        #expect(result.totalMaterialized == 0)
-        #expect(result.failures.count == 3)
-
-        var sawPlane = false
-        var sawAxis = false
-        var sawPoint = false
-        for failure in result.failures {
-            switch failure {
-            case .planeResolveFailed: sawPlane = true
-            case .axisResolveFailed: sawAxis = true
-            case .pointResolveFailed: sawPoint = true
-            default: Issue.record("unexpected failure kind: \(failure)")
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("materialize reports a resolve failure for each entity kind")
+        func materializeReportsResolveFailuresByKind() {
+            guard let doc = Document.create(),
+                let box = Shape.box(width: 10, height: 10, depth: 10),
+                let graph = BRepGraph(shape: box)
+            else {
+                Issue.record("setup nil")
+                return
             }
+            let ctx = doc.constructionContext
+            let brokenFace = TopologyRef.createdBy(operationName: "NeverHappened", kind: .face)
+            let brokenEdge = TopologyRef.createdBy(operationName: "NeverHappened", kind: .edge)
+            let brokenVertex = TopologyRef.createdBy(operationName: "NeverHappened", kind: .vertex)
+            ctx.add(ConstructionPlane.offsetFromFace(face: brokenFace, distance: 5))
+            ctx.add(ConstructionAxis.alongEdge(brokenEdge))
+            ctx.add(ConstructionPoint.atVertex(brokenVertex))
+
+            let result = ctx.materialize(in: doc, graph: graph)
+            #expect(result.totalMaterialized == 0)
+            #expect(result.failures.count == 3)
+
+            var sawPlane = false
+            var sawAxis = false
+            var sawPoint = false
+            for failure in result.failures {
+                switch failure {
+                case .planeResolveFailed: sawPlane = true
+                case .axisResolveFailed: sawAxis = true
+                case .pointResolveFailed: sawPoint = true
+                default: Issue.record("unexpected failure kind: \(failure)")
+                }
+            }
+            #expect(sawPlane)
+            #expect(sawAxis)
+            #expect(sawPoint)
         }
-        #expect(sawPlane)
-        #expect(sawAxis)
-        #expect(sawPoint)
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
     // #880: `axisShape` always materializes as a bare wire (its wire is never closed, so the
     // face attempt above it can never succeed), the *only* way it can still fail is the same
@@ -801,57 +834,64 @@ struct ConstructionLayerTests {
     // #2759: a zero direction is now refused at `resolve` (`.degenerate`), as OCCT refuses a
     // zero-norm `gp_Dir`, so it never reaches `axisShape`; the invariant #880 guards, that no
     // non-finite geometry reaches the document, is unchanged, and so is `totalMaterialized == 0`.
-    @Test("materialize reports axisResolveFailed for a zero-length axis direction (#880, #2759)")
-    func materializeReportsAxisResolveFailedForZeroLengthDirection() {
-        guard let doc = Document.create(),
-            let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("setup nil")
-            return
-        }
-        let ctx = doc.constructionContext
-        ctx.add(ConstructionAxis.absolute(origin: .zero, direction: .zero), name: "degenerate")
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test(
+            "materialize reports axisResolveFailed for a zero-length axis direction (#880, #2759)")
+        func materializeReportsAxisResolveFailedForZeroLengthDirection() {
+            guard let doc = Document.create(),
+                let box = Shape.box(width: 10, height: 10, depth: 10),
+                let graph = BRepGraph(shape: box)
+            else {
+                Issue.record("setup nil")
+                return
+            }
+            let ctx = doc.constructionContext
+            ctx.add(ConstructionAxis.absolute(origin: .zero, direction: .zero), name: "degenerate")
 
-        let result = ctx.materialize(in: doc, graph: graph)
-        #expect(result.totalMaterialized == 0)
-        #expect(result.failures.count == 1)
-        if case .axisResolveFailed(_, .degenerate) = result.failures.first {
-            // expected
-        } else {
-            Issue.record(
-                "expected axisResolveFailed(.degenerate), got \(String(describing: result.failures.first))"
-            )
+            let result = ctx.materialize(in: doc, graph: graph)
+            #expect(result.totalMaterialized == 0)
+            #expect(result.failures.count == 1)
+            if case .axisResolveFailed(_, .degenerate) = result.failures.first {
+                // expected
+            } else {
+                Issue.record(
+                    "expected axisResolveFailed(.degenerate), got \(String(describing: result.failures.first))"
+                )
+            }
         }
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
     // #880: `planeShape` has no bare-wire fallback, unlike `axisShape`, deliberately. This is
     // the case that motivated keeping it that way: `planeHalfSize` this small collapses the
     // rectangle's corners closer together than OCCT's confusion tolerance (~1e-7), so
     // `BRepBuilderAPI_MakePolygon` can't even close a valid wire, `Wire.polygon3D` itself
     // returns `nil`, before any face/fallback logic would run either way.
-    @Test("materialize reports planeShapeFailed when the plane's wire itself can't be built (#880)")
-    func materializeReportsPlaneShapeFailedForUnbuildableWire() {
-        guard let doc = Document.create(),
-            let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("setup nil")
-            return
-        }
-        let ctx = doc.constructionContext
-        ctx.add(ConstructionPlane.absolute(origin: .zero, normal: SIMD3(0, 0, 1)), name: "tiny")
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test(
+            "materialize reports planeShapeFailed when the plane's wire itself can't be built (#880)"
+        )
+        func materializeReportsPlaneShapeFailedForUnbuildableWire() {
+            guard let doc = Document.create(),
+                let box = Shape.box(width: 10, height: 10, depth: 10),
+                let graph = BRepGraph(shape: box)
+            else {
+                Issue.record("setup nil")
+                return
+            }
+            let ctx = doc.constructionContext
+            ctx.add(ConstructionPlane.absolute(origin: .zero, normal: SIMD3(0, 0, 1)), name: "tiny")
 
-        let result = ctx.materialize(in: doc, graph: graph, options: .init(planeHalfSize: 1e-9))
-        #expect(result.totalMaterialized == 0)
-        #expect(result.failures.count == 1)
-        if case .planeShapeFailed = result.failures.first {
-            // expected
-        } else {
-            Issue.record(
-                "expected planeShapeFailed, got \(String(describing: result.failures.first))")
+            let result = ctx.materialize(in: doc, graph: graph, options: .init(planeHalfSize: 1e-9))
+            #expect(result.totalMaterialized == 0)
+            #expect(result.failures.count == 1)
+            if case .planeShapeFailed = result.failures.first {
+                // expected
+            } else {
+                Issue.record(
+                    "expected planeShapeFailed, got \(String(describing: result.failures.first))")
+            }
         }
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
     // #880: the *only* input measured to reach planeShape's face-build failure with a non-nil
     // wire is a zero-length plane normal, `Placement`'s `normalizedVector` turns that into NaN,
@@ -864,31 +904,34 @@ struct ConstructionLayerTests {
     //
     // #2759: the zero normal is now refused at `resolve` (`.degenerate`), as OCCT refuses a
     // zero-norm `gp_Dir`; this still asserts that nothing non-finite reaches the document.
-    @Test(
-        "materialize reports planeResolveFailed, not non-finite geometry, for a zero-length normal (#880, #2759)"
-    )
-    func materializeReportsPlaneResolveFailedForZeroNormal() {
-        guard let doc = Document.create(),
-            let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("setup nil")
-            return
-        }
-        let ctx = doc.constructionContext
-        ctx.add(ConstructionPlane.absolute(origin: .zero, normal: .zero), name: "degenerate-normal")
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test(
+            "materialize reports planeResolveFailed, not non-finite geometry, for a zero-length normal (#880, #2759)"
+        )
+        func materializeReportsPlaneResolveFailedForZeroNormal() {
+            guard let doc = Document.create(),
+                let box = Shape.box(width: 10, height: 10, depth: 10),
+                let graph = BRepGraph(shape: box)
+            else {
+                Issue.record("setup nil")
+                return
+            }
+            let ctx = doc.constructionContext
+            ctx.add(
+                ConstructionPlane.absolute(origin: .zero, normal: .zero), name: "degenerate-normal")
 
-        let result = ctx.materialize(in: doc, graph: graph)
-        #expect(result.totalMaterialized == 0)
-        #expect(result.failures.count == 1)
-        if case .planeResolveFailed(_, .degenerate) = result.failures.first {
-            // expected
-        } else {
-            Issue.record(
-                "expected planeResolveFailed(.degenerate), got \(String(describing: result.failures.first))"
-            )
+            let result = ctx.materialize(in: doc, graph: graph)
+            #expect(result.totalMaterialized == 0)
+            #expect(result.failures.count == 1)
+            if case .planeResolveFailed(_, .degenerate) = result.failures.first {
+                // expected
+            } else {
+                Issue.record(
+                    "expected planeResolveFailed(.degenerate), got \(String(describing: result.failures.first))"
+                )
+            }
         }
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
     // PR #898 review, finding 4: `materializeOne` used to skip straight to `.success` after
     // `document.addConstructionShape(shape)` without checking the label ID it returned, even

@@ -88,22 +88,26 @@ struct DiskUnicodeOSDUtilitiesTests {
 
     // MARK: - Finding 3: DiskIsValid checks Failed(), not merely whether construction threw
 
-    @Test("A real, accessible path is reported valid")
-    func diskIsValidAcceptsRealPath() throws {
-        #if os(WASI)
-            // #3025: wasi-libc has no statvfs and "/" is not a preopen, so DiskInfo documents
-            // every path as invalid on WASI.
-            #expect(DiskInfo.isValid(path: "/") == false)
-            #expect(DiskInfo.size() == 0)
-            #expect(DiskInfo.freeSpace() == 0)
-        #else
-            #expect(DiskInfo.isValid(path: "/") == true)
-        #endif
-    }
+    #if OCCTSWIFT_OCCT_80_CLASSES
+        @Test("A real, accessible path is reported valid")
+        func diskIsValidAcceptsRealPath() throws {
+            #if os(WASI)
+                // #3025: wasi-libc has no statvfs and "/" is not a preopen, so DiskInfo documents
+                // every path as invalid on WASI.
+                #expect(DiskInfo.isValid(path: "/") == false)
+                #expect(DiskInfo.size() == 0)
+                #expect(DiskInfo.freeSpace() == 0)
+            #else
+                #expect(DiskInfo.isValid(path: "/") == true)
+            #endif
+        }
+    #endif  // OCCTSWIFT_OCCT_80_CLASSES
 
-    @Test("A nonexistent path is reported invalid")
-    func diskIsValidRejectsNonexistentPath() throws {
-        let bogus = "/this/path/does/not/exist/xyz123_\(Int.random(in: 100_000..<999_999))"
-        #expect(DiskInfo.isValid(path: bogus) == false)
-    }
+    #if OCCTSWIFT_OCCT_80_CLASSES
+        @Test("A nonexistent path is reported invalid")
+        func diskIsValidRejectsNonexistentPath() throws {
+            let bogus = "/this/path/does/not/exist/xyz123_\(Int.random(in: 100_000..<999_999))"
+            #expect(DiskInfo.isValid(path: bogus) == false)
+        }
+    #endif  // OCCTSWIFT_OCCT_80_CLASSES
 }

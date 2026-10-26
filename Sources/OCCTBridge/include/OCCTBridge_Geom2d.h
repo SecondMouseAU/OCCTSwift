@@ -903,16 +903,6 @@ int32_t OCCTGeom2dGccCirc2d2TanOn(OCCTCurve2DRef         c1,
                                   OCCTGccCircleSolution* out,
                                   int32_t                max);
 
-/// Circle tangent to curve, center on curve, given radius (Geom2dGcc).
-/// @return Number of solutions
-int32_t OCCTGeom2dGccCirc2dTanOnRad(OCCTCurve2DRef         curve,
-                                    int32_t                qualifier,
-                                    OCCTCurve2DRef         onCurve,
-                                    double                 radius,
-                                    double                 tolerance,
-                                    OCCTGccCircleSolution* out,
-                                    int32_t                max);
-
 // --- IntAna2d_AnaIntersection ---
 
 /// 2D intersection point result

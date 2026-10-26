@@ -1096,22 +1096,7 @@ public final class Surface: @unchecked Sendable {
 
     /// Deform this surface to pass through target positions (NLPlate G0).
     ///
-    /// Each constraint pins a (u, v) parameter of this surface to a target 3D position. The result
-    /// is a cubic BSpline interpolating a sample lattice of the solved plate. Every constraint's
-    /// (u, v) is a node of that lattice, so the result passes through each target to rounding
-    /// (to the kernel's own residual, about 5e-6 for several G0 targets), and it carries the
-    /// parametrisation of the working domain the samples were taken over, so a constrained (u, v)
-    /// addresses the same place on the result. See `docs/reference/Surface-Advanced.md` for what
-    /// that domain is and `docs/occtswift-wrapping-gaps.md` for what the refit does not preserve.
-    ///
-    /// ```swift
-    /// let plane = Surface.plane(origin: SIMD3(100, 0, 0), normal: SIMD3(0, 0, 1))!
-    /// let bumped = plane.nlPlateDeformed(
-    ///     constraints: [(uv: SIMD2(0, 0), target: SIMD3(100, 0, 5))])!
-    /// print(bumped.point(atU: 0, v: 0))                           // (100.0, 0.0, 5.0)
-    /// print(plane.nlPlateDeformed(constraints: [(uv: SIMD2(0, 0), target: SIMD3(100, 0, 5))],
-    ///                             resolutionOrder: 12) == nil)    // true, out of range
-    /// ```
+    /// Unavailable in this build: NLPlate_NLPlate and the NLPlate_HPG* constraints were deleted in OCCT 8.1 and the upstream IR kernel has no replacement; use Plate_Plate through PlateSolver, or GeomPlate for a surface through constraints.
     ///
     /// - Parameters:
     ///   - constraints: Array of (uv parameter, target 3D position) pairs
@@ -1121,47 +1106,22 @@ public final class Surface: @unchecked Sendable {
     ///     samples more finely: 20 nodes per direction at 0.1, 63 at 1e-3, at most 80), default
     ///     1e-3. It does not bound the error between samples.
     /// - Returns: A new deformed surface, or nil on failure
+    @available(
+        *, unavailable,
+        message:
+            "NLPlate_NLPlate and the NLPlate_HPG* constraints were deleted in OCCT 8.1 and the upstream IR kernel has no replacement; use Plate_Plate through PlateSolver, or GeomPlate for a surface through constraints."
+    )
     public func nlPlateDeformed(
         constraints: [(uv: SIMD2<Double>, target: SIMD3<Double>)],
         resolutionOrder: Int = 4,
         tolerance: Double = 1e-3
     ) -> Surface? {
-        guard !constraints.isEmpty else { return nil }
-
-        // Flat array: (u, v, targetX, targetY, targetZ) per constraint
-        var flat: [Double] = []
-        for c in constraints {
-            flat.append(c.uv.x)
-            flat.append(c.uv.y)
-            flat.append(c.target.x)
-            flat.append(c.target.y)
-            flat.append(c.target.z)
-        }
-
-        guard
-            let h = OCCTSurfaceNLPlateG0(
-                handle, &flat, Int32(constraints.count),
-                Int32(resolutionOrder), tolerance
-            )
-        else { return nil }
-        return Surface(handle: h)
+        fatalError("unavailable")
     }
 
     /// Deform this surface with position + tangent constraints (NLPlate G0+G1).
     ///
-    /// Each constraint specifies a (u, v) parameter, a target 3D position, and
-    /// desired partial derivatives (tangent vectors) in the U and V directions.
-    /// The result is parametrised as ``nlPlateDeformed(constraints:resolutionOrder:tolerance:)``'s
-    /// is.
-    ///
-    /// ```swift
-    /// let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
-    /// let shaped = plane.nlPlateDeformedG1(constraints: [
-    ///     (uv: SIMD2(0, 0), target: SIMD3(0, 0, 5),
-    ///      tangentU: SIMD3(1, 0, 0.5), tangentV: SIMD3(0, 1, 0.5))
-    /// ])
-    /// print(shaped != nil)  // true
-    /// ```
+    /// Unavailable in this build: NLPlate_NLPlate and the NLPlate_HPG* constraints were deleted in OCCT 8.1 and the upstream IR kernel has no replacement; use Plate_Plate through PlateSolver, or GeomPlate for a surface through constraints.
     ///
     /// - Parameters:
     ///   - constraints: Array of (uv, target, tangentU, tangentV) tuples
@@ -1171,6 +1131,11 @@ public final class Surface: @unchecked Sendable {
     ///     samples more finely: 20 nodes per direction at 0.1, 63 at 1e-3, at most 80), default
     ///     1e-3. It does not bound the error between samples.
     /// - Returns: A new deformed surface, or nil on failure
+    @available(
+        *, unavailable,
+        message:
+            "NLPlate_NLPlate and the NLPlate_HPG* constraints were deleted in OCCT 8.1 and the upstream IR kernel has no replacement; use Plate_Plate through PlateSolver, or GeomPlate for a surface through constraints."
+    )
     public func nlPlateDeformedG1(
         constraints: [(
             uv: SIMD2<Double>, target: SIMD3<Double>, tangentU: SIMD3<Double>,
@@ -1179,31 +1144,7 @@ public final class Surface: @unchecked Sendable {
         resolutionOrder: Int = 4,
         tolerance: Double = 1e-3
     ) -> Surface? {
-        guard !constraints.isEmpty else { return nil }
-
-        // Flat: (u, v, targetX, targetY, targetZ, d1uX, d1uY, d1uZ, d1vX, d1vY, d1vZ)
-        var flat: [Double] = []
-        for c in constraints {
-            flat.append(c.uv.x)
-            flat.append(c.uv.y)
-            flat.append(c.target.x)
-            flat.append(c.target.y)
-            flat.append(c.target.z)
-            flat.append(c.tangentU.x)
-            flat.append(c.tangentU.y)
-            flat.append(c.tangentU.z)
-            flat.append(c.tangentV.x)
-            flat.append(c.tangentV.y)
-            flat.append(c.tangentV.z)
-        }
-
-        guard
-            let h = OCCTSurfaceNLPlateG1(
-                handle, &flat, Int32(constraints.count),
-                Int32(resolutionOrder), tolerance
-            )
-        else { return nil }
-        return Surface(handle: h)
+        fatalError("unavailable")
     }
 }
 
@@ -2663,10 +2604,7 @@ extension Surface {
 
     /// Deform this surface with position + tangent + curvature constraints (NLPlate G0+G2).
     ///
-    /// Each constraint specifies a (u,v) parameter, a target 3D position,
-    /// tangent vectors (dU, dV), and second derivatives (dUU, dUV, dVV).
-    /// The result is parametrised as ``nlPlateDeformed(constraints:resolutionOrder:tolerance:)``'s
-    /// is.
+    /// Unavailable in this build: NLPlate_NLPlate and the NLPlate_HPG* constraints were deleted in OCCT 8.1 and the upstream IR kernel has no replacement; use Plate_Plate through PlateSolver, or GeomPlate for a surface through constraints.
     ///
     /// - Parameters:
     ///   - constraints: Array of constraint tuples
@@ -2678,6 +2616,11 @@ extension Surface {
     /// There is no iteration count: `NLPlate_NLPlate::Solve2` takes none. For the incremental
     /// solver strategy, which does take a number of increments, use
     /// ``nlPlateDeformedIncremental(constraints:maxOrder:initConstraintOrder:nbIncrements:)``.
+    @available(
+        *, unavailable,
+        message:
+            "NLPlate_NLPlate and the NLPlate_HPG* constraints were deleted in OCCT 8.1 and the upstream IR kernel has no replacement; use Plate_Plate through PlateSolver, or GeomPlate for a surface through constraints."
+    )
     public func nlPlateDeformedG2(
         constraints: [(
             uv: SIMD2<Double>, target: SIMD3<Double>,
@@ -2686,46 +2629,12 @@ extension Surface {
         )],
         tolerance: Double = 1e-3
     ) -> Surface? {
-        guard !constraints.isEmpty else { return nil }
-
-        // 20 doubles per constraint
-        var flat: [Double] = []
-        flat.reserveCapacity(constraints.count * 20)
-        for c in constraints {
-            flat.append(c.uv.x)
-            flat.append(c.uv.y)
-            flat.append(c.target.x)
-            flat.append(c.target.y)
-            flat.append(c.target.z)
-            flat.append(c.tangentU.x)
-            flat.append(c.tangentU.y)
-            flat.append(c.tangentU.z)
-            flat.append(c.tangentV.x)
-            flat.append(c.tangentV.y)
-            flat.append(c.tangentV.z)
-            flat.append(c.curvatureUU.x)
-            flat.append(c.curvatureUU.y)
-            flat.append(c.curvatureUU.z)
-            flat.append(c.curvatureUV.x)
-            flat.append(c.curvatureUV.y)
-            flat.append(c.curvatureUV.z)
-            flat.append(c.curvatureVV.x)
-            flat.append(c.curvatureVV.y)
-            flat.append(c.curvatureVV.z)
-        }
-
-        guard
-            let h = OCCTSurfaceNLPlateG2(handle, &flat, Int32(constraints.count), tolerance)
-        else { return nil }
-        return Surface(handle: h)
+        fatalError("unavailable")
     }
 
     /// Deform this surface with G0+G1+G2+G3 constraints (position + tangent + curvature + 3rd order).
     ///
-    /// Each constraint has 32 doubles: uv(2) + target(3) + d1u(3) + d1v(3) +
-    /// d2uu(3) + d2uv(3) + d2vv(3) + d3uuu(3) + d3uuv(3) + d3uvv(3) + d3vvv(3).
-    /// The result is parametrised as ``nlPlateDeformed(constraints:resolutionOrder:tolerance:)``'s
-    /// is.
+    /// Unavailable in this build: NLPlate_NLPlate and the NLPlate_HPG* constraints were deleted in OCCT 8.1 and the upstream IR kernel has no replacement; use Plate_Plate through PlateSolver, or GeomPlate for a surface through constraints.
     ///
     /// - Parameters:
     ///   - constraints: Array of constraint tuples
@@ -2736,6 +2645,11 @@ extension Surface {
     ///
     /// There is no iteration count, for the same reason as
     /// ``nlPlateDeformedG2(constraints:tolerance:)``.
+    @available(
+        *, unavailable,
+        message:
+            "NLPlate_NLPlate and the NLPlate_HPG* constraints were deleted in OCCT 8.1 and the upstream IR kernel has no replacement; use Plate_Plate through PlateSolver, or GeomPlate for a surface through constraints."
+    )
     public func nlPlateDeformedG3(
         constraints: [(
             uv: SIMD2<Double>, target: SIMD3<Double>,
@@ -2745,58 +2659,12 @@ extension Surface {
         )],
         tolerance: Double = 1e-3
     ) -> Surface? {
-        guard !constraints.isEmpty else { return nil }
-
-        // 32 doubles per constraint
-        var flat: [Double] = []
-        flat.reserveCapacity(constraints.count * 32)
-        for c in constraints {
-            flat.append(c.uv.x)
-            flat.append(c.uv.y)
-            flat.append(c.target.x)
-            flat.append(c.target.y)
-            flat.append(c.target.z)
-            flat.append(c.tangentU.x)
-            flat.append(c.tangentU.y)
-            flat.append(c.tangentU.z)
-            flat.append(c.tangentV.x)
-            flat.append(c.tangentV.y)
-            flat.append(c.tangentV.z)
-            flat.append(c.curvatureUU.x)
-            flat.append(c.curvatureUU.y)
-            flat.append(c.curvatureUU.z)
-            flat.append(c.curvatureUV.x)
-            flat.append(c.curvatureUV.y)
-            flat.append(c.curvatureUV.z)
-            flat.append(c.curvatureVV.x)
-            flat.append(c.curvatureVV.y)
-            flat.append(c.curvatureVV.z)
-            flat.append(c.d3UUU.x)
-            flat.append(c.d3UUU.y)
-            flat.append(c.d3UUU.z)
-            flat.append(c.d3UUV.x)
-            flat.append(c.d3UUV.y)
-            flat.append(c.d3UUV.z)
-            flat.append(c.d3UVV.x)
-            flat.append(c.d3UVV.y)
-            flat.append(c.d3UVV.z)
-            flat.append(c.d3VVV.x)
-            flat.append(c.d3VVV.y)
-            flat.append(c.d3VVV.z)
-        }
-
-        guard
-            let h = OCCTSurfaceNLPlateG3(handle, &flat, Int32(constraints.count), tolerance)
-        else { return nil }
-        return Surface(handle: h)
+        fatalError("unavailable")
     }
 
     /// Deform this surface with incremental G0 constraints (alternative solver strategy).
     ///
-    /// Uses NLPlate IncrementalSolve which progressively adds constraints for
-    /// better convergence on challenging constraint sets.
-    /// The result is parametrised as ``nlPlateDeformed(constraints:resolutionOrder:tolerance:)``'s
-    /// is.
+    /// Unavailable in this build: NLPlate_NLPlate and the NLPlate_HPG* constraints were deleted in OCCT 8.1 and the upstream IR kernel has no replacement; use Plate_Plate through PlateSolver, or GeomPlate for a surface through constraints.
     ///
     /// - Parameters:
     ///   - constraints: Array of (uv parameter, target 3D position) pairs
@@ -2804,40 +2672,23 @@ extension Surface {
     ///   - initConstraintOrder: Initial constraint order (default 1)
     ///   - nbIncrements: Number of increments (default 4)
     /// - Returns: A new deformed surface, or nil on failure
+    @available(
+        *, unavailable,
+        message:
+            "NLPlate_NLPlate and the NLPlate_HPG* constraints were deleted in OCCT 8.1 and the upstream IR kernel has no replacement; use Plate_Plate through PlateSolver, or GeomPlate for a surface through constraints."
+    )
     public func nlPlateDeformedIncremental(
         constraints: [(uv: SIMD2<Double>, target: SIMD3<Double>)],
         maxOrder: Int = 2,
         initConstraintOrder: Int = 1,
         nbIncrements: Int = 4
     ) -> Surface? {
-        guard !constraints.isEmpty else { return nil }
-
-        var flat: [Double] = []
-        flat.reserveCapacity(constraints.count * 5)
-        for c in constraints {
-            flat.append(c.uv.x)
-            flat.append(c.uv.y)
-            flat.append(c.target.x)
-            flat.append(c.target.y)
-            flat.append(c.target.z)
-        }
-
-        guard
-            let h = OCCTSurfaceNLPlateIncrementalG0(
-                handle, &flat, Int32(constraints.count),
-                Int32(maxOrder), Int32(initConstraintOrder), Int32(nbIncrements)
-            )
-        else { return nil }
-        return Surface(handle: h)
+        fatalError("unavailable")
     }
 
     /// Evaluate a derivative of the NLPlate-deformed surface at a UV point.
     ///
-    /// Solves the NLPlate problem with G0 constraints and returns the derivative at (u,v).
-    /// `NLPlate_NLPlate::EvaluateDerivative` seeds its accumulator with this surface's own value
-    /// or derivative before summing the plates, so this is a derivative of the deformed surface
-    /// rather than of a displacement away from it, and at `iu == 0, iv == 0` it is the deformed
-    /// point itself.
+    /// Unavailable in this build: NLPlate_NLPlate and the NLPlate_HPG* constraints were deleted in OCCT 8.1 and the upstream IR kernel has no replacement; use Plate_Plate through PlateSolver, or GeomPlate for a surface through constraints.
     ///
     /// - Parameters:
     ///   - constraints: Array of G0 constraint (uv, target) pairs
@@ -2846,28 +2697,17 @@ extension Surface {
     ///   - iu: U derivative order
     ///   - iv: V derivative order
     /// - Returns: Derivative vector, or nil on failure
+    @available(
+        *, unavailable,
+        message:
+            "NLPlate_NLPlate and the NLPlate_HPG* constraints were deleted in OCCT 8.1 and the upstream IR kernel has no replacement; use Plate_Plate through PlateSolver, or GeomPlate for a surface through constraints."
+    )
     public func nlPlateDerivative(
         constraints: [(uv: SIMD2<Double>, target: SIMD3<Double>)],
         u: Double, v: Double,
         iu: Int = 1, iv: Int = 0
     ) -> SIMD3<Double>? {
-        guard !constraints.isEmpty else { return nil }
-
-        var flat: [Double] = []
-        for c in constraints {
-            flat.append(c.uv.x)
-            flat.append(c.uv.y)
-            flat.append(c.target.x)
-            flat.append(c.target.y)
-            flat.append(c.target.z)
-        }
-
-        return unwrapVectorComponentsIfSuccessful {
-            OCCTSurfaceNLPlateEvaluateDerivative(
-                handle, &flat, Int32(constraints.count),
-                u, v, Int32(iu), Int32(iv), $0, $1, $2
-            )
-        }
+        fatalError("unavailable")
     }
 
     /// Generate a ruled/lofted surface from a sequence of section curves.

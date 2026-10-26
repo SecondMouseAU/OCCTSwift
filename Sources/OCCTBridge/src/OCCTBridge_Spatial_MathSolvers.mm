@@ -66,7 +66,6 @@
 #include <math_Uzawa.hxx>
 #include <math_EigenValuesSearcher.hxx>
 #include <math_KronrodSingleIntegration.hxx>
-#include <math_GaussMultipleIntegration.hxx>
 #include <math_GaussSetIntegration.hxx>
 #include <math_FunctionSample.hxx>
 #include <math_IntegerVector.hxx>
@@ -92,7 +91,6 @@
 #include <math_Householder.hxx>
 #include <math_Crout.hxx>
 #include <IntAna_IntConicQuad.hxx>
-#include <IntAna_Int3Pln.hxx>
 #include <IntAna_IntLinTorus.hxx>
 #include <IntAna_Quadric.hxx>
 #include <IntAna_IntQuadQuad.hxx>
@@ -2345,7 +2343,10 @@ double OCCTMathGaussMultipleIntegration(OCCTMathMultiVarCallback _Nonnull callba
                                         const int32_t* _Nonnull order,
                                         bool* _Nonnull isDone)
 {
-  class Adapter : public math_MultipleVarFunction
+  // math_GaussMultipleIntegration was removed in OCCT 8.1. math_GaussSetIntegration is the same
+  // Gauss-Legendre product rule over a math_FunctionSet; a scalar integrand is a set of one
+  // equation.
+  class Adapter : public math_FunctionSet
   {
     OCCTMathMultiVarCallback cb;
     void*                    ctx;
@@ -2361,7 +2362,16 @@ double OCCTMathGaussMultipleIntegration(OCCTMathMultiVarCallback _Nonnull callba
 
     int NbVariables() const override { return n; }
 
-    bool Value(const math_Vector& X, double& F) override { return cb(&X(1), n, &F, ctx); }
+    int NbEquations() const override { return 1; }
+
+    bool Value(const math_Vector& X, math_Vector& F) override
+    {
+      double value = 0.0;
+      if (!cb(&X(1), n, &value, ctx))
+        return false;
+      F(1) = value;
+      return true;
+    }
   };
 
   try
@@ -2375,9 +2385,9 @@ double OCCTMathGaussMultipleIntegration(OCCTMathMultiVarCallback _Nonnull callba
       up(i + 1)  = upper[i];
       ord(i + 1) = order[i];
     }
-    math_GaussMultipleIntegration gmi(f, lo, up, ord);
-    *isDone = gmi.IsDone();
-    return gmi.IsDone() ? gmi.Value() : 0;
+    math_GaussSetIntegration gsi(f, lo, up, ord);
+    *isDone = gsi.IsDone();
+    return gsi.IsDone() ? gsi.Value()(1) : 0;
   }
   catch (...)
   {

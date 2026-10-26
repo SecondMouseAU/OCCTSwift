@@ -827,7 +827,7 @@ public static func triangulationFromPoints(_ points: [(Double, Double, Double)])
 - **Returns:** A triangulated `Shape` (face), or `nil` on failure.
 - **OCCT:** `ShapeConstruct_MakeTriangulation` via `OCCTShapeConstructTriangulationFromPoints`.
 - **Example:**
-  ```swift
+  ```swift no-typecheck: triangulation constructors are unavailable against the upstream IR kernel (ShapeConstruct_MakeTriangulation deleted in OCCT 8.1)
   let pts = [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.5, 1.0, 0.0)]
   if let tri = Shape.triangulationFromPoints(pts) {
       // tri is a triangulated face
@@ -848,7 +848,7 @@ public static func triangulationFromWire(_ wire: Wire) -> Shape?
 - **Returns:** A triangulated `Shape`, or `nil` on failure.
 - **OCCT:** `ShapeConstruct_MakeTriangulation` via `OCCTShapeConstructTriangulationFromWire`.
 - **Example:**
-  ```swift
+  ```swift no-typecheck: triangulation constructors are unavailable against the upstream IR kernel (ShapeConstruct_MakeTriangulation deleted in OCCT 8.1)
   if let rect = Wire.rectangle(width: 10, height: 5),
      let tri = Shape.triangulationFromWire(rect) {
       // tri is a mesh of the rectangle

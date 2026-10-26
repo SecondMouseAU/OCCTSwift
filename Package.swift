@@ -47,6 +47,53 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
+// BRepGraph. OCCT 8.1 withdrew the BRepGraph package (OCCT#1628, deferred with no date; see OCCT
+// discussion 1656), so the upstream `IR` kernel this branch builds has no BRepGraph.hxx. Whether the
+// Swift half of the feature is built follows the kernel that is actually linked, which the manifest can
+// only see when it is a local xcframework: it asks that framework's own headers. A remote binary target
+// cannot be inspected at manifest time, so a build against the pinned remote asset reports the feature
+// as absent too; the bridge half (`OCCTBridge_BRepGraph.mm`) decides for itself with __has_include.
+//   - present: BRepGraph.swift, BRepGraph+Attributes.swift and the two +BRepGraph resolution files
+//     are built, OCCTBRepGraphTests exists, and the OCCTSWIFT_HAS_BREPGRAPH Swift define is set;
+//   - absent: those files are left out, BRepGraphUnavailable.swift is built in their place, and the
+//     BRepGraph test target is not declared (its tests are kept in the tree, not deleted).
+let kernelHasBRepGraph: Bool = {
+    guard useLocalXCFramework else { return false }
+    let headers = occtPackageDir + "/Libraries/OCCT.xcframework"
+    return ["macos-arm64", "ios-arm64", "ios-arm64-simulator"].contains {
+        FileManager.default.fileExists(atPath: headers + "/" + $0 + "/Headers/BRepGraph.hxx")
+    }
+}()
+let brepGraphSwiftSettings: [SwiftSetting] =
+    kernelHasBRepGraph ? [.define("OCCTSWIFT_HAS_BREPGRAPH")] : []
+let brepGraphExcludedSources: [String] =
+    kernelHasBRepGraph
+    ? ["BRepGraphUnavailable.swift"]
+    : [
+        "BRepGraph.swift", "BRepGraph+Attributes.swift", "ConstructionEntity+BRepGraph.swift",
+        "TopologyRef+BRepGraph.swift",
+    ]
+
+// Classes OCCT 8.1 deleted, with no replacement in the upstream `IR` kernel: NLPlate_NLPlate and the
+// NLPlate_HPG* constraints, ProjLib_ProjectOnSurface, ShapeCustom_Curve,
+// ShapeConstruct_MakeTriangulation, Geom2dGcc_Circ2dTanOnRad and OSD_Disk. Their bridge functions are
+// gone and the Swift methods are `@available(*, unavailable)`, so the test files that only exercise
+// them cannot compile and are left out of their targets here (kept in the tree, not deleted; a restored
+// class brings them back). Tests that share a file with live ones are wrapped in
+// `#if OCCTSWIFT_OCCT_80_CLASSES`, a define nothing sets today.
+let removedInOCCT81TestFiles: [String: [String]] = [
+    "OCCTSurfaceTests": [
+        "Plate/NLPlateBaseSurfaceTests.swift", "Plate/NLPlateDeformationTests.swift",
+        "Plate/NLPlateG2G3Tests.swift", "Plate/NLPlateParametersTests.swift",
+        "Plate/NLPlateResolutionOrderTests.swift",
+    ],
+    "OCCTGeom2dTests": ["ProjLib/ProjLibProjectOnSurfaceTests.swift"],
+    "OCCTShapeHealingTests": [
+        "ShapeCustom/CurveConvertToPeriodicTests.swift",
+        "ShapeBuild/ShapeConstructTriangulationTests.swift",
+    ],
+]
+
 // OCCT `IR` (53706f78a8, V8_0_1-76-g53706f78a8) plus the sixty-one carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target =
@@ -1128,6 +1175,18 @@ func adjustedForWASM(_ target: Target) -> Target? {
     return target
 }
 
+// The BRepGraph switch for everything that is not the OCCTSwift target itself (that one carries it
+// inline above): the test and executable targets get the OCCTSWIFT_HAS_BREPGRAPH define so a file
+// that names `BRepGraph` can say so with `#if`, and the BRepGraph test target is not declared at all
+// against a kernel without the package. Its sources stay in Tests/OCCTBRepGraphTests.
+func adjustedForBRepGraph(_ target: Target) -> Target? {
+    if target.name == "OCCTBRepGraphTests" && !kernelHasBRepGraph { return nil }
+    if target.type == .test || target.type == .executable {
+        target.swiftSettings = (target.swiftSettings ?? []) + brepGraphSwiftSettings
+    }
+    return target
+}
+
 let package = Package(
     name: "OCCTSwift",
     platforms: [
@@ -1181,9 +1240,10 @@ let package = Package(
             name: "OCCTSwift",
             dependencies: swiftLayerDependencies,
             path: "Sources/OCCTSwift",
+            exclude: brepGraphExcludedSources,
             swiftSettings: [
                 .swiftLanguageMode(.v6)
-            ]
+            ] + brepGraphSwiftSettings
         ),
 
         // Objective-C++ bridge to OCCT, source or prebuilt; see OCCTSWIFT_BRIDGE_PREBUILT above.
@@ -1205,7 +1265,8 @@ let package = Package(
             name: "OCCTFoundationTests", dependencies: ["OCCTSwift"],
             path: "Tests/OCCTFoundationTests"),
         .testTarget(
-            name: "OCCTGeom2dTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTGeom2dTests"),
+            name: "OCCTGeom2dTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTGeom2dTests",
+            exclude: removedInOCCT81TestFiles["OCCTGeom2dTests"] ?? []),
         .testTarget(name: "OCCTIOTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTIOTests"),
         .testTarget(
             name: "OCCTIntegrationTests", dependencies: ["OCCTSwift"],
@@ -1230,7 +1291,8 @@ let package = Package(
         // nbV=1, so proving the per-axis fix needs the raw C entry point, not the Swift wrapper.
         .testTarget(
             name: "OCCTShapeHealingTests", dependencies: ["OCCTSwift", "OCCTBridge"],
-            path: "Tests/OCCTShapeHealingTests"),
+            path: "Tests/OCCTShapeHealingTests",
+            exclude: removedInOCCT81TestFiles["OCCTShapeHealingTests"] ?? []),
         // `Fixtures/` holds .brep files read straight from the source tree via `#filePath`, not
         // through `Bundle.module`, so they are neither build inputs nor resources to copy. Without
         // this exclude SwiftPM reports them as unhandled on every build of this package as the ROOT
@@ -1242,7 +1304,8 @@ let package = Package(
             name: "OCCTStressTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTStressTests",
             exclude: ["Fixtures"]),
         .testTarget(
-            name: "OCCTSurfaceTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTSurfaceTests"),
+            name: "OCCTSurfaceTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTSurfaceTests",
+            exclude: removedInOCCT81TestFiles["OCCTSurfaceTests"] ?? []),
         .testTarget(
             name: "OCCTThreadTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTThreadTests"),
         .testTarget(
@@ -1293,6 +1356,7 @@ let package = Package(
             name: "Censuses",
             dependencies: ["OCCTSwift", "RunnerCore"],
             path: "Scripts/repro/censuses",
+            exclude: kernelHasBRepGraph ? [] : ["Issue761.swift"],
             swiftSettings: [
                 .swiftLanguageMode(.v6)
             ]
@@ -1338,13 +1402,14 @@ let package = Package(
             // The first wasm CI job (#2269) is what surfaced this at all: #2175 guarded the library
             // and nothing built this target for wasm, because that spike consumed OCCTSwift through
             // a separate package.
-            exclude: isWASI
+            exclude: (isWASI
                 ? ["AnalyzeSelfIntersectionTiming.swift", "PocketEnclosureTiming.swift"]
-                : [],
+                : [])
+                + (kernelHasBRepGraph ? [] : ["PocketEnclosureTiming.swift"]),
             swiftSettings: [
                 .swiftLanguageMode(.v6)
             ]
         ),
-    ].compactMap(adjustedForWASM),
+    ].compactMap(adjustedForWASM).compactMap(adjustedForBRepGraph),
     cxxLanguageStandard: .cxx17
 )

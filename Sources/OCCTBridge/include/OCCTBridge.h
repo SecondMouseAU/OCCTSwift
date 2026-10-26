@@ -371,9 +371,9 @@ typedef enum
 // GccAna_Circ2dTanCen                 → OCCTGccAnaCirc2dTanCen*
 // GccAna_Circ2dTanOnRad               → OCCTGccAnaCirc2dTanOnRad*
 // GccAna_Lin2dBisec                   → OCCTGccAnaLin2dBisec
-// GccAna_Lin2dTanObl                  → OCCTGccAnaLin2dTanOblPt
-// GccAna_Lin2dTanPar                  → OCCTGccAnaLin2dTanPar*
-// GccAna_Lin2dTanPer                  → OCCTGccAnaLin2dTanPer*
+// GccAna_Lin2dTanObl                  → OCCTGccAnaLin2dTanOblPt, OCCTGccAnaLin2dTanPar*,
+//                                       OCCTGccAnaLin2dTanPer* (angle 0 and pi / 2; OCCT 8.1
+//                                       removed GccAna_Lin2dTanPar and GccAna_Lin2dTanPer)
 // GccAna_Circ2d3Tan                   → OCCTGccAnaCirc2d3Tan* (v0.68.0)
 // GccAna_Pnt2dBisec                   → OCCTGccAnaPnt2dBisec
 //
@@ -440,7 +440,6 @@ typedef enum
 // Geom2dGcc_Circ2d2TanOn              → OCCTGeom2dGccCirc2d2TanOn*
 // Geom2dGcc_Circ2d2TanRad             → OCCTGccCircle2d2TanRad, OCCTGccCircle2dTanPtRad,
 // OCCTGccCircle2d2PtRad Geom2dGcc_Circ2dTanCen              → OCCTGccCircle2dTanCen
-// Geom2dGcc_Circ2dTanOnRad            → OCCTGeom2dGccCirc2dTanOnRad*
 // Geom2dGcc_Lin2d2Tan                 → OCCTGccLine2d2Tan, OCCTGccLine2dTanPt
 // Geom2dGcc_Lin2dTanObl               → OCCTGeom2dGccLin2dTanObl*
 //
@@ -604,11 +603,6 @@ typedef enum
 //                                       an inline scan — LProp_AnalyticCurInf itself is not
 //                                       wrapped)
 //
-// --- NLPlate ---
-// NLPlate_NLPlate                     → OCCTSurfaceNLPlate*
-// NLPlate_HPG0G2Constraint            → OCCTSurfaceNLPlateG2
-// NLPlate_HPG0G3Constraint            → OCCTSurfaceNLPlateG3
-//
 // --- OSD ---
 // OSD_Environment                     → OCCTEnvironment*
 // OSD_Path                            → OCCTOSDPath* (the only path-parsing family; #499 deleted
@@ -652,9 +646,6 @@ typedef enum
 // --- ShapeBuild ---
 // ShapeBuild_Edge                     → OCCTShapeBuildEdge*
 // ShapeBuild_Vertex                   → OCCTShapeBuildVertex*
-//
-// --- ShapeConstruct ---
-// ShapeConstruct_MakeTriangulation    → OCCTShapeConstructTriangulation*
 //
 // --- ShapeCustom ---
 // ShapeCustom_BSplineRestriction      → OCCTShapeBSplineRestriction*

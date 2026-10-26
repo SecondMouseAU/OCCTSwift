@@ -133,28 +133,31 @@ struct TransformPatternFullHistoryTests {
         }
     }
 
-    @Test("A translate's history can be absorbed into a BRepGraph (issue #290 integration)")
-    func translateHistoryAbsorbsIntoGraph() throws {
-        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
-        guard let graph = BRepGraph(shape: box),
-            let root = graph.findNode(for: box)
-        else {
-            Issue.record("graph setup failed")
-            return
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("A translate's history can be absorbed into a BRepGraph (issue #290 integration)")
+        func translateHistoryAbsorbsIntoGraph() throws {
+            let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+            guard let graph = BRepGraph(shape: box),
+                let root = graph.findNode(for: box)
+            else {
+                Issue.record("graph setup failed")
+                return
+            }
+            guard let r = box.translatedWithFullHistory(by: SIMD3(5, 0, 0)) else {
+                Issue.record("translate should succeed")
+                return
+            }
+            #expect(graph.historyRecordCount == 0)
+            let added = graph.add(
+                r.result, absorbing: r.history,
+                inputRoots: [BRepGraph.NodeRef(kind: root.kind, index: root.index)],
+                operationName: "translate")
+            #expect(
+                added != nil, "add(absorbing:) should succeed for a translate's synthesized history"
+            )
+            #expect(graph.historyRecordCount > 0, "absorb should have written history records")
         }
-        guard let r = box.translatedWithFullHistory(by: SIMD3(5, 0, 0)) else {
-            Issue.record("translate should succeed")
-            return
-        }
-        #expect(graph.historyRecordCount == 0)
-        let added = graph.add(
-            r.result, absorbing: r.history,
-            inputRoots: [BRepGraph.NodeRef(kind: root.kind, index: root.index)],
-            operationName: "translate")
-        #expect(
-            added != nil, "add(absorbing:) should succeed for a translate's synthesized history")
-        #expect(graph.historyRecordCount > 0, "absorb should have written history records")
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
     @Test("Linear pattern with a zero-length direction fails gracefully (does not crash)")
     func linearPatternZeroDirectionDoesNotCrash() throws {
@@ -171,28 +174,32 @@ struct TransformPatternFullHistoryTests {
         #expect(r == nil)
     }
 
-    @Test("A linear pattern's history can be absorbed into a BRepGraph (issue #290 integration)")
-    func linearPatternHistoryAbsorbsIntoGraph() throws {
-        let hole = try #require(Shape.cylinder(radius: 3, height: 10))
-        guard let graph = BRepGraph(shape: hole),
-            let root = graph.findNode(for: hole)
-        else {
-            Issue.record("graph setup failed")
-            return
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test(
+            "A linear pattern's history can be absorbed into a BRepGraph (issue #290 integration)")
+        func linearPatternHistoryAbsorbsIntoGraph() throws {
+            let hole = try #require(Shape.cylinder(radius: 3, height: 10))
+            guard let graph = BRepGraph(shape: hole),
+                let root = graph.findNode(for: hole)
+            else {
+                Issue.record("graph setup failed")
+                return
+            }
+            guard
+                let r = hole.linearPatternWithFullHistory(
+                    direction: SIMD3(20, 0, 0), spacing: 20, count: 3)
+            else {
+                Issue.record("linear pattern should succeed")
+                return
+            }
+            #expect(graph.historyRecordCount == 0)
+            let added = graph.add(
+                r.result, absorbing: r.history,
+                inputRoots: [BRepGraph.NodeRef(kind: root.kind, index: root.index)],
+                operationName: "linearPattern")
+            #expect(
+                added != nil, "add(absorbing:) should succeed for a pattern's synthesized history")
+            #expect(graph.historyRecordCount > 0, "absorb should have written history records")
         }
-        guard
-            let r = hole.linearPatternWithFullHistory(
-                direction: SIMD3(20, 0, 0), spacing: 20, count: 3)
-        else {
-            Issue.record("linear pattern should succeed")
-            return
-        }
-        #expect(graph.historyRecordCount == 0)
-        let added = graph.add(
-            r.result, absorbing: r.history,
-            inputRoots: [BRepGraph.NodeRef(kind: root.kind, index: root.index)],
-            operationName: "linearPattern")
-        #expect(added != nil, "add(absorbing:) should succeed for a pattern's synthesized history")
-        #expect(graph.historyRecordCount > 0, "absorb should have written history records")
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 }

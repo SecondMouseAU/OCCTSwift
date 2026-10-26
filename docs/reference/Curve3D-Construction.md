@@ -90,7 +90,7 @@ The curve must be closed (start point equals end point). The resulting periodic 
 - **Returns:** Periodic BSpline curve, or `nil` if the curve is not closed or periodic conversion is not possible.
 - **OCCT:** `ShapeCustom_Curve::ConvertToPeriodic`.
 - **Example:**
-  ```swift
+  ```swift no-typecheck: Curve3D.convertToPeriodic is unavailable against the upstream IR kernel (ShapeCustom_Curve deleted in OCCT 8.1)
   if let closed = Curve3D.interpolate(points: [
       SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(-1, 0, 0), SIMD3(0, -1, 0)
   ], closed: true) {

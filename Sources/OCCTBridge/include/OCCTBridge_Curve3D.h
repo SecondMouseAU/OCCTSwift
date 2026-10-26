@@ -544,11 +544,6 @@ OCCTCurve3DRef _Nullable OCCTCurve3DArcOfParabola(double focalDistance,
                                                   double alpha2,
                                                   bool   sense);
 
-/// Convert a closed BSpline curve to periodic form.
-/// @param curve Closed BSpline curve
-/// @return Periodic curve, or NULL if conversion fails
-OCCTCurve3DRef _Nullable OCCTCurve3DConvertToPeriodic(OCCTCurve3DRef curve);
-
 /// Split a 3D curve at a specified parameter value.
 /// @param curve Curve to split
 /// @param splitParam Parameter at which to split

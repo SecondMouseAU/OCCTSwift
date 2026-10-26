@@ -971,18 +971,6 @@ int32_t OCCTFileList(const char* _Nonnull path,
 
 // MARK: - OSD_Disk (v0.109.0)
 
-/// Get disk total size in KB for path (0 if unavailable).
-int64_t OCCTDiskSize(const char* _Nonnull path);
-
-/// Get disk free space in KB for path (0 if unavailable).
-int64_t OCCTDiskFree(const char* _Nonnull path);
-
-/// Check if a disk path is valid/accessible.
-bool OCCTDiskIsValid(const char* _Nonnull path);
-
-/// Get the disk/volume name. Caller must free() the result.
-char* _Nullable OCCTDiskName(const char* _Nonnull path);
-
 /// Create a shared library handle by name/path.
 OCCTSharedLibRef _Nullable OCCTSharedLibCreate(const char* _Nonnull name);
 

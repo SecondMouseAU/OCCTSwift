@@ -15,21 +15,30 @@
 import RunnerCore
 
 enum CensusRunner {
-    static let censuses: [RunnableEntry] = [
-        RunnableEntry(
-            name: "cluster-a", summary: "sub-shape enumeration and orientation (#664)",
-            run: ClusterA.run),
-        RunnableEntry(
-            name: "cluster-b", summary: "fillet and chamfer edge-set contract (#665)",
-            run: ClusterB.run),
-        RunnableEntry(
-            name: "cluster-d",
-            summary: "continuity handling across the kernel and bridge (#513/#667)",
-            run: ClusterD.run),
-        RunnableEntry(
-            name: "issue-761", summary: "AAG vs BRepGraph face/edge adjacency (#761)",
-            run: Issue761.run),
-    ]
+    static let censuses: [RunnableEntry] = {
+        var entries: [RunnableEntry] = [
+            RunnableEntry(
+                name: "cluster-a", summary: "sub-shape enumeration and orientation (#664)",
+                run: ClusterA.run),
+            RunnableEntry(
+                name: "cluster-b", summary: "fillet and chamfer edge-set contract (#665)",
+                run: ClusterB.run),
+            RunnableEntry(
+                name: "cluster-d",
+                summary: "continuity handling across the kernel and bridge (#513/#667)",
+                run: ClusterD.run),
+        ]
+        // Issue761.swift builds BRepGraphs, so Package.swift leaves it out, and defines
+        // OCCTSWIFT_HAS_BREPGRAPH, only for a kernel that provides the package (OCCT 8.1 withdrew it,
+        // OCCT#1628).
+        #if OCCTSWIFT_HAS_BREPGRAPH
+            entries.append(
+                RunnableEntry(
+                    name: "issue-761", summary: "AAG vs BRepGraph face/edge adjacency (#761)",
+                    run: Issue761.run))
+        #endif
+        return entries
+    }()
 
     static func main() {
         GenericRunner.main(

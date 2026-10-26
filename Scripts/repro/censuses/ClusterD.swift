@@ -669,31 +669,38 @@ enum ClusterD {
         // same BRep_Tool::MaxContinuity the graph's own comment says to use instead reports the
         // real class on at least one edge of the identical shape.
 
-        do {
-            guard let cylinder = Shape.cylinder(radius: 5, height: 10),
-                let graph = BRepGraph(shape: cylinder)
-            else {
-                print("Cluster D census: could not build the BRepGraph fixture.")
-                return
-            }
-            let allZero = (0..<graph.edgeCount).allSatisfy { graph.edgeMaxContinuity($0) == 0 }
-            print(
-                "6. BRepGraph.edgeMaxContinuity(_:), cylinder, all \(graph.edgeCount) edges: "
-                    + "\(allZero ? "ALL report 0 (the stub)" : "NOT all zero -- would contradict the source read")"
-            )
+        #if OCCTSWIFT_HAS_BREPGRAPH
+            do {
+                guard let cylinder = Shape.cylinder(radius: 5, height: 10),
+                    let graph = BRepGraph(shape: cylinder)
+                else {
+                    print("Cluster D census: could not build the BRepGraph fixture.")
+                    return
+                }
+                let allZero = (0..<graph.edgeCount).allSatisfy { graph.edgeMaxContinuity($0) == 0 }
+                print(
+                    "6. BRepGraph.edgeMaxContinuity(_:), cylinder, all \(graph.edgeCount) edges: "
+                        + "\(allZero ? "ALL report 0 (the stub)" : "NOT all zero -- would contradict the source read")"
+                )
 
-            var maxContinuities: [Int] = []
-            for edge in cylinder.subShapes(ofType: .edge) {
-                maxContinuities.append(Shape.maxContinuity(edge: edge))
+                var maxContinuities: [Int] = []
+                for edge in cylinder.subShapes(ofType: .edge) {
+                    maxContinuities.append(Shape.maxContinuity(edge: edge))
+                }
+                let sawNonzero = maxContinuities.contains { $0 != 0 }
+                print(
+                    "   Shape.maxContinuity(edge:) (BRep_Tool, the documented replacement), same cylinder, "
+                        + "per-edge values: \(maxContinuities) -- \(sawNonzero ? "at least one nonzero, confirming the graph path is the one losing information" : "all zero on this fixture too")"
+                )
+                print()
+                totalMeasured += 1
             }
-            let sawNonzero = maxContinuities.contains { $0 != 0 }
+        #else
             print(
-                "   Shape.maxContinuity(edge:) (BRep_Tool, the documented replacement), same cylinder, "
-                    + "per-edge values: \(maxContinuities) -- \(sawNonzero ? "at least one nonzero, confirming the graph path is the one losing information" : "all zero on this fixture too")"
+                "6. BRepGraph.edgeMaxContinuity(_:): skipped, BRepGraph is not available against this kernel (OCCT#1628)."
             )
             print()
-            totalMeasured += 1
-        }
+        #endif
 
         // MARK: 7. Summary
 

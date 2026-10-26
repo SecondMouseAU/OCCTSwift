@@ -288,85 +288,92 @@ public final class ConstructionContext: @unchecked Sendable {
         points.removeAll()
     }
 
-    // MARK: - Resolution
+    // Resolution reads a BRepGraph, which OCCT 8.1 withdrew (OCCT#1628), so it is built only where
+    // the kernel provides one.
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        // MARK: - Resolution
 
-    public func resolve(_ id: PlaneID, in graph: BRepGraph)
-        -> Result<Placement, ConstructionResolutionError>
-    {
-        resolveEntity(id, in: planes, kind: "plane") { graph.resolve($0) }
-    }
-
-    public func resolve(_ id: AxisID, in graph: BRepGraph)
-        -> Result<(origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError>
-    {
-        resolveEntity(id, in: axes, kind: "axis") { graph.resolve($0) }
-    }
-
-    public func resolve(_ id: PointID, in graph: BRepGraph)
-        -> Result<SIMD3<Double>, ConstructionResolutionError>
-    {
-        resolveEntity(id, in: points, kind: "point") { graph.resolve($0) }
-    }
-
-    /// Shared shape for the three `resolve(_:in:)` overloads above: look the entity up by ID,
-    /// resolve it against the graph, or report a not-registered failure, same message format
-    /// every kind used before #886 unified them.
-    ///
-    /// `resolver` captures its `BRepGraph` from the enclosing call site rather than taking one as
-    /// a parameter, every caller already has exactly one `graph` in scope, so re-threading it
-    /// through the closure signature was a no-op indirection (PR #898 review).
-    private func resolveEntity<ID: ConstructionEntityID, Entity, Resolved>(
-        _ id: ID,
-        in store: EntityStore<ID, Entity>,
-        kind: String,
-        resolver: (Entity) -> Result<Resolved, ConstructionResolutionError>
-    ) -> Result<Resolved, ConstructionResolutionError> {
-        guard let entity = store.value(id) else {
-            return .failure(.notApplicable("\(kind) id \(id.raw) not registered"))
+        public func resolve(_ id: PlaneID, in graph: BRepGraph)
+            -> Result<Placement, ConstructionResolutionError>
+        {
+            resolveEntity(id, in: planes, kind: "plane") { graph.resolve($0) }
         }
-        return resolver(entity)
-    }
 
-    // MARK: - Diagnostics
-
-    public struct BrokenEntities: Sendable {
-        public let planes: [(id: PlaneID, error: ConstructionResolutionError)]
-        public let axes: [(id: AxisID, error: ConstructionResolutionError)]
-        public let points: [(id: PointID, error: ConstructionResolutionError)]
-
-        public var isEmpty: Bool { planes.isEmpty && axes.isEmpty && points.isEmpty }
-        public var totalCount: Int { planes.count + axes.count + points.count }
-    }
-
-    /// Inspect every registered entity against the given graph, return those that fail
-    /// resolution.
-    ///
-    /// Useful for agent workflows to detect broken references after a model edit. Reads all
-    /// three stores as one atomic snapshot (`allEntitiesSnapshot`, PR #898 review finding 1) so a
-    /// concurrent `removeAll()`/`remove()` can't be observed mid-flight, some kinds already
-    /// cleared, others not, the same torn-cross-store-read bug class `count()` was fixed for.
-    public func allBroken(in graph: BRepGraph) -> BrokenEntities {
-        let (planes, axes, points) = allEntitiesSnapshot
-        return BrokenEntities(
-            planes: broken(planes) { graph.resolve($0) },
-            axes: broken(axes) { graph.resolve($0) },
-            points: broken(points) { graph.resolve($0) }
-        )
-    }
-
-    /// Shared shape for the three per-kind scans in `allBroken(in:)`, above.
-    ///
-    /// `resolver` captures `graph` from the enclosing `allBroken(in:)` call rather than taking
-    /// one as a parameter, same reasoning as `resolveEntity` above (PR #898 review).
-    private func broken<ID: ConstructionEntityID, Entity, Resolved>(
-        _ entries: [(id: ID, name: String?, value: Entity)],
-        resolver: (Entity) -> Result<Resolved, ConstructionResolutionError>
-    ) -> [(id: ID, error: ConstructionResolutionError)] {
-        entries.compactMap { entry in
-            guard case .failure(let error) = resolver(entry.value) else { return nil }
-            return (id: entry.id, error: error)
+        public func resolve(_ id: AxisID, in graph: BRepGraph)
+            -> Result<
+                (origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError
+            >
+        {
+            resolveEntity(id, in: axes, kind: "axis") { graph.resolve($0) }
         }
-    }
+
+        public func resolve(_ id: PointID, in graph: BRepGraph)
+            -> Result<SIMD3<Double>, ConstructionResolutionError>
+        {
+            resolveEntity(id, in: points, kind: "point") { graph.resolve($0) }
+        }
+
+        /// Shared shape for the three `resolve(_:in:)` overloads above: look the entity up by ID,
+        /// resolve it against the graph, or report a not-registered failure, same message format
+        /// every kind used before #886 unified them.
+        ///
+        /// `resolver` captures its `BRepGraph` from the enclosing call site rather than taking one as
+        /// a parameter, every caller already has exactly one `graph` in scope, so re-threading it
+        /// through the closure signature was a no-op indirection (PR #898 review).
+        private func resolveEntity<ID: ConstructionEntityID, Entity, Resolved>(
+            _ id: ID,
+            in store: EntityStore<ID, Entity>,
+            kind: String,
+            resolver: (Entity) -> Result<Resolved, ConstructionResolutionError>
+        ) -> Result<Resolved, ConstructionResolutionError> {
+            guard let entity = store.value(id) else {
+                return .failure(.notApplicable("\(kind) id \(id.raw) not registered"))
+            }
+            return resolver(entity)
+        }
+
+        // MARK: - Diagnostics
+
+        public struct BrokenEntities: Sendable {
+            public let planes: [(id: PlaneID, error: ConstructionResolutionError)]
+            public let axes: [(id: AxisID, error: ConstructionResolutionError)]
+            public let points: [(id: PointID, error: ConstructionResolutionError)]
+
+            public var isEmpty: Bool { planes.isEmpty && axes.isEmpty && points.isEmpty }
+            public var totalCount: Int { planes.count + axes.count + points.count }
+        }
+
+        /// Inspect every registered entity against the given graph, return those that fail
+        /// resolution.
+        ///
+        /// Useful for agent workflows to detect broken references after a model edit. Reads all
+        /// three stores as one atomic snapshot (`allEntitiesSnapshot`, PR #898 review finding 1) so a
+        /// concurrent `removeAll()`/`remove()` can't be observed mid-flight, some kinds already
+        /// cleared, others not, the same torn-cross-store-read bug class `count()` was fixed for.
+        public func allBroken(in graph: BRepGraph) -> BrokenEntities {
+            let (planes, axes, points) = allEntitiesSnapshot
+            return BrokenEntities(
+                planes: broken(planes) { graph.resolve($0) },
+                axes: broken(axes) { graph.resolve($0) },
+                points: broken(points) { graph.resolve($0) }
+            )
+        }
+
+        /// Shared shape for the three per-kind scans in `allBroken(in:)`, above.
+        ///
+        /// `resolver` captures `graph` from the enclosing `allBroken(in:)` call rather than taking
+        /// one as a parameter, same reasoning as `resolveEntity` above (PR #898 review).
+        private func broken<ID: ConstructionEntityID, Entity, Resolved>(
+            _ entries: [(id: ID, name: String?, value: Entity)],
+            resolver: (Entity) -> Result<Resolved, ConstructionResolutionError>
+        ) -> [(id: ID, error: ConstructionResolutionError)] {
+            entries.compactMap { entry in
+                guard case .failure(let error) = resolver(entry.value) else { return nil }
+                return (id: entry.id, error: error)
+            }
+        }
+
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
     public var count: (planes: Int, axes: Int, points: Int) {
         crossStoreLock.lock()

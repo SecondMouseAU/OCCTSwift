@@ -189,7 +189,6 @@
 #include <TColStd_PackedMapOfInteger.hxx>
 #include <TDF_Transaction.hxx>
 #include <TDF_CopyTool.hxx>
-#include <TDF_ComparisonTool.hxx>
 #include <TDF_DataSet.hxx>
 #include <TDF_RelocationTable.hxx>
 #include <TDocStd_XLinkTool.hxx>
@@ -5062,13 +5061,12 @@ bool OCCTDocumentIsSelfContained(OCCTDocumentRef doc, int64_t labelId)
     if (label.IsNull())
       return false;
 
-    Handle(TDF_DataSet) ds = new TDF_DataSet();
-    ds->AddLabel(label);
-    for (TDF_ChildIterator cit(label, true); cit.More(); cit.Next())
-    {
-      ds->AddLabel(cit.Value());
-    }
-    return TDF_ComparisonTool::IsSelfContained(label, ds);
+    // TDF_ComparisonTool::IsSelfContained was removed in OCCT 8.1. It only tested that every label
+    // of a data set is a descendant of `label`, and this function filled the set with `label` and
+    // its own descendants, so it could not answer false. TDF_Tool::IsSelfContained is the check the
+    // doc comment on Document.isSelfContained(labelId:) describes: `label` and its descendants
+    // reference only attributes or labels attached to themselves (TDF_Tool.hxx).
+    return TDF_Tool::IsSelfContained(label);
   }
   catch (...)
   {

@@ -96,47 +96,49 @@ public struct Sketch: Sendable, Hashable {
 }
 
 extension Sketch {
-    /// Build a 3D closed profile wire from the sketch's non-construction elements,
-    /// placed on the host construction plane.
-    ///
-    /// Construction elements are filtered out at this single site, upstream uses
-    /// of the sketch (solver, constraint editor, agent-facing accessors) see the
-    /// full element set including construction.
-    ///
-    /// - Parameters:
-    ///   - context: The construction context that registered `hostPlane`.
-    ///   - graph: A BRepGraph against which to resolve the host plane's recipe.
-    /// - Returns: A closed Wire on the resolved plane, or nil if the host plane
-    ///   fails to resolve or no profile elements exist.
-    public func buildProfile(
-        in context: ConstructionContext,
-        graph: BRepGraph
-    ) -> Wire? {
-        let profileElements = elements.filter { !$0.isConstruction }
-        guard !profileElements.isEmpty else { return nil }
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        /// Build a 3D closed profile wire from the sketch's non-construction elements,
+        /// placed on the host construction plane.
+        ///
+        /// Construction elements are filtered out at this single site, upstream uses
+        /// of the sketch (solver, constraint editor, agent-facing accessors) see the
+        /// full element set including construction.
+        ///
+        /// - Parameters:
+        ///   - context: The construction context that registered `hostPlane`.
+        ///   - graph: A BRepGraph against which to resolve the host plane's recipe.
+        /// - Returns: A closed Wire on the resolved plane, or nil if the host plane
+        ///   fails to resolve or no profile elements exist.
+        public func buildProfile(
+            in context: ConstructionContext,
+            graph: BRepGraph
+        ) -> Wire? {
+            let profileElements = elements.filter { !$0.isConstruction }
+            guard !profileElements.isEmpty else { return nil }
 
-        let placement: Placement
-        switch context.resolve(hostPlane, in: graph) {
-        case .success(let p): placement = p
-        case .failure: return nil
-        }
-
-        // Lift 2D elements into 3D using the placement's frame, then assemble a wire.
-        var points3D: [SIMD3<Double>] = []
-        for element in profileElements {
-            let elementPoints = element.curve.tessellate2D(segmentsPerRadian: 16)
-            for (i, pt) in elementPoints.enumerated() {
-                let p = placement.lift(pt)
-                if i == 0 && !points3D.isEmpty && approxEqual(points3D.last!, p) { continue }
-                points3D.append(p)
+            let placement: Placement
+            switch context.resolve(hostPlane, in: graph) {
+            case .success(let p): placement = p
+            case .failure: return nil
             }
-        }
 
-        guard points3D.count >= 2 else { return nil }
-        // Close the wire if not already closed.
-        let closed = approxEqual(points3D.first!, points3D.last!)
-        return Wire.polygon3D(points3D, closed: closed)
-    }
+            // Lift 2D elements into 3D using the placement's frame, then assemble a wire.
+            var points3D: [SIMD3<Double>] = []
+            for element in profileElements {
+                let elementPoints = element.curve.tessellate2D(segmentsPerRadian: 16)
+                for (i, pt) in elementPoints.enumerated() {
+                    let p = placement.lift(pt)
+                    if i == 0 && !points3D.isEmpty && approxEqual(points3D.last!, p) { continue }
+                    points3D.append(p)
+                }
+            }
+
+            guard points3D.count >= 2 else { return nil }
+            // Close the wire if not already closed.
+            let closed = approxEqual(points3D.first!, points3D.last!)
+            return Wire.polygon3D(points3D, closed: closed)
+        }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
     private func approxEqual(_ a: SIMD3<Double>, _ b: SIMD3<Double>, tolerance: Double = 1e-9)
         -> Bool

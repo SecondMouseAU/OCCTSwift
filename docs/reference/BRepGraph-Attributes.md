@@ -109,7 +109,7 @@ public var doublesValue: [Double]? { get }
 ```
 
 - **Example:**
-  ```swift
+  ```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
   let attr: BRepGraph.AttrValue = .doubles([0.12, 0.34, 0.56])
   if let params = attr.doublesValue {
       print("params:", params)

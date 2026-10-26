@@ -22,7 +22,7 @@ A node **index** is a position in a per-kind vector. It is convenient but not st
 removing topology, or calling `compact()`, renumbers the vectors, so face index 3 today may be a
 different face tomorrow.
 
-```swift
+```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
 let box = Shape.box(width: 10, height: 10, depth: 10)!
 let graph = BRepGraph(shape: box)!
 
@@ -222,7 +222,7 @@ A graph built from a compound of placed instances, which is what a STEP assembly
 sub-shape of every instance resolves through `findNode(for:)`, and the two instances of one part
 resolve to the *same* node:
 
-```swift
+```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
 let box = Shape.box(width: 10, height: 8, depth: 6)!
 let placed = box.moved(dx: 50, dy: 0, dz: 0)!
 let pair = Shape.compound([box, placed])!

@@ -102,7 +102,7 @@ is what the `nlPlateDerivative` entry below spells out. (#811)
 - **Returns:** New deformed surface, or `nil` if the array is empty, `resolutionOrder` is outside `2...9`, or the solver fails.
 - **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG0Constraint` + `Geom_RectangularTrimmedSurface` + `BSplCLib::Interpolate`.
 - **Example:**
-  ```swift
+  ```swift no-typecheck: NLPlate is unavailable against the upstream IR kernel (deleted in OCCT 8.1)
   let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
   if let bumped = plane.nlPlateDeformed(
       constraints: [(uv: SIMD2(0, 0), target: SIMD3(0, 0, 5))],

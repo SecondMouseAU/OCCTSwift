@@ -64,7 +64,6 @@
 #include <math_Uzawa.hxx>
 #include <math_EigenValuesSearcher.hxx>
 #include <math_KronrodSingleIntegration.hxx>
-#include <math_GaussMultipleIntegration.hxx>
 #include <math_GaussSetIntegration.hxx>
 #include <math_FunctionSample.hxx>
 #include <math_IntegerVector.hxx>
@@ -90,7 +89,6 @@
 #include <math_Householder.hxx>
 #include <math_Crout.hxx>
 #include <IntAna_IntConicQuad.hxx>
-#include <IntAna_Int3Pln.hxx>
 #include <IntAna_IntLinTorus.hxx>
 #include <IntAna_Quadric.hxx>
 #include <IntAna_IntQuadQuad.hxx>

@@ -49,8 +49,11 @@
 #include <GeomLib_Check2dBSplineCurve.hxx>
 #include <ShapeUpgrade_SplitCurve2dContinuity.hxx>
 #include <ShapeUpgrade_ConvertCurve2dToBezier.hxx>
-#include <Extrema_LocateExtCC2d.hxx>
 #include <Extrema_POnCurv2d.hxx>
+#include <Extrema_GenLocateExtCC.hxx>
+#include <Extrema_GFuncExtCC.hxx>
+#include <Extrema_Curve2dTool.hxx>
+#include <NCollection_Sequence.hxx>
 #include <gce_MakeCirc2d.hxx>
 #include <gce_MakeElips2d.hxx>
 #include <gce_MakeHypr2d.hxx>
@@ -130,8 +133,6 @@
 #include <GccAna_Circ2dBisec.hxx>
 #include <GccAna_CircLin2dBisec.hxx>
 #include <GccAna_CircPnt2dBisec.hxx>
-#include <GccAna_Lin2dTanPar.hxx>
-#include <GccAna_Lin2dTanPer.hxx>
 #include <GccAna_Lin2dTanObl.hxx>
 #include <GccAna_Circ2d2TanOn.hxx>
 #include <GccAna_Circ2dTanOnRad.hxx>
@@ -143,7 +144,6 @@
 #include <GccInt_BHyper.hxx>
 #include <GccInt_BParab.hxx>
 #include <Geom2dGcc_Circ2d2TanOn.hxx>
-#include <Geom2dGcc_Circ2dTanOnRad.hxx>
 #include <Geom2dGcc_Lin2dTanObl.hxx>
 #include <IntAna2d_AnaIntersection.hxx>
 #include <IntAna2d_IntPoint.hxx>
@@ -471,7 +471,23 @@ OCCTExtremaLocateExtCC2dResult OCCTExtremaLocateExtCC2d(OCCTCurve2DRef curve1,
     auto*                       c2  = (OCCTCurve2D*)curve2;
     Handle(Geom2dAdaptor_Curve) ac1 = new Geom2dAdaptor_Curve(c1->curve, u1First, u1Last);
     Handle(Geom2dAdaptor_Curve) ac2 = new Geom2dAdaptor_Curve(c2->curve, u2First, u2Last);
-    Extrema_LocateExtCC2d       ext(*ac1, *ac2, seedU, seedV);
+    // Extrema_LocateExtCC2d was removed in OCCT 8.1; its body was this template with the
+    // resolution tolerances below (Extrema_LocateExtCC2d.cxx at V8_0_1), so it is spelled directly.
+    using LocateExtCC2d =
+      Extrema_GenLocateExtCC<Adaptor2d_Curve2d,
+                             Extrema_Curve2dTool,
+                             Extrema_POnCurv2d,
+                             Extrema_GFuncExtCC<Adaptor2d_Curve2d,
+                                                Extrema_Curve2dTool,
+                                                Adaptor2d_Curve2d,
+                                                Extrema_Curve2dTool,
+                                                Extrema_POnCurv2d,
+                                                gp_Pnt2d,
+                                                gp_Vec2d,
+                                                NCollection_Sequence<Extrema_POnCurv2d>>>;
+    const double  tolU = ac1->Resolution(Precision::Confusion());
+    const double  tolV = ac2->Resolution(Precision::Confusion());
+    LocateExtCC2d ext(*ac1, *ac2, seedU, seedV, tolU, tolV);
     result.isDone = ext.IsDone();
     if (result.isDone)
     {

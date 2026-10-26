@@ -248,13 +248,6 @@ bool OCCTBRepLibPointCloudByDensity(OCCTShapeRef shape,
 
 // MARK: - ShapeConstruct_MakeTriangulation
 
-/// Build a triangulated face from an array of 3D points.
-OCCTShapeRef _Nullable OCCTShapeConstructTriangulationFromPoints(const double* _Nonnull coords,
-                                                                 int32_t pointCount);
-
-/// Build a triangulated face from a wire.
-OCCTShapeRef _Nullable OCCTShapeConstructTriangulationFromWire(OCCTWireRef _Nonnull wire);
-
 // MARK: - BRepMesh_ShapeTool (Static Mesh Utilities)
 
 /// Get maximum tolerance of edges/vertices on a face.

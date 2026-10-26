@@ -288,15 +288,17 @@ struct Issue553GccZeroRadiusTests {
             ).isEmpty)
     }
 
-    @Test func requestedRadiusOfZeroIsRejectedOnCurves() throws {
-        let line = try #require(Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)))
-        let centerOn = try #require(Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 1)))
-        #expect(
-            Curve2DGcc.circlesTangentOnCurveWithRadius(
-                line, centerOn: centerOn,
-                radius: 0
-            ).isEmpty)
-    }
+    #if OCCTSWIFT_OCCT_80_CLASSES
+        @Test func requestedRadiusOfZeroIsRejectedOnCurves() throws {
+            let line = try #require(Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)))
+            let centerOn = try #require(Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 1)))
+            #expect(
+                Curve2DGcc.circlesTangentOnCurveWithRadius(
+                    line, centerOn: centerOn,
+                    radius: 0
+                ).isEmpty)
+        }
+    #endif  // OCCTSWIFT_OCCT_80_CLASSES
 
     @Test func requestedRadiusAcceptsValidValues() {
         #expect(

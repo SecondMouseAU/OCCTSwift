@@ -64,94 +64,96 @@ extension ConstructionContext {
         }
     }
 
-    /// Materialise all construction entities as `TopoDS_Shape`s on the document's
-    /// CONSTRUCTION layer. Each resolved placement becomes a finite representative
-    /// shape:
-    /// - Planes → a rectangular face (2 × `planeHalfSize`) centred on the plane origin
-    /// - Axes   → an edge of length 2 × `axisHalfLength` centred on the axis origin
-    /// - Points → a vertex
-    ///
-    /// Returns a breakdown of what got materialised and what failed to resolve.
-    ///
-    /// Reads every plane/axis/point as one atomic cross-store snapshot up front
-    /// (`allEntitiesSnapshot`, PR #898 review finding 1), so a concurrent `removeAll()`/
-    /// `remove()` can't be observed mid-flight, some kinds already cleared, others not, the same
-    /// torn-cross-store-read bug class `count()` was fixed for. The per-entity resolve/build/add
-    /// work below runs entirely against that local snapshot, outside any `ConstructionContext`
-    /// lock, see the doc comment on `allEntitiesSnapshot` for why that's safe.
-    @discardableResult
-    public func materialize(
-        in document: Document,
-        graph: BRepGraph,
-        options: MaterializeOptions = MaterializeOptions()
-    ) -> MaterializationResult {
-        var planeShapes: [(id: PlaneID, labelId: Int64)] = []
-        var axisShapes: [(id: AxisID, labelId: Int64)] = []
-        var pointShapes: [(id: PointID, labelId: Int64)] = []
-        var failures: [MaterializationFailure] = []
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        /// Materialise all construction entities as `TopoDS_Shape`s on the document's
+        /// CONSTRUCTION layer. Each resolved placement becomes a finite representative
+        /// shape:
+        /// - Planes → a rectangular face (2 × `planeHalfSize`) centred on the plane origin
+        /// - Axes   → an edge of length 2 × `axisHalfLength` centred on the axis origin
+        /// - Points → a vertex
+        ///
+        /// Returns a breakdown of what got materialised and what failed to resolve.
+        ///
+        /// Reads every plane/axis/point as one atomic cross-store snapshot up front
+        /// (`allEntitiesSnapshot`, PR #898 review finding 1), so a concurrent `removeAll()`/
+        /// `remove()` can't be observed mid-flight, some kinds already cleared, others not, the same
+        /// torn-cross-store-read bug class `count()` was fixed for. The per-entity resolve/build/add
+        /// work below runs entirely against that local snapshot, outside any `ConstructionContext`
+        /// lock, see the doc comment on `allEntitiesSnapshot` for why that's safe.
+        @discardableResult
+        public func materialize(
+            in document: Document,
+            graph: BRepGraph,
+            options: MaterializeOptions = MaterializeOptions()
+        ) -> MaterializationResult {
+            var planeShapes: [(id: PlaneID, labelId: Int64)] = []
+            var axisShapes: [(id: AxisID, labelId: Int64)] = []
+            var pointShapes: [(id: PointID, labelId: Int64)] = []
+            var failures: [MaterializationFailure] = []
 
-        let (planes, axes, points) = allEntitiesSnapshot
-        let addShape: (Shape) -> Int64 = { document.addConstructionShape($0) }
+            let (planes, axes, points) = allEntitiesSnapshot
+            let addShape: (Shape) -> Int64 = { document.addConstructionShape($0) }
 
-        // Hoisted above their loops (PR #898 review, finding 3): each closure closes over only
-        // loop-invariant `self`/`options`, nothing that varies per entity, so building a fresh
-        // one on every iteration was a wasted allocation.
-        let buildPlaneShape: (Placement) -> Shape? = {
-            self.planeShape(placement: $0, halfSize: options.planeHalfSize)
-        }
-        for entry in planes {
-            switch materializeOne(
-                id: entry.id, resolution: graph.resolve(entry.value),
-                buildShape: buildPlaneShape,
-                addShape: addShape,
-                resolveFailure: MaterializationFailure.planeResolveFailed,
-                shapeFailure: MaterializationFailure.planeShapeFailed,
-                addFailure: MaterializationFailure.planeAddFailed)
-            {
-            case .success(let materialized): planeShapes.append(materialized)
-            case .failure(let failure): failures.append(failure)
+            // Hoisted above their loops (PR #898 review, finding 3): each closure closes over only
+            // loop-invariant `self`/`options`, nothing that varies per entity, so building a fresh
+            // one on every iteration was a wasted allocation.
+            let buildPlaneShape: (Placement) -> Shape? = {
+                self.planeShape(placement: $0, halfSize: options.planeHalfSize)
             }
-        }
-
-        let buildAxisShape: ((origin: SIMD3<Double>, direction: SIMD3<Double>)) -> Shape? = {
-            self.axisShape(
-                origin: $0.origin, direction: $0.direction, halfLength: options.axisHalfLength)
-        }
-        for entry in axes {
-            switch materializeOne(
-                id: entry.id, resolution: graph.resolve(entry.value),
-                buildShape: buildAxisShape,
-                addShape: addShape,
-                resolveFailure: MaterializationFailure.axisResolveFailed,
-                shapeFailure: MaterializationFailure.axisShapeFailed,
-                addFailure: MaterializationFailure.axisAddFailed)
-            {
-            case .success(let materialized): axisShapes.append(materialized)
-            case .failure(let failure): failures.append(failure)
+            for entry in planes {
+                switch materializeOne(
+                    id: entry.id, resolution: graph.resolve(entry.value),
+                    buildShape: buildPlaneShape,
+                    addShape: addShape,
+                    resolveFailure: MaterializationFailure.planeResolveFailed,
+                    shapeFailure: MaterializationFailure.planeShapeFailed,
+                    addFailure: MaterializationFailure.planeAddFailed)
+                {
+                case .success(let materialized): planeShapes.append(materialized)
+                case .failure(let failure): failures.append(failure)
+                }
             }
-        }
 
-        let buildPointShape: (SIMD3<Double>) -> Shape? = { self.pointShape(at: $0) }
-        for entry in points {
-            switch materializeOne(
-                id: entry.id, resolution: graph.resolve(entry.value),
-                buildShape: buildPointShape,
-                addShape: addShape,
-                resolveFailure: MaterializationFailure.pointResolveFailed,
-                shapeFailure: MaterializationFailure.pointShapeFailed,
-                addFailure: MaterializationFailure.pointAddFailed)
-            {
-            case .success(let materialized): pointShapes.append(materialized)
-            case .failure(let failure): failures.append(failure)
+            let buildAxisShape: ((origin: SIMD3<Double>, direction: SIMD3<Double>)) -> Shape? = {
+                self.axisShape(
+                    origin: $0.origin, direction: $0.direction, halfLength: options.axisHalfLength)
             }
-        }
+            for entry in axes {
+                switch materializeOne(
+                    id: entry.id, resolution: graph.resolve(entry.value),
+                    buildShape: buildAxisShape,
+                    addShape: addShape,
+                    resolveFailure: MaterializationFailure.axisResolveFailed,
+                    shapeFailure: MaterializationFailure.axisShapeFailed,
+                    addFailure: MaterializationFailure.axisAddFailed)
+                {
+                case .success(let materialized): axisShapes.append(materialized)
+                case .failure(let failure): failures.append(failure)
+                }
+            }
 
-        return MaterializationResult(
-            planeShapes: planeShapes,
-            axisShapes: axisShapes,
-            pointShapes: pointShapes,
-            failures: failures)
-    }
+            let buildPointShape: (SIMD3<Double>) -> Shape? = { self.pointShape(at: $0) }
+            for entry in points {
+                switch materializeOne(
+                    id: entry.id, resolution: graph.resolve(entry.value),
+                    buildShape: buildPointShape,
+                    addShape: addShape,
+                    resolveFailure: MaterializationFailure.pointResolveFailed,
+                    shapeFailure: MaterializationFailure.pointShapeFailed,
+                    addFailure: MaterializationFailure.pointAddFailed)
+                {
+                case .success(let materialized): pointShapes.append(materialized)
+                case .failure(let failure): failures.append(failure)
+                }
+            }
+
+            return MaterializationResult(
+                planeShapes: planeShapes,
+                axisShapes: axisShapes,
+                pointShapes: pointShapes,
+                failures: failures)
+        }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
     /// Shared shape for the three per-kind loops in `materialize(in:graph:options:)`, above
     /// (#886): resolve-failure, shape-build-failure and add-failure are reported the same way for

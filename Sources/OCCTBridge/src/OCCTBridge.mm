@@ -424,9 +424,6 @@ int32_t OCCTDiagnosticsStackTraceDepth(void)
 #include <RWObj_CafReader.hxx>
 #include <RWObj_CafWriter.hxx>
 #include <RWPly_CafWriter.hxx>
-#include <NLPlate_NLPlate.hxx>
-#include <NLPlate_HPG0Constraint.hxx>
-#include <NLPlate_HPG1Constraint.hxx>
 #include <Plate_D1.hxx>
 #include <GeomAPI_PointsToBSplineSurface.hxx>
 #include <ProjLib_ProjectOnPlane.hxx>

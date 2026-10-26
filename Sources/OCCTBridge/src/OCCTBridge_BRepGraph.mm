@@ -43,71 +43,83 @@
 #include <ChFi3d.hxx>
 #include <ChFiDS_TypeOfConcavity.hxx>
 
+// OCCTSWIFT_HAS_BREPGRAPH: the kernel provides the BRepGraph package. OCCT 8.1 withdrew it
+// (OCCT#1628, deferred with no date; see OCCT discussion 1656), so a build against the upstream
+// `IR` kernel has no BRepGraph.hxx and everything between here and the AAG section below is
+// compiled out. The code is kept as it was for the 8.0.x kernels and for a restored package. The
+// Swift layer gates on the same fact with the OCCTSWIFT_HAS_BREPGRAPH Swift define (Package.swift).
+#if __has_include(<BRepGraph.hxx>)
+  #define OCCTSWIFT_HAS_BREPGRAPH 1
+#endif
+
+#ifdef OCCTSWIFT_HAS_BREPGRAPH
+
 // === Extracted BRepGraph block ===
 //
 // Verbatim copy of lines 55486–EOF from OCCTBridge.mm at the time of issue #99.
 
 // MARK: - BRepGraph (v0.129.0)
 
-#include <BRepGraph.hxx>
-#include <BRepGraph_TopoView.hxx>
-#include <BRepGraph_Tool.hxx>
-#include <BRepGraph_LayerRegistry.hxx>
-// NOTE: BRepGraph_LayerRegularity.hxx is NOT included, it is an upstream p1 bug: it marks
-// `override` on OnNodeRemoved(node,replacement)/OnCompact() which do not exist as virtuals in
-// BRepGraph_Layer, so the header does not compile (AppleClang) and the .cxx is absent from libOCCT
-// (0 symbols). Edge regularity/continuity via the graph layer is therefore unavailable in 8.0.0p1;
-// the shape-based BRep_Tool::MaxContinuity path (OCCTBRepToolMaxContinuity) is unaffected.
-#include <BRepGraph_ReverseIterator.hxx>
-#include <BRepGraph_RefsView.hxx>
-#include <BRepGraphInc_Relations.hxx>
-#include <BRepGraphInc_Definition.hxx>
-#include <BRepGraph_MeshView.hxx>
-#include <BRepGraph_Compact.hxx>
-#include <BRepGraph_Deduplicate.hxx>
-#include <BRepGraph_Validate.hxx>
-#include <BRepGraph_ChildExplorer.hxx>
-#include <BRepGraph_ParentExplorer.hxx>
-#include <BRepGraph_NodeId.hxx>
-// BRepGraph_RepId moved to the BRepGraphInc subpackage in OCCT 8.0.0p1 (its Kind enum was
-// also repurposed to representation kinds: EdgeCurve3D, FaceSurface, FaceTriangulation, …).
-#include <BRepGraphInc_RepId.hxx>
-// OCCT 8.0.0p1 removed BRepGraph_Builder; shape ingestion is now BRepGraph::ShapesView::Add().
-#include <BRepGraph_ShapesView.hxx>
-// TopoSupplement runtime layer (vertex-supplement attachments), issue: un-stub vertex ops.
-#include <BRepGraph_SupplementEditor.hxx>
-#include <BRepGraph_SupplementIterator.hxx>
-#include <BRepGraph_LayerTopoSupplement.hxx>
-#include <BRepBuilderAPI_MakeVertex.hxx>
-#include <TopoDS_Vertex.hxx>
-// Surface-equality classes for FaceSameDomain derivation.
-#include <Geom_Plane.hxx>
-#include <Geom_CylindricalSurface.hxx>
-#include <Geom_ConicalSurface.hxx>
-#include <Geom_SphericalSurface.hxx>
-#include <Geom_ToroidalSurface.hxx>
-#include <gp_Ax1.hxx>
-#include <gp_Ax3.hxx>
-#include <gp_Dir.hxx>
-#include <gp_Pln.hxx>
-#include <gp_Lin.hxx>
+  #include <BRepGraph.hxx>
+  #include <BRepGraph_TopoView.hxx>
+  #include <BRepGraph_Tool.hxx>
+  #include <BRepGraph_LayerRegistry.hxx>
+  // NOTE: BRepGraph_LayerRegularity.hxx is NOT included, it is an upstream p1 bug: it marks
+  // `override` on OnNodeRemoved(node,replacement)/OnCompact() which do not exist as virtuals in
+  // BRepGraph_Layer, so the header does not compile (AppleClang) and the .cxx is absent from
+  // libOCCT (0 symbols). Edge regularity/continuity via the graph layer is therefore unavailable
+  // in 8.0.0p1; the shape-based BRep_Tool::MaxContinuity path (OCCTBRepToolMaxContinuity) is
+  // unaffected.
+  #include <BRepGraph_ReverseIterator.hxx>
+  #include <BRepGraph_RefsView.hxx>
+  #include <BRepGraphInc_Relations.hxx>
+  #include <BRepGraphInc_Definition.hxx>
+  #include <BRepGraph_MeshView.hxx>
+  #include <BRepGraph_Compact.hxx>
+  #include <BRepGraph_Deduplicate.hxx>
+  #include <BRepGraph_Validate.hxx>
+  #include <BRepGraph_ChildExplorer.hxx>
+  #include <BRepGraph_ParentExplorer.hxx>
+  #include <BRepGraph_NodeId.hxx>
+  // BRepGraph_RepId moved to the BRepGraphInc subpackage in OCCT 8.0.0p1 (its Kind enum was
+  // also repurposed to representation kinds: EdgeCurve3D, FaceSurface, FaceTriangulation, …).
+  #include <BRepGraphInc_RepId.hxx>
+  // OCCT 8.0.0p1 removed BRepGraph_Builder; shape ingestion is now BRepGraph::ShapesView::Add().
+  #include <BRepGraph_ShapesView.hxx>
+  // TopoSupplement runtime layer (vertex-supplement attachments), issue: un-stub vertex ops.
+  #include <BRepGraph_SupplementEditor.hxx>
+  #include <BRepGraph_SupplementIterator.hxx>
+  #include <BRepGraph_LayerTopoSupplement.hxx>
+  #include <BRepBuilderAPI_MakeVertex.hxx>
+  #include <TopoDS_Vertex.hxx>
+  // Surface-equality classes for FaceSameDomain derivation.
+  #include <Geom_Plane.hxx>
+  #include <Geom_CylindricalSurface.hxx>
+  #include <Geom_ConicalSurface.hxx>
+  #include <Geom_SphericalSurface.hxx>
+  #include <Geom_ToroidalSurface.hxx>
+  #include <gp_Ax1.hxx>
+  #include <gp_Ax3.hxx>
+  #include <gp_Dir.hxx>
+  #include <gp_Pln.hxx>
+  #include <gp_Lin.hxx>
 
-// OCCT 8.0.0p1 side-registry (issue: rep-id ABI preservation)
-// ------------------------------------------------------------
-// The pre-p1 mesh/geometry write API allocated integer "rep ids": you created a
-// representation handle, got back an int id, then bound that id to an entity. p1
-// removed rep ids entirely, handles are attached directly to topology defs / the
-// mesh cache. To keep the int-rep-id C ABI (consumed by Swift) we keep parallel
-// vectors here: Create*Rep() pushes the input handle and returns its index; the
-// Set*RepId / RepSet* / append-cached entry points look the index back up and call
-// the corresponding handle-based p1 setter.
-#include <Poly_Triangulation.hxx>
-#include <Poly_Polygon3D.hxx>
-#include <Poly_Polygon2D.hxx>
-#include <Poly_PolygonOnTriangulation.hxx>
-#include <Geom_Surface.hxx>
-#include <Geom_Curve.hxx>
-#include <Geom2d_Curve.hxx>
+  // OCCT 8.0.0p1 side-registry (issue: rep-id ABI preservation)
+  // ------------------------------------------------------------
+  // The pre-p1 mesh/geometry write API allocated integer "rep ids": you created a
+  // representation handle, got back an int id, then bound that id to an entity. p1
+  // removed rep ids entirely, handles are attached directly to topology defs / the
+  // mesh cache. To keep the int-rep-id C ABI (consumed by Swift) we keep parallel
+  // vectors here: Create*Rep() pushes the input handle and returns its index; the
+  // Set*RepId / RepSet* / append-cached entry points look the index back up and call
+  // the corresponding handle-based p1 setter.
+  #include <Poly_Triangulation.hxx>
+  #include <Poly_Polygon3D.hxx>
+  #include <Poly_Polygon2D.hxx>
+  #include <Poly_PolygonOnTriangulation.hxx>
+  #include <Geom_Surface.hxx>
+  #include <Geom_Curve.hxx>
+  #include <Geom2d_Curve.hxx>
 
 // Mints the per-instance id every OCCTBRepGraph carries (#295).
 //
@@ -999,8 +1011,8 @@ OCCTBRepGraphStats OCCTBRepGraphGetStats(OCCTBRepGraphRef g)
 
 // MARK: - BRepGraph Extended (v0.133.0)
 
-#include <BRepGraph_Copy.hxx>
-#include <BRepGraph_Transform.hxx>
+  #include <BRepGraph_Copy.hxx>
+  #include <BRepGraph_Transform.hxx>
 
 // --- Shape Reconstruction ---
 
@@ -1549,11 +1561,11 @@ int32_t OCCTBRepGraphSolidCompSolidCount(OCCTBRepGraphRef g, int32_t solidIndex)
   }
 }
 
-// --- History ---
-// OCCT 8.0.0p1: history moved from BRepGraph::History() to the registered BRepGraph_LayerHistory
-// layer (via LayerRegistry().FindLayer<>() / Ensure<>()); records are now `Event`s whose Mapping
-// value type is NCollection_LinearVector (was NCollection_DynamicArray).
-#include <BRepGraph_LayerHistory.hxx>
+  // --- History ---
+  // OCCT 8.0.0p1: history moved from BRepGraph::History() to the registered BRepGraph_LayerHistory
+  // layer (via LayerRegistry().FindLayer<>() / Ensure<>()); records are now `Event`s whose Mapping
+  // value type is NCollection_LinearVector (was NCollection_DynamicArray).
+  #include <BRepGraph_LayerHistory.hxx>
 
 // Read the history layer if one has been registered (null otherwise). Reads do not create it.
 static occ::handle<BRepGraph_LayerHistory> bgHistory(OCCTBRepGraphRef g)
@@ -3546,8 +3558,8 @@ int32_t OCCTBRepGraphEdgeFindCoEdge(OCCTBRepGraphRef g, int32_t edgeIndex, int32
 
 // MARK: - BRepGraph Builder (v0.135.0; migrated to EditorView in v0.157.0 / OCCT 8.0.0 beta1)
 
-#include <BRepGraph_EditorView.hxx>
-#include <BRepGraph_DeferredScope.hxx>
+  #include <BRepGraph_EditorView.hxx>
+  #include <BRepGraph_DeferredScope.hxx>
 
 static TopAbs_Orientation oriFromInt(int32_t o)
 {
@@ -5627,7 +5639,7 @@ uint32_t OCCTBRepGraphCachedCoEdgeMeshStoredOwnGen(OCCTBRepGraphRef g, int32_t c
 
 // MARK: - BRepGraph ML Export & Sampling (v0.136.0)
 
-#include <TopoDS_Face.hxx>
+  #include <TopoDS_Face.hxx>
 
 int32_t OCCTBRepGraphSampleFaceUVGrid(OCCTBRepGraphRef g,
                                       int32_t          faceIndex,
@@ -5755,6 +5767,8 @@ int32_t OCCTBRepGraphSampleEdgeCurve(OCCTBRepGraphRef g,
     return 0;
   }
 }
+
+#endif // OCCTSWIFT_HAS_BREPGRAPH
 
 // MARK: - AAG Support Implementation
 
@@ -6165,12 +6179,15 @@ double OCCTEdgeGetDihedralAngle(OCCTEdgeRef edge,
   }
 }
 
+#ifdef OCCTSWIFT_HAS_BREPGRAPH // BRepGraph again: durable identity and usage paths, to the end of
+                               // the file
+
 // MARK: - Durable identity (BRepGraph:UIDsView), OCCT 8.0.0p1
 
-#include <BRepGraph_UID.hxx>
-#include <BRepGraph_RefUID.hxx>
-#include <BRepGraph_ItemUID.hxx>
-#include <BRepGraph_UIDsView.hxx>
+  #include <BRepGraph_UID.hxx>
+  #include <BRepGraph_RefUID.hxx>
+  #include <BRepGraph_ItemUID.hxx>
+  #include <BRepGraph_UIDsView.hxx>
 
 // Maps a raw BRepGraph_RefId::Kind enum ordinal (0..6 as defined in the header)
 // straight back to the enum. Distinct from refKindFromInt() above, which carries a
@@ -6417,7 +6434,7 @@ uint64_t OCCTBRepGraphInstanceID(OCCTBRepGraphRef graph)
 
 // MARK: - BRepGraph occurrence-aware lookup (BRepGraph_ChildExplorer usage paths)
 
-#include <BRepGraph_UsagePath.hxx>
+  #include <BRepGraph_UsagePath.hxx>
 
 // Why this is a traversal and not a lookup.
 //
@@ -6554,3 +6571,5 @@ int32_t OCCTBRepGraphOccurrenceAt(OCCTBRepGraphRef        g,
     return -1;
   }
 }
+
+#endif // OCCTSWIFT_HAS_BREPGRAPH

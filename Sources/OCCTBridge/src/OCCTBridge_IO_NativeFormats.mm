@@ -104,7 +104,6 @@
 #include <Resource_Unicode.hxx>
 #include <OSD_DirectoryIterator.hxx>
 #include <OSD_FileIterator.hxx>
-#include <OSD_Disk.hxx>
 #include <OSD_SharedLibrary.hxx>
 #include <Message_Msg.hxx>
 #include <Message_MsgFile.hxx>

@@ -15,7 +15,7 @@ import OCCTPlatform
 /// `Shape`, it indexes all faces, edges, vertices, wires, shells, and solids
 /// as flat entity vectors with integer cross-references.
 ///
-/// ```swift
+/// ```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
 /// let box = Shape.box(width: 10, height: 10, depth: 10)!
 /// let graph = BRepGraph(shape: box)!
 /// print(graph.stats)  // faces: 6, edges: 12, vertices: 8
@@ -181,25 +181,6 @@ public final class BRepGraph: @unchecked Sendable {
     }
 
     // MARK: - Explorers
-
-    /// Node kind enumeration matching OCCT BRepGraph_NodeId::Kind.
-    ///
-    /// Topology kinds 0–5 are core hierarchy; 6/7 are containers; 8 is the
-    /// face-context coedge entity. Assembly kinds (Product, Occurrence) start
-    /// at 10, leaving slot 9 reserved for future topology extension.
-    public enum NodeKind: Int32, Sendable, Codable {
-        case solid = 0
-        case shell = 1
-        case face = 2
-        case wire = 3
-        case edge = 4
-        case vertex = 5
-        case compound = 6
-        case compSolid = 7
-        case coedge = 8
-        case product = 10
-        case occurrence = 11
-    }
 
     /// Count descendant nodes of a given kind from a root node.
     public func childCount(rootKind: NodeKind, rootIndex: Int, targetKind: NodeKind) -> Int {
@@ -412,7 +393,7 @@ public final class BRepGraph: @unchecked Sendable {
     /// A placed shape the graph never ingested does not resolve, so this stays a lookup of
     /// the construction input rather than a match on `TShape` alone.
     ///
-    /// ```swift
+    /// ```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
     /// let box = Shape.box(width: 10, height: 8, depth: 6)!
     /// let placed = box.moved(dx: 50, dy: 0, dz: 0)!
     /// let pair = Shape.compound([box, placed])!
@@ -444,7 +425,7 @@ public final class BRepGraph: @unchecked Sendable {
     /// rules: a sub-shape of a placed instance in the construction input is known, and a
     /// placed shape the graph never ingested is not.
     ///
-    /// ```swift
+    /// ```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
     /// let box = Shape.box(width: 10, height: 8, depth: 6)!
     /// let placed = box.moved(dx: 50, dy: 0, dz: 0)!
     /// let graph = BRepGraph(shape: Shape.compound([box, placed])!)!
@@ -648,23 +629,6 @@ public final class BRepGraph: @unchecked Sendable {
     }
 
     // MARK: - History Record Readback (v0.141, #72 Phase 0)
-
-    /// A (kind, index) pair identifying a node in a `BRepGraph`.
-    ///
-    /// This is the Swift mirror of OCCT's `BRepGraph_NodeId`. Two pairs with the
-    /// same kind+index refer to the same node **within a given graph instance**;
-    /// across graph rebuilds you have to translate through the history records.
-    public struct NodeRef: Sendable, Hashable, Codable {
-        public let kind: NodeKind
-        public let index: Int
-
-        public init(kind: NodeKind, index: Int) {
-            self.kind = kind
-            self.index = index
-        }
-
-        public var isValid: Bool { index >= 0 }
-    }
 
     /// A single atomic modification event in the graph's history log.
     ///
@@ -949,7 +913,7 @@ public final class BRepGraph: @unchecked Sendable {
     /// Build the graph from the operation's *input* shape, not its result: the
     /// input roots must already be in this graph.
     ///
-    /// ```swift
+    /// ```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
     /// // Cut a channel across a box's top face, then keep hold of the face.
     /// let base = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!
     /// let graph = BRepGraph(shape: base)!
@@ -1187,7 +1151,7 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Transform the graph by a translation.
     ///
-    /// ```swift
+    /// ```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
     /// let box = Shape.box(width: 10, height: 10, depth: 10)
     /// if let box, let graph = BRepGraph(shape: box),
     ///     let moved = graph.translated(dx: 100, dy: 200, dz: 300)
@@ -2992,7 +2956,7 @@ public final class BRepGraph: @unchecked Sendable {
     /// one definition costs the same as keeping every occurrence of the kind, so code that wants the
     /// occurrences of many nodes should not call this once per node.
     ///
-    /// ```swift
+    /// ```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
     /// let box = Shape.box(width: 10, height: 8, depth: 6)!
     /// let placed = box.moved(dx: 50, dy: 0, dz: 0)!
     /// let pair = Shape.compound([box, placed])!
@@ -3042,7 +3006,7 @@ public final class BRepGraph: @unchecked Sendable {
     /// picked sub-shape of a placed instance answers every placement of the part it belongs to,
     /// including the one it was picked from.
     ///
-    /// ```swift
+    /// ```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
     /// let box = Shape.box(width: 10, height: 8, depth: 6)!
     /// let placed = box.moved(dx: 50, dy: 0, dz: 0)!
     /// let pair = Shape.compound([box, placed])!
