@@ -53,7 +53,15 @@ struct GeomEvalCircularHelixTests {
         let curve = Curve3D.circularHelix(radius: 5.0, pitch: 10.0)
         #expect(curve != nil)
         if let curve {
-            let d = curve.minimumDistance(from: SIMD3(10, 0, 0))
+            // The upstream IR kernel's ExtremaPC refuses the helix's unbounded domain (+-2e100)
+            // with ExtremaPC::Status::InvalidInput, where V8_0_1 solved it, so the query is made
+            // on two turns of it. Measured by compiling the same call against the IR build:
+            // unbounded gives Status 4 and no extremum for any tolerance from 1e-3 to 1e-12,
+            // [0, 4 pi] gives two extrema with a minimum of exactly 5.
+            #expect(curve.minimumDistance(from: SIMD3(10, 0, 0)) == nil)
+            let twoTurns = curve.trimmed(from: 0, to: 4 * .pi)
+            #expect(twoTurns != nil)
+            let d = twoTurns?.minimumDistance(from: SIMD3(10, 0, 0))
             #expect(d != nil)
             if let d {
                 #expect(abs(d - 5) < 1e-9)

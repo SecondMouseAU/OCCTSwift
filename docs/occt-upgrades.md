@@ -35,6 +35,16 @@ patched tree, the GTest suites, the repros) is in `Scripts/patches/README.md` ("
 `IR`") and in the pull request that moved the base. This is phase 1: nothing is repinned, no
 asset is built, and `Package.swift`'s `url:`/`checksum:` still name the `V8_0_1` kernel.
 
+### Phase 2: the bridge, Swift layer and tests against the IR kernel
+
+`Scripts/build-occt.sh` was run (macOS slice, see the pull request for the iOS and simulator slices) and
+the 49 toolkits in `REQUIRED_TOOLKITS` are exactly the 49 it installs. The bridge compiles with no
+warning under the repo's `OCCT_NO_DEPRECATED` define. What OCCT 8.1 removed, what each loss was
+replaced with, and what is now unavailable is in `docs/occtswift-wrapping-gaps.md` ("Removed against
+the upstream `IR` kernel"). The `NCollection` typedef headers (`TopTools_*` and the rest) moved to
+`src/Deprecated/NCollectionAliases/` and are still installed, so the bridge keeps its spellings;
+`OCCT_NO_DEPRECATED` is what keeps their deprecation (since 8.1.0) quiet, as it did for 8.0.
+
 ---
 
 ## p1 to 8.0.1 (Unreleased)

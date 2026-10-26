@@ -252,6 +252,8 @@ public var result: Shape? { get }
 
 ### `DiskInfo.size(path:)`
 
+> **Unavailable against the upstream `IR` kernel.** `OSD_Disk` was deleted in OCCT 8.1 and has no replacement. The text below is for an 8.0.x kernel.
+
 Get the total disk size in kilobytes for the given path.
 
 ```swift
@@ -270,6 +272,8 @@ public static func size(path: String = "/") -> Int64
 
 ### `DiskInfo.freeSpace(path:)`
 
+> **Unavailable against the upstream `IR` kernel.** `OSD_Disk` was deleted in OCCT 8.1 and has no replacement. The text below is for an 8.0.x kernel.
+
 Get the free space in kilobytes for the given path.
 
 ```swift
@@ -287,6 +291,8 @@ public static func freeSpace(path: String = "/") -> Int64
 
 ### `DiskInfo.isValid(path:)`
 
+> **Unavailable against the upstream `IR` kernel.** `OSD_Disk` was deleted in OCCT 8.1 and has no replacement. The text below is for an 8.0.x kernel.
+
 Check whether a disk path is accessible.
 
 ```swift
@@ -303,6 +309,8 @@ public static func isValid(path: String) -> Bool
 ---
 
 ### `DiskInfo.name(path:)`
+
+> **Unavailable against the upstream `IR` kernel.** `OSD_Disk` was deleted in OCCT 8.1 and has no replacement. The text below is for an 8.0.x kernel.
 
 Get the volume name for a given path.
 

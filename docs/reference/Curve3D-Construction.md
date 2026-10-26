@@ -79,6 +79,8 @@ The parabola vertex is at `center` and the focal distance determines its opening
 
 ### `convertToPeriodic()`
 
+> **Unavailable against the upstream `IR` kernel.** `ShapeCustom_Curve` was deleted in OCCT 8.1 and has no replacement. The text below is for an 8.0.x kernel.
+
 Converts a closed BSpline curve to its periodic form.
 
 ```swift

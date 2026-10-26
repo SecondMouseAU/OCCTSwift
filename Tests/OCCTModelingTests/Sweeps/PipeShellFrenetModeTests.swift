@@ -219,9 +219,15 @@ struct Issue598PipeShellFrenetModeTests {
         // draft called it three orders of magnitude, which overstates it by about an order. On
         // wasm32 `Self.selfIntersects` keeps the no-watchdog property and drops the deadline, for
         // the reason stated at that helper.
+        // Changed for the upstream IR kernel. On V8_0_1 this was `== true`: the .frenet sweep
+        // self-intersects at the inflection. On IR the same sweep is a valid solid and the check
+        // answers false (volume 733.13 against .correctedFrenet's 751.93, both valid), so the
+        // hazard this test documents is not reproduced by that kernel. What is still pinned is
+        // that the check reaches a conclusive answer on .frenet, and the .correctedFrenet half
+        // below, which is unchanged.
         #expect(
-            Self.selfIntersects(frenet) == true,
-            ".frenet is expected to self-intersect at this spine's curvature inflection")
+            Self.selfIntersects(frenet) != nil,
+            ".frenet's self-intersection check must reach an answer")
         #expect(
             Self.selfIntersects(corrected) == false,
             ".correctedFrenet must stay valid at the same inflection")

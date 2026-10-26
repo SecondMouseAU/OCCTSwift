@@ -43,9 +43,11 @@ struct PolynomialSolverLaguerreTests {
     @Test func quinticRoots() {
         // x^5 - 15x^4 + 85x^3 - 225x^2 + 274x - 120 = 0 -> roots 1, 2, 3, 4, 5
         let roots = PolynomialSolver.quinticRoots(a: 1, b: -15, c: 85, d: -225, e: 274, f: -120)
-        // Quintic uses PolyResult with max 4 roots. Probed (Scripts/repro/
-        // 766-math-polynomial-convert-laguerre): the kernel returns exactly 1, 2, 3, 4.
-        #expect(roots.count == 4)
-        #expect(zip(roots, [1.0, 2.0, 3.0, 4.0]).allSatisfy { abs($0 - $1) < 1e-9 })
+        // MathPoly::Quintic on the upstream IR kernel returns all five real roots. V8_0_1's
+        // PolyResult held at most four, so this test pinned exactly 1, 2, 3, 4 (probed in
+        // Scripts/repro/766-math-polynomial-convert-laguerre), a limit of the container and not
+        // of the polynomial: 1 to 5 is the correct answer.
+        #expect(roots.count == 5)
+        #expect(zip(roots, [1.0, 2.0, 3.0, 4.0, 5.0]).allSatisfy { abs($0 - $1) < 1e-9 })
     }
 }

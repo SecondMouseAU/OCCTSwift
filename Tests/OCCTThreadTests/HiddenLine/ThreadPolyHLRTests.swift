@@ -88,9 +88,12 @@ struct Issue196PolyHLRTests {
             "outline: coarse \(coarse.outline), fine \(fine.outline)")
         #expect(
             coarse.sharp > fine.sharp, "sharp: coarse \(coarse.sharp), fine \(fine.sharp)")
-        #expect(within1Percent(fine.outline, of: 17041), "fine outline \(fine.outline)")
-        #expect(within1Percent(coarse.outline, of: 3578), "coarse outline \(coarse.outline)")
+        // Re-pinned for the upstream IR kernel, whose BRepMesh meshes this thread differently: the
+        // counts were 17041, 3578, 1873 and 2089 on V8_0_1 (this test passed on those with the same
+        // code) and are 17775, 3506, 1873 and 2144 now. Both relations asserted above hold on both.
+        #expect(within1Percent(fine.outline, of: 17775), "fine outline \(fine.outline)")
+        #expect(within1Percent(coarse.outline, of: 3506), "coarse outline \(coarse.outline)")
         #expect(within1Percent(fine.sharp, of: 1873), "fine sharp \(fine.sharp)")
-        #expect(within1Percent(coarse.sharp, of: 2089), "coarse sharp \(coarse.sharp)")
+        #expect(within1Percent(coarse.sharp, of: 2144), "coarse sharp \(coarse.sharp)")
     }
 }

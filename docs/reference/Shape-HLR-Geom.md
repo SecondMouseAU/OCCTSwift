@@ -817,6 +817,8 @@ public func allHits() -> [Hit]
 
 ### `Shape.triangulationFromPoints(_:)`
 
+> **Unavailable against the upstream `IR` kernel.** `ShapeConstruct_MakeTriangulation` was deleted in OCCT 8.1 and has no replacement. The text below is for an 8.0.x kernel.
+
 Creates a triangulated face from a flat list of 3D points.
 
 ```swift
@@ -837,6 +839,8 @@ public static func triangulationFromPoints(_ points: [(Double, Double, Double)])
 ---
 
 ### `Shape.triangulationFromWire(_:)`
+
+> **Unavailable against the upstream `IR` kernel.** `ShapeConstruct_MakeTriangulation` was deleted in OCCT 8.1 and has no replacement. The text below is for an 8.0.x kernel.
 
 Creates a triangulated face from a planar wire.
 

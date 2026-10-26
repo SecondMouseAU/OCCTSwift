@@ -2871,7 +2871,10 @@ extension Curve3D {
     /// ``extrema(from:)``'s array
     /// ([#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633)).
     ///
-    /// `nil` means the solver reported nothing at all, which on a curve it could build is rare.
+    /// `nil` means the solver reported nothing at all, which on a curve it could build is rare. One
+    /// case is not rare: the upstream `IR` kernel's `ExtremaPC_Curve` refuses an unbounded domain
+    /// it cannot solve analytically (a `Curve3D.circularHelix`, whose domain is +-2e100) with
+    /// `ExtremaPC::Status::InvalidInput`, so `trimmed(from:to:)` such a curve first.
     ///
     /// ```swift
     /// if let arc = Curve3D.arcOfCircle(

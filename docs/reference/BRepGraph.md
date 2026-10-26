@@ -5,6 +5,8 @@ parent: API Reference
 
 # BRepGraph
 
+> **Unavailable against the upstream `IR` kernel.** OCCT 8.1 withdrew the `BRepGraph` package (OCCT#1628, deferred with no date; see OCCT discussion 1656), so a build against that kernel cannot make a `BRepGraph`: `BRepGraph(shape:)` is marked unavailable with this reason, and the members described below are not built. The page describes the API as it is against an 8.0.x kernel (a local `Libraries/OCCT.xcframework` whose headers include `BRepGraph.hxx`). See `docs/occtswift-wrapping-gaps.md`.
+
 `BRepGraph` is OCCTSwift's graph-based view of B-Rep topology, wrapping OCCT's `BRepGraph` package. It indexes all faces, edges, vertices, wires, shells, solids, coedges, and compounds of a `Shape` as flat integer-indexed entity vectors with O(1) cross-references, enabling cache-friendly traversal, fast adjacency queries, and parallel geometry extraction. Obtain one via `BRepGraph(shape:)`.
 
 > **BRepGraph is large, documented across several pages.** This is the core (construction, counts, topology queries, explorers, validate/compact/deduplicate, statistics, geometry readback); see the other **BRepGraph, …** pages for topology detail/history/mesh, builders & editor mutation, editor geometry/sampling/durable-identity, and attributes/snapshots/references.

@@ -78,6 +78,8 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
+#include <algorithm>
+#include <math.hxx>
 
 // MARK: - KD-Tree Spatial Queries (v0.28.0)
 
@@ -2343,51 +2345,74 @@ double OCCTMathGaussMultipleIntegration(OCCTMathMultiVarCallback _Nonnull callba
                                         const int32_t* _Nonnull order,
                                         bool* _Nonnull isDone)
 {
-  // math_GaussMultipleIntegration was removed in OCCT 8.1. math_GaussSetIntegration is the same
-  // Gauss-Legendre product rule over a math_FunctionSet; a scalar integrand is a set of one
-  // equation.
-  class Adapter : public math_FunctionSet
-  {
-    OCCTMathMultiVarCallback cb;
-    void*                    ctx;
-    int                      n;
-
-  public:
-    Adapter(OCCTMathMultiVarCallback c, void* x, int nv)
-        : cb(c),
-          ctx(x),
-          n(nv)
-    {
-    }
-
-    int NbVariables() const override { return n; }
-
-    int NbEquations() const override { return 1; }
-
-    bool Value(const math_Vector& X, math_Vector& F) override
-    {
-      double value = 0.0;
-      if (!cb(&X(1), n, &value, ctx))
-        return false;
-      F(1) = value;
-      return true;
-    }
-  };
-
+  // math_GaussMultipleIntegration was removed in OCCT 8.1. Its body
+  // (math_GaussMultipleIntegration.cxx at V8_0_1) is the Gauss-Legendre product rule over the box
+  // [lower, upper]: the integrand summed at every combination of the per-variable Gauss points
+  // (math::GaussPoints), weighted by the product of the per-variable Gauss weights
+  // (math::GaussWeights), times the half-width of each variable. math_GaussSetIntegration is not a
+  // substitute, it integrates a single variable only (it raises Standard_NotImplemented for
+  // NbVariables() != 1). Each order is clamped to math::GaussPointsMax() as before. One deliberate
+  // difference: the original's recursion reported the integrand's status at the last point only, so
+  // a failure earlier in the sum was lost; here any failure is "not done".
   try
   {
-    Adapter            f(callback, context, nVars);
-    math_Vector        lo(1, nVars), up(1, nVars);
-    math_IntegerVector ord(1, nVars);
+    const int                        maxOrder = math::GaussPointsMax();
+    std::vector<int>                 ord(nVars);
+    std::vector<std::vector<double>> points(nVars), weights(nVars);
+    double                           scale = 1.0;
+    std::vector<double>              mid(nVars), half(nVars);
     for (int i = 0; i < nVars; i++)
     {
-      lo(i + 1)  = lower[i];
-      up(i + 1)  = upper[i];
-      ord(i + 1) = order[i];
+      ord[i] = std::min((int)order[i], maxOrder);
+      if (ord[i] < 1)
+      {
+        *isDone = false;
+        return 0;
+      }
+      math_Vector gp(1, ord[i]), gw(1, ord[i]);
+      math::GaussPoints(ord[i], gp);
+      math::GaussWeights(ord[i], gw);
+      points[i].resize(ord[i]);
+      weights[i].resize(ord[i]);
+      for (int k = 0; k < ord[i]; k++)
+      {
+        points[i][k]  = gp(k + 1);
+        weights[i][k] = gw(k + 1);
+      }
+      mid[i]  = 0.5 * (lower[i] + upper[i]);
+      half[i] = 0.5 * (upper[i] - lower[i]);
+      scale *= half[i];
     }
-    math_GaussSetIntegration gsi(f, lo, up, ord);
-    *isDone = gsi.IsDone();
-    return gsi.IsDone() ? gsi.Value()(1) : 0;
+
+    std::vector<int>    inc(nVars, 0);
+    std::vector<double> x(nVars);
+    double              sum  = 0.0;
+    bool                more = nVars > 0;
+    while (more)
+    {
+      double w = 1.0;
+      for (int i = 0; i < nVars; i++)
+      {
+        x[i] = mid[i] + half[i] * points[i][inc[i]];
+        w *= weights[i][inc[i]];
+      }
+      double value = 0.0;
+      if (!callback(x.data(), nVars, &value, context))
+      {
+        *isDone = false;
+        return 0;
+      }
+      sum += w * value;
+      int d = nVars - 1;
+      while (d >= 0 && ++inc[d] == ord[d])
+      {
+        inc[d] = 0;
+        d--;
+      }
+      more = d >= 0;
+    }
+    *isDone = nVars > 0;
+    return nVars > 0 ? sum * scale : 0;
   }
   catch (...)
   {

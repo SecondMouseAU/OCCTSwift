@@ -5,6 +5,8 @@ parent: API Reference
 
 # Surface. Advanced Construction
 
+> **The NLPlate methods are unavailable against the upstream `IR` kernel.** `nlPlateDeformed`, `nlPlateDeformedG1`, `nlPlateDeformedG2`, `nlPlateDeformedG3`, `nlPlateDeformedIncremental` and `nlPlateDerivative` are marked unavailable: OCCT 8.1 deleted the `NLPlate` package and the kernel has no replacement. The descriptions below are for an 8.0.x kernel. See `docs/occtswift-wrapping-gaps.md`.
+
 This page covers the higher-level surface construction APIs: energy-minimising plate and NLPlate
 surfaces, Bezier and BSpline fills, face-from-surface conversions, constrained geometry factories,
 and GeomTools persistence. For the core `Surface` type (properties, analytic primitives, swept

@@ -994,6 +994,8 @@ The iterative solver uses starting parameters `initParam1`, `initParam2`, `initP
 
 ### `Curve2DGcc.circlesTangentOnCurveWithRadius(_:_:centerOn:radius:tolerance:)`
 
+> **Unavailable against the upstream `IR` kernel.** `Geom2dGcc_Circ2dTanOnRad` was deleted in OCCT 8.1 and has no replacement. The text below is for an 8.0.x kernel.
+
 Finds circles tangent to a curve, with the center on a second curve, and a given radius.
 
 ```swift

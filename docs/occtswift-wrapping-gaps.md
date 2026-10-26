@@ -7,8 +7,8 @@ search_exclude: true
 
 ## Coverage
 
-All user-facing OCCT classes are wrapped to method-level completeness: **4,403 operations**
-across **1,193 OCCT headers the bridge includes** (of 6,774 shipped in the xcframework).
+All user-facing OCCT classes are wrapped to method-level completeness: **4,388 operations**
+across **1,182 OCCT headers the bridge includes** (of 6,774 shipped in the xcframework).
 
 Both numbers are derived, not maintained by hand: the first is
 `python3 Scripts/count-operations.py`'s `DERIVED` row, which the `count-operations` gate holds
@@ -17,10 +17,44 @@ this file, which is how the figure here sat at 3,333 from 2026-04-13 until v2.0.
 count grew past 4,200, and reached 4,256 (against a derived 4,355) by #807's own opening. **Both
 re-derived again for the v4.0.0-beta.6 release**, 2026-10-16 (last at the beta.5 release, 2026-10-10, when
 they were 4,391 and 1,186, and before that at #820, 2026-08-31, when they were 4,365 and 1,174):
-`count-operations.py` now reports 4,403, and
+`count-operations.py` now reports 4,403 (4,388 after the upstream `IR` rebase removed fifteen), and
 `grep -rhoE '#include <[A-Za-z0-9_]+\.hxx>' Sources/OCCTBridge/{src,include} | sort -u | wc -l`
-(the same query this figure has always meant) now reports 1,193. Re-derive both again before
+(the same query this figure has always meant) now reports 1,193 (1,182 after the rebase). Re-derive both again before
 trusting either; this file has a five-month history of exactly this drift.
+
+### Removed against the upstream `IR` kernel (OCCT 8.1)
+
+The kernel this branch builds, upstream `IR` (OCCT 8.1.0 dev), no longer ships these. The Swift
+methods are kept and marked `@available(*, unavailable)` with the reason as the message, and their
+bridge code is gone; nothing returns a made-up value.
+
+| Capability | What OCCT 8.1 removed | Swift API, now unavailable |
+|---|---|---|
+| Non-linear plate surfaces | the whole `NLPlate` package (`NLPlate_NLPlate`, `NLPlate_HPG0Constraint`, `HPG0G1`, `HPG0G2`, `HPG0G3`, `HPG1`) | `Surface.nlPlateDeformed`, `nlPlateDeformedG1`, `nlPlateDeformedG2`, `nlPlateDeformedG3`, `nlPlateDeformedIncremental`, `nlPlateDerivative` |
+| Curve projection to a 3D BSpline on a surface | `ProjLib_ProjectOnSurface` | `Curve3D.projectOnSurface` (use `Surface.projectCurve3D(_:)`, which is `GeomProjLib::Project`) |
+| Closed BSpline curve to periodic | `ShapeCustom_Curve` | `Curve3D.convertToPeriodic` (`Surface.convertToPeriodic` is unaffected) |
+| Triangulated face from points or a wire | `ShapeConstruct_MakeTriangulation` | `Shape.triangulationFromPoints`, `Shape.triangulationFromWire` |
+| Circle tangent to a curve, centre on a curve, given radius | `Geom2dGcc_Circ2dTanOnRad` | `Curve2DGcc.circlesTangentOnCurveWithRadius` |
+| Disk size, free space, validity, name | `OSD_Disk` | `DiskInfo.size`, `freeSpace`, `isValid`, `name` |
+| Topology graph | the `BRepGraph` package (OCCT#1628, deferred with no date; OCCT discussion 1656) | `BRepGraph` and everything built on it: see below |
+
+Re-pointed at what OCCT 8.1 kept, with the same Swift API: `GccAna_Lin2dTanPar` and `GccAna_Lin2dTanPer`
+(now `GccAna_Lin2dTanObl` at angle 0 and pi / 2), `Extrema_LocateExtCC2d` (`Extrema_GenLocateExtCC`
+with the same tolerances), `IntAna_Int3Pln` (its own `math_Gauss` body), `math_GaussMultipleIntegration`
+(`math_GaussSetIntegration` with one equation) and `TDF_ComparisonTool::IsSelfContained`
+(`TDF_Tool::IsSelfContained`; the old call could not return false, see the CHANGELOG).
+
+**BRepGraph is unavailable in this beta.** Against a kernel whose headers have no `BRepGraph.hxx`,
+`Package.swift` leaves `BRepGraph.swift`, `BRepGraph+Attributes.swift`, `TopologyRef+BRepGraph.swift`
+and `ConstructionEntity+BRepGraph.swift` out of the build, declares no `OCCTBRepGraphTests` target, and
+builds `BRepGraphUnavailable.swift`, in which `BRepGraph(shape:)` is unavailable with the reason. The
+members that need a graph in other types (`ConstructionContext.resolve(_:in:)` and `allBroken(in:)`,
+`ConstructionContext.materialize(in:graph:options:)`, `ConstructionAxis` and `ConstructionPlane`
+`angle(to:in:)`, `Sketch.buildProfile(in:graph:)`, `BRepGraph.resolve(_:)`) are compiled out with it. The
+recipe types (`TopologyRef`, `ConstructionPlane`, `ConstructionAxis`, `ConstructionPoint`,
+`Placement`) and `BRepGraph.NodeKind`/`BRepGraph.NodeRef` stay. A local `Libraries/OCCT.xcframework` whose
+headers include `BRepGraph.hxx` (an 8.0.x kernel) turns all of it back on. The bridge file
+`OCCTBridge_BRepGraph.mm` decides the same way with `__has_include(<BRepGraph.hxx>)`.
 
 ### What's Wrapped
 

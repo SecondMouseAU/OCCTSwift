@@ -1185,7 +1185,8 @@ extension MathSolver {
     /// `lower.count` is never negative (it is a real array's own length), so there is no
     /// positivity bound to add here, only the consistency check. Unlike `gaussSetIntegration`,
     /// this genuinely supports any number of variables: `math_GaussMultipleIntegration`
-    /// integrates recursively over every dimension.
+    /// integrated recursively over every dimension, and OCCT 8.1 deleted it, so the bridge keeps
+    /// its product rule itself (`OCCTMathGaussMultipleIntegration`).
     ///
     /// ```swift
     /// MathSolver.gaussMultipleIntegration(lower: [0, 0], upper: [1, 1], order: [10, 10]) { x in

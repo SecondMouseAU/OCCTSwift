@@ -190,12 +190,12 @@ struct Issue3200FilletResultValidityTests {
             ("slab chamfer all12 d=1", box.chamfered(distance: 1.0), 205.333333333),
         ]
         // The slab r=1.999 volume differs by 2.3e-8 (1e-10 relative) on wasm32, where WASILibc's
-        // transcendentals feed the numerical integration. Apple keeps the 1e-8 bound.
-        #if arch(wasm32)
-            let tolerance = 1e-6
-        #else
-            let tolerance = 1e-8
-        #endif
+        // transcendentals feed the numerical integration. Apple kept the 1e-8 bound until the
+        // upstream IR kernel, which moves the slab r=1.999 and r=1.9999 volumes by 1.18e-8 and
+        // 1.14e-8 (5e-11 relative) and nothing else in the battery. The carried fillet patches are
+        // not the cause: the same drift shows with 0079 to 0084 reversed in the kernel. So the
+        // wasm bound applies everywhere.
+        let tolerance = 1e-6
         for (name, shape, expected) in cases {
             let result = try #require(shape, Comment(rawValue: name))
             #expect(result.isValid, Comment(rawValue: name))

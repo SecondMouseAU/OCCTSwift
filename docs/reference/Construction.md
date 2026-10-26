@@ -5,6 +5,8 @@ parent: API Reference
 
 # Construction & Sketching
 
+> **Resolution is unavailable against the upstream `IR` kernel.** The recipe types (`TopologyRef`, `ConstructionPlane`, `ConstructionAxis`, `ConstructionPoint`, `Placement`) and `ConstructionContext`'s registry stay, but everything that resolves a recipe against a `BRepGraph` (`resolve`, `allBroken(in:)`, `materialize(in:graph:options:)`, `angle(to:in:)`, `Sketch.buildProfile(in:graph:)`) is not built, because OCCT 8.1 withdrew the `BRepGraph` package (OCCT#1628). See `docs/occtswift-wrapping-gaps.md`.
+
 The construction & sketching types implement Fusion 360-style parametric reference geometry and 2D profile creation. `ConstructionEntity` types carry _recipes_ (plane, axis, point definitions keyed on `TopologyRef`s) that are resolved against a live `BRepGraph`; `ConstructionContext` is the document-level registry for those entities; `ConstructionLayer` bridges them to the XCAF document layer system for STEP persistence; `Sketch` hosts 2D curve elements on a plane and builds a 3D profile wire; and `Section2D` extends `Shape` to produce 2D contour drawings from planar section cuts.
 
 ## Topics
