@@ -106,7 +106,6 @@
 #include <GC_MakeEllipse.hxx>
 #include <GC_MakeHyperbola.hxx>
 #include <GC_MakeSegment.hxx>
-#include <ShapeCustom_Curve.hxx>
 #include <ShapeUpgrade_SplitCurve3d.hxx>
 #include <TColGeom_HArray1OfCurve.hxx>
 #include <TColStd_HSequenceOfReal.hxx>
@@ -1358,28 +1357,6 @@ int32_t OCCTCurve3DEvaluateGridD1(OCCTCurve3DRef curve,
   {
     occtRecordCaughtException(__func__);
     return 0;
-  }
-}
-
-// MARK: - Curve3D ConvertToPeriodic / SplitAt (v0.50)
-OCCTCurve3DRef OCCTCurve3DConvertToPeriodic(OCCTCurve3DRef curve)
-{
-  if (!curve || curve->curve.IsNull())
-    return nullptr;
-  try
-  {
-    ShapeCustom_Curve  scc(curve->curve);
-    Handle(Geom_Curve) periodic = scc.ConvertToPeriodic(Standard_False);
-    if (periodic.IsNull())
-      return nullptr;
-    auto* ref  = new OCCTCurve3D();
-    ref->curve = periodic;
-    return ref;
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return nullptr;
   }
 }
 

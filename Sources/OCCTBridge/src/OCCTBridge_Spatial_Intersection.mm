@@ -64,7 +64,6 @@
 #include <math_Uzawa.hxx>
 #include <math_EigenValuesSearcher.hxx>
 #include <math_KronrodSingleIntegration.hxx>
-#include <math_GaussMultipleIntegration.hxx>
 #include <math_GaussSetIntegration.hxx>
 #include <math_FunctionSample.hxx>
 #include <math_IntegerVector.hxx>
@@ -90,7 +89,6 @@
 #include <math_Householder.hxx>
 #include <math_Crout.hxx>
 #include <IntAna_IntConicQuad.hxx>
-#include <IntAna_Int3Pln.hxx>
 #include <IntAna_IntLinTorus.hxx>
 #include <IntAna_Quadric.hxx>
 #include <IntAna_IntQuadQuad.hxx>
@@ -481,15 +479,27 @@ bool OCCTIntAna3Planes(double  p1ox,
 {
   try
   {
-    IntAna_Int3Pln inter(gp_Pln(gp_Pnt(p1ox, p1oy, p1oz), gp_Dir(p1nx, p1ny, p1nz)),
-                         gp_Pln(gp_Pnt(p2ox, p2oy, p2oz), gp_Dir(p2nx, p2ny, p2nz)),
-                         gp_Pln(gp_Pnt(p3ox, p3oy, p3oz), gp_Dir(p3nx, p3ny, p3nz)));
-    if (!inter.IsDone() || inter.IsEmpty())
+    // IntAna_Int3Pln was removed in OCCT 8.1. Its Perform (IntAna_Int3Pln.cxx at V8_0_1) was
+    // exactly this: the three plane equations a x + b y + c z + d = 0 solved by math_Gauss at
+    // gp::Resolution(), empty when the matrix is singular (parallel planes, or planes sharing a
+    // line).
+    math_Matrix  m(1, 3, 1, 3);
+    math_Vector  v(1, 3);
+    const gp_Pln pl1(gp_Pnt(p1ox, p1oy, p1oz), gp_Dir(p1nx, p1ny, p1nz));
+    const gp_Pln pl2(gp_Pnt(p2ox, p2oy, p2oz), gp_Dir(p2nx, p2ny, p2nz));
+    const gp_Pln pl3(gp_Pnt(p3ox, p3oy, p3oz), gp_Dir(p3nx, p3ny, p3nz));
+    pl1.Coefficients(m(1, 1), m(1, 2), m(1, 3), v(1));
+    pl2.Coefficients(m(2, 1), m(2, 2), m(2, 3), v(2));
+    pl3.Coefficients(m(3, 1), m(3, 2), m(3, 3), v(3));
+    math_Gauss solver(m, gp::Resolution());
+    if (!solver.IsDone())
       return false;
-    gp_Pnt p = inter.Value();
-    *outX    = p.X();
-    *outY    = p.Y();
-    *outZ    = p.Z();
+    v = -v;
+    solver.Solve(v);
+    gp_Pnt p(v(1), v(2), v(3));
+    *outX = p.X();
+    *outY = p.Y();
+    *outZ = p.Z();
     return true;
   }
   catch (...)

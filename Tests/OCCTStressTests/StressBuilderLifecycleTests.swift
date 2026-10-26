@@ -79,9 +79,16 @@ struct StressFilletBuilderLifecycleTests {
         // Oversized radius should fail gracefully
         builder.addEdge(edges[0], radius: 100.0)
         let result = builder.build()
-        // BRepFilletAPI_MakeFillet is not done for r = 100 on a 10-wide box (the old check read
-        // the result into `_`).
-        #expect(result == nil)
+        // V8_0_1's BRepFilletAPI_MakeFillet was not done for r = 100 on a 10-wide box (the old check
+        // read the result into `_`). Carried kernel patch 0082 (OCCT#1668) builds a fillet wider
+        // than its face, ending the arc at the far edge, so on the upstream IR kernel this answers a
+        // shape; measured with the patches 0079 to 0084 reversed in the kernel it is nil again. The
+        // contract is "no crash, and nil or a valid solid", which both kernels meet.
+        if let result {
+            #expect(result.isValid)
+            #expect(result.solidCount == 1)
+            #expect((result.volume ?? .infinity) < 1000)
+        }
     }
 
     // A second Build() on the same BRepFilletAPI_MakeFillet is done but hands back the box

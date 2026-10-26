@@ -110,40 +110,42 @@ struct Issue761SharedEdgeCountCapTests {
             edge.sharedEdgeCount > 10, "the whole point of this fixture is to exceed the old cap")
     }
 
-    /// The second, independent construction the measurement policy asks for: BRepGraph's own
-    /// `sharedEdges(between:and:)`, mapped to the same two occurrences via `findNode(for:)`, has
-    /// no such cap (an unbounded `std::vector` on the bridge side, `bgSharedEdges` in
-    /// `OCCTBridge_BRepGraph.mm`).
-    ///
-    /// It must agree with AAG's own count exactly now that AAG is no
-    /// longer capped, this is precisely the disagreement this issue's census found before the fix.
-    @Test("agrees with BRepGraph's own uncapped sharedEdges count")
-    func agreesWithBRepGraphsUncappedCount() {
-        guard let shape = Self.manySharedEdgesFixture(),
-            let (aag, topIndex, frontIndex) = Self.topAndFrontFaces(in: shape)
-        else {
-            Issue.record("could not build the many-shared-edges fixture")
-            return
-        }
-        guard let aagEdge = aag.edge(between: topIndex, and: frontIndex) else {
-            Issue.record("expected the top and front faces to be adjacent")
-            return
-        }
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        /// The second, independent construction the measurement policy asks for: BRepGraph's own
+        /// `sharedEdges(between:and:)`, mapped to the same two occurrences via `findNode(for:)`, has
+        /// no such cap (an unbounded `std::vector` on the bridge side, `bgSharedEdges` in
+        /// `OCCTBridge_BRepGraph.mm`).
+        ///
+        /// It must agree with AAG's own count exactly now that AAG is no
+        /// longer capped, this is precisely the disagreement this issue's census found before the fix.
+        @Test("agrees with BRepGraph's own uncapped sharedEdges count")
+        func agreesWithBRepGraphsUncappedCount() {
+            guard let shape = Self.manySharedEdgesFixture(),
+                let (aag, topIndex, frontIndex) = Self.topAndFrontFaces(in: shape)
+            else {
+                Issue.record("could not build the many-shared-edges fixture")
+                return
+            }
+            guard let aagEdge = aag.edge(between: topIndex, and: frontIndex) else {
+                Issue.record("expected the top and front faces to be adjacent")
+                return
+            }
 
-        let occ = shape.orientedFaces()
-        guard let graph = BRepGraph(shape: shape),
-            let topFaceShape = Shape.fromFace(occ[topIndex]),
-            let frontFaceShape = Shape.fromFace(occ[frontIndex]),
-            let topNode = graph.findNode(for: topFaceShape), topNode.kind == .face,
-            let frontNode = graph.findNode(for: frontFaceShape), frontNode.kind == .face
-        else {
-            Issue.record("could not map the top/front faces into BRepGraph")
-            return
-        }
+            let occ = shape.orientedFaces()
+            guard let graph = BRepGraph(shape: shape),
+                let topFaceShape = Shape.fromFace(occ[topIndex]),
+                let frontFaceShape = Shape.fromFace(occ[frontIndex]),
+                let topNode = graph.findNode(for: topFaceShape), topNode.kind == .face,
+                let frontNode = graph.findNode(for: frontFaceShape), frontNode.kind == .face
+            else {
+                Issue.record("could not map the top/front faces into BRepGraph")
+                return
+            }
 
-        let graphShared = graph.sharedEdges(between: topNode.index, and: frontNode.index)
-        #expect(aagEdge.sharedEdgeCount == graphShared.count)
-    }
+            let graphShared = graph.sharedEdges(between: topNode.index, and: frontNode.index)
+            #expect(aagEdge.sharedEdgeCount == graphShared.count)
+        }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
     /// The invariant the #776 review asked to pin directly: `OCCTFaceGetSharedEdges` and
     /// `OCCTFaceGetSharedEdgeCount` now share one internal comparison

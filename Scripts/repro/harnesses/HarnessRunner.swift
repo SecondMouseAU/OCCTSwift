@@ -35,11 +35,18 @@ enum HarnessRunner {
                 RunnableEntry(
                     name: "772-self-intersection",
                     summary: "analyze(tolerance:) vs isSelfIntersecting(timeout:) cost (#772)",
-                    run: AnalyzeSelfIntersectionTiming.run),
+                    run: AnalyzeSelfIntersectionTiming.run)
+            ]
+        #endif
+        // PocketEnclosureTiming builds a BRepGraph, so it goes with the Swift half of that package:
+        // Package.swift leaves the file out, and defines OCCTSWIFT_HAS_BREPGRAPH, only for a kernel
+        // that provides it (OCCT 8.1 withdrew it, OCCT#1628).
+        #if !os(WASI) && OCCTSWIFT_HAS_BREPGRAPH
+            entries += [
                 RunnableEntry(
                     name: "777-pocket-isopen",
                     summary: "PocketFeature.isOpen's enclosure test, four ways (#777)",
-                    run: PocketEnclosureTiming.run),
+                    run: PocketEnclosureTiming.run)
             ]
         #endif
         // Sorted, so the listing printed with no argument does not depend on the order the

@@ -103,7 +103,6 @@
 #include <Resource_Unicode.hxx>
 #include <OSD_DirectoryIterator.hxx>
 #include <OSD_FileIterator.hxx>
-#include <OSD_Disk.hxx>
 #include <OSD_SharedLibrary.hxx>
 #include <Message_Msg.hxx>
 #include <Message_MsgFile.hxx>
@@ -1379,75 +1378,6 @@ int32_t OCCTFileList(const char* path, const char* mask, char** names, int32_t m
 // permanently empty on those platforms and every statvfs() call (and hence DiskSize()/
 // DiskFree()/Failed()) failed regardless of whether the real path was valid. The const char*
 // overload assigns myDiskName from the raw string directly and is unaffected.
-
-int64_t OCCTDiskSize(const char* path)
-{
-  try
-  {
-    OSD_Disk disk(path);
-    // OSD_Disk::DiskSize() reports 512-byte blocks (OSD_Disk.hxx), this bridge fn is
-    // documented in KB; 1 block = 0.5 KB (#1442).
-    return (int64_t)disk.DiskSize() / 2;
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return 0;
-  }
-}
-
-int64_t OCCTDiskFree(const char* path)
-{
-  try
-  {
-    OSD_Disk disk(path);
-    // OSD_Disk::DiskFree() reports 512-byte blocks (OSD_Disk.hxx), this bridge fn is
-    // documented in KB; 1 block = 0.5 KB (#1442).
-    return (int64_t)disk.DiskFree() / 2;
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return 0;
-  }
-}
-
-bool OCCTDiskIsValid(const char* path)
-{
-  try
-  {
-    OSD_Disk disk(path);
-    // DiskSize() does not throw on failure (OSD_Disk.cxx): it sets the OSD_Error flag and
-    // returns 0. Check Failed(), not the exception (#1442), matching OCCTEnvironmentSet's
-    // !env.Failed() pattern elsewhere in this file.
-    disk.DiskSize();
-    return !disk.Failed();
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return false;
-  }
-}
-
-char* OCCTDiskName(const char* path)
-{
-  try
-  {
-    TCollection_AsciiString apath(path);
-    OSD_Path                opath(apath);
-    OSD_Disk                disk(opath);
-    OSD_Path                namePath = disk.Name();
-    TCollection_AsciiString nameStr;
-    namePath.SystemName(nameStr);
-    return strdup(nameStr.ToCString());
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return nullptr;
-  }
-}
 
 OCCTSharedLibRef OCCTSharedLibCreate(const char* name)
 {

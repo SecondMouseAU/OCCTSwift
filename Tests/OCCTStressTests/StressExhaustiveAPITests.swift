@@ -1247,8 +1247,15 @@ struct StressMathUtilTests {
 
     // x³ - x: -1, 0, 1.
     @Test func polynomialSolverCubic() {
-        let roots = PolynomialSolver.cubicRc4(a: 1, b: 0, c: -1, d: 0)
-        #expect((roots ?? []).sorted() == [-1, 0, 1])
+        let roots = (PolynomialSolver.cubicRc4(a: 1, b: 0, c: -1, d: 0) ?? []).sorted()
+        // The middle root is zero to rounding: the upstream IR kernel's solver gives 3.6e-61 where
+        // V8_0_1's gave exactly 0.0, so it is compared with a tolerance, not for equality.
+        #expect(roots.count == 3)
+        if roots.count == 3 {
+            #expect(roots[0] == -1)
+            #expect(abs(roots[1]) < 1e-12)
+            #expect(roots[2] == 1)
+        }
     }
 
     // Ten-point Gauss-Legendre is exact for a polynomial of degree 19, so these are the integrals

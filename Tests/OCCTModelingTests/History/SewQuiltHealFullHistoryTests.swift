@@ -167,26 +167,28 @@ struct SewQuiltHealFullHistoryTests {
         #expect(r1.isDeleted == r2.isDeleted)
     }
 
-    @Test("A sew's history can be absorbed into a BRepGraph (issue #290 integration)")
-    func sewHistoryAbsorbsIntoGraph() throws {
-        let (face1, face2) = try Self.touchingFaces()
-        guard let compound = Shape.compound([face1, face2]),
-            let graph = BRepGraph(shape: compound),
-            let root = graph.findNode(for: compound)
-        else {
-            Issue.record("graph setup failed")
-            return
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("A sew's history can be absorbed into a BRepGraph (issue #290 integration)")
+        func sewHistoryAbsorbsIntoGraph() throws {
+            let (face1, face2) = try Self.touchingFaces()
+            guard let compound = Shape.compound([face1, face2]),
+                let graph = BRepGraph(shape: compound),
+                let root = graph.findNode(for: compound)
+            else {
+                Issue.record("graph setup failed")
+                return
+            }
+            guard let r = Shape.sewWithFullHistory(shapes: [face1, face2], tolerance: 1e-6) else {
+                Issue.record("sew should succeed")
+                return
+            }
+            #expect(graph.historyRecordCount == 0)
+            let added = graph.add(
+                r.result, absorbing: r.history,
+                inputRoots: [BRepGraph.NodeRef(kind: root.kind, index: root.index)],
+                operationName: "sew")
+            #expect(added != nil, "add(absorbing:) should succeed for a sew's synthesized history")
+            #expect(graph.historyRecordCount > 0, "absorb should have written history records")
         }
-        guard let r = Shape.sewWithFullHistory(shapes: [face1, face2], tolerance: 1e-6) else {
-            Issue.record("sew should succeed")
-            return
-        }
-        #expect(graph.historyRecordCount == 0)
-        let added = graph.add(
-            r.result, absorbing: r.history,
-            inputRoots: [BRepGraph.NodeRef(kind: root.kind, index: root.index)],
-            operationName: "sew")
-        #expect(added != nil, "add(absorbing:) should succeed for a sew's synthesized history")
-        #expect(graph.historyRecordCount > 0, "absorb should have written history records")
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 }

@@ -25,7 +25,6 @@
 #include <BRepLib_ToolTriangulatedShape.hxx>
 #include <BRepMesh_Deflection.hxx>
 #include <BRepMesh_ShapeTool.hxx>
-#include <ShapeConstruct_MakeTriangulation.hxx>
 #include <Geom2dAdaptor_Curve.hxx>
 #include <Poly_MergeNodesTool.hxx>
 #include <Poly_Polygon2D.hxx>
@@ -1161,60 +1160,6 @@ bool OCCTBRepLibPointCloudByDensity(OCCTShapeRef shape,
 
 // MARK: - ShapeConstruct_MakeTriangulation (v0.74)
 // --- ShapeConstruct_MakeTriangulation ---
-
-OCCTShapeRef _Nullable OCCTShapeConstructTriangulationFromPoints(const double* _Nonnull coords,
-                                                                 int32_t pointCount)
-{
-  if (pointCount < 3)
-    return nullptr;
-  try
-  {
-    NCollection_Array1<gp_Pnt> points(1, pointCount);
-    for (int32_t i = 0; i < pointCount; i++)
-    {
-      points.SetValue(i + 1, gp_Pnt(coords[i * 3], coords[i * 3 + 1], coords[i * 3 + 2]));
-    }
-    ShapeConstruct_MakeTriangulation maker(points);
-    maker.Build();
-    if (!maker.IsDone())
-      return nullptr;
-    TopoDS_Shape result = maker.Shape();
-    if (result.IsNull())
-      return nullptr;
-    auto* ref  = new OCCTShape();
-    ref->shape = result;
-    return ref;
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return nullptr;
-  }
-}
-
-OCCTShapeRef _Nullable OCCTShapeConstructTriangulationFromWire(OCCTWireRef _Nonnull wire)
-{
-  if (!wire)
-    return nullptr;
-  try
-  {
-    ShapeConstruct_MakeTriangulation maker(wire->wire);
-    maker.Build();
-    if (!maker.IsDone())
-      return nullptr;
-    TopoDS_Shape result = maker.Shape();
-    if (result.IsNull())
-      return nullptr;
-    auto* ref  = new OCCTShape();
-    ref->shape = result;
-    return ref;
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return nullptr;
-  }
-}
 
 // MARK: - BRepMesh_ShapeTool (v0.74)
 // --- BRepMesh_ShapeTool ---

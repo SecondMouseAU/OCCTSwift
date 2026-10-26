@@ -96,6 +96,9 @@ WORDS = {
     "forty-six": 46, "forty-seven": 47, "forty-eight": 48, "forty-nine": 49, "fifty": 50,
     "fifty-one": 51, "fifty-two": 52, "fifty-three": 53, "fifty-four": 54, "fifty-five": 55,
     "fifty-six": 56, "fifty-seven": 57, "fifty-eight": 58, "fifty-nine": 59, "sixty": 60,
+    # The kernel rebase onto IR (phase 1) carries sixty-one patches, one past the old table.
+    "sixty-one": 61, "sixty-two": 62, "sixty-three": 63, "sixty-four": 64, "sixty-five": 65,
+    "sixty-six": 66, "sixty-seven": 67, "sixty-eight": 68, "sixty-nine": 69, "seventy": 70,
 }
 
 
@@ -1188,8 +1191,10 @@ def self_test():
     # The table once stopped at forty-five, so the day the job's invocation count reached 46 the
     # claim "forty-six" was unreadable and the gate failed a correct sentence.
     # ...and stopped at fifty the day it reached 52 (#2759).
-    case("number-words-reach-sixty", to_int("forty-six") == 46 and to_int("fifty-two") == 52
-         and to_int("sixty") == 60 and to_int("sixty-one") is None)
+    # ...and at sixty when the rebase onto IR made it 61.
+    case("number-words-reach-seventy", to_int("forty-six") == 46 and to_int("fifty-two") == 52
+         and to_int("sixty") == 60 and to_int("sixty-one") == 61 and to_int("seventy") == 70
+         and to_int("seventy-one") is None)
 
     # 5. The ci.yml parser stops at the next job rather than counting the whole file.
     sample = (
@@ -1481,10 +1486,11 @@ def self_test():
             globals()["carried_patch_digests"] = saved_digests
 
         # A development tree states OCC_VERSION_DEVELOPMENT and tree_occt_version appends it, so
-        # the stamp can read "8.0.1.dev" against build-occt.sh's bare "8.0.1". Comparing the
+        # the stamp can read "<version>.dev" against build-occt.sh's bare version. Comparing the
         # triple is what the docstring always claimed; string equality is what it did (#2893).
         globals()["read"] = with_map(
-            re.sub(r"^# occt-version: .*$", "# occt-version: 8.0.1.dev", real_map, count=1,
+            re.sub(r"^# occt-version: .*$",
+                   "# occt-version: %s.dev" % build_script_occt_version(), real_map, count=1,
                    flags=re.MULTILINE))
         case("a-development-suffix-on-the-stamp-is-not-a-version-bump",
              not any("Scripts/build-occt.sh builds" in p

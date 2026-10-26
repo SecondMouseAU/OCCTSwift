@@ -88,9 +88,10 @@ SecondMouseAU/OCCTSwift#2873.
  2 files changed, 10 insertions(+), 5 deletions(-)
 
 diff --git a/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Vinert.cxx b/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Vinert.cxx
+index 116b44f861..e9ad8d020d 100644
 --- a/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Vinert.cxx
 +++ b/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Vinert.cxx
-@@ -277,7 +277,8 @@
+@@ -277,7 +277,8 @@ double BRepGProp_Vinert::Perform(BRepGProp_Face&   theSurface,
  {
    double aCoeff[4];
    thePlane.Coefficients(aCoeff[0], aCoeff[1], aCoeff[2], aCoeff[3]);
@@ -98,9 +99,9 @@ diff --git a/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Vinert.cxx b/s
 +  // The integrand subtracts aCoeff[3], so negate d to measure about the plane as given.
 +  aCoeff[3] = -aCoeff[3] - aCoeff[0] * loc.X() - aCoeff[1] * loc.Y() - aCoeff[2] * loc.Z();
  
-   BRepGProp_Gauss aGauss(BRepGProp_Gauss::Vinert);
+   BRepGProp_Gauss aGauss(BRepGProp_Gauss::GaussType::Vinert);
  
-@@ -294,7 +295,8 @@
+@@ -294,7 +295,8 @@ void BRepGProp_Vinert::Perform(const BRepGProp_Face& theSurface, const gp_Pln& t
  
    thePlane.Coefficients(aCoeff[0], aCoeff[1], aCoeff[2], aCoeff[3]);
  
@@ -110,7 +111,7 @@ diff --git a/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Vinert.cxx b/s
  
    myEpsilon = 1.0;
    aGauss.Compute(theSurface, loc, aCoeff, false, dim, g, inertia);
-@@ -311,7 +313,8 @@
+@@ -311,7 +313,8 @@ void BRepGProp_Vinert::Perform(BRepGProp_Face&   theSurface,
  
    thePlane.Coefficients(aCoeff[0], aCoeff[1], aCoeff[2], aCoeff[3]);
  
@@ -121,9 +122,10 @@ diff --git a/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Vinert.cxx b/s
    myEpsilon = 1.0;
    aGauss.Compute(theSurface, theDomain, loc, aCoeff, false, dim, g, inertia);
 diff --git a/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_VinertGK.cxx b/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_VinertGK.cxx
+index a19c717d17..b0e4803dd8 100644
 --- a/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_VinertGK.cxx
 +++ b/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_VinertGK.cxx
-@@ -216,7 +216,8 @@
+@@ -216,7 +216,8 @@ double BRepGProp_VinertGK::Perform(BRepGProp_Face& theSurface,
  
    loc.Coord(aXLoc, aYLoc, aZLoc);
    thePlane.Coefficients(aCoeff[0], aCoeff[1], aCoeff[2], aCoeff[3]);
@@ -133,7 +135,7 @@ diff --git a/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_VinertGK.cxx b
  
    return PrivatePerform(theSurface, nullptr, false, aCoeff, theTolerance, theCGFlag, theIFlag);
  }
-@@ -241,7 +242,8 @@
+@@ -241,7 +242,8 @@ double BRepGProp_VinertGK::Perform(BRepGProp_Face&   theSurface,
  
    loc.Coord(aXLoc, aYLoc, aZLoc);
    thePlane.Coefficients(aCoeff[0], aCoeff[1], aCoeff[2], aCoeff[3]);

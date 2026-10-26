@@ -47,7 +47,54 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the fifty-four carried patches are documented in Scripts/patches/README.md
+// BRepGraph. OCCT 8.1 withdrew the BRepGraph package (OCCT#1628, deferred with no date; see OCCT
+// discussion 1656), so the upstream `IR` kernel this branch builds has no BRepGraph.hxx. Whether the
+// Swift half of the feature is built follows the kernel that is actually linked, which the manifest can
+// only see when it is a local xcframework: it asks that framework's own headers. A remote binary target
+// cannot be inspected at manifest time, so a build against the pinned remote asset reports the feature
+// as absent too; the bridge half (`OCCTBridge_BRepGraph.mm`) decides for itself with __has_include.
+//   - present: BRepGraph.swift, BRepGraph+Attributes.swift and the two +BRepGraph resolution files
+//     are built, OCCTBRepGraphTests exists, and the OCCTSWIFT_HAS_BREPGRAPH Swift define is set;
+//   - absent: those files are left out, BRepGraphUnavailable.swift is built in their place, and the
+//     BRepGraph test target is not declared (its tests are kept in the tree, not deleted).
+let kernelHasBRepGraph: Bool = {
+    guard useLocalXCFramework else { return false }
+    let headers = occtPackageDir + "/Libraries/OCCT.xcframework"
+    return ["macos-arm64", "ios-arm64", "ios-arm64-simulator"].contains {
+        FileManager.default.fileExists(atPath: headers + "/" + $0 + "/Headers/BRepGraph.hxx")
+    }
+}()
+let brepGraphSwiftSettings: [SwiftSetting] =
+    kernelHasBRepGraph ? [.define("OCCTSWIFT_HAS_BREPGRAPH")] : []
+let brepGraphExcludedSources: [String] =
+    kernelHasBRepGraph
+    ? ["BRepGraphUnavailable.swift"]
+    : [
+        "BRepGraph.swift", "BRepGraph+Attributes.swift", "ConstructionEntity+BRepGraph.swift",
+        "TopologyRef+BRepGraph.swift",
+    ]
+
+// Classes OCCT 8.1 deleted, with no replacement in the upstream `IR` kernel: NLPlate_NLPlate and the
+// NLPlate_HPG* constraints, ProjLib_ProjectOnSurface, ShapeCustom_Curve,
+// ShapeConstruct_MakeTriangulation, Geom2dGcc_Circ2dTanOnRad and OSD_Disk. Their bridge functions are
+// gone and the Swift methods are `@available(*, unavailable)`, so the test files that only exercise
+// them cannot compile and are left out of their targets here (kept in the tree, not deleted; a restored
+// class brings them back). Tests that share a file with live ones are wrapped in
+// `#if OCCTSWIFT_OCCT_80_CLASSES`, a define nothing sets today.
+let removedInOCCT81TestFiles: [String: [String]] = [
+    "OCCTSurfaceTests": [
+        "Plate/NLPlateBaseSurfaceTests.swift", "Plate/NLPlateDeformationTests.swift",
+        "Plate/NLPlateG2G3Tests.swift", "Plate/NLPlateParametersTests.swift",
+        "Plate/NLPlateResolutionOrderTests.swift",
+    ],
+    "OCCTGeom2dTests": ["ProjLib/ProjLibProjectOnSurfaceTests.swift"],
+    "OCCTShapeHealingTests": [
+        "ShapeCustom/CurveConvertToPeriodicTests.swift",
+        "ShapeBuild/ShapeConstructTriangulationTests.swift",
+    ],
+]
+
+// OCCT `IR` (53706f78a8, V8_0_1-76-g53706f78a8) plus the sixty-one carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target =
     isWASI
@@ -86,10 +133,23 @@ let occtTarget: Target =
             name: "OCCT",
             path: "Libraries/OCCT.xcframework"
         )
-        // OCCT V8_0_1 + the fifty carried patches listed below.
+        // OCCT V8_0_1 + the forty-six carried patches listed below.
         //
-        // Scripts/build-occt.sh builds V8_0_1, which absorbed ten of the previously carried patches (0001-0009 and 0013; their files are deleted,
-        // their writeups kept in Scripts/patches/README.md under "Retired patches"). The fifty that
+        // KERNEL REBASE (2026-10-25, phase 1). Scripts/build-occt.sh now builds the upstream `IR` commit
+        // 53706f78a8 (V8_0_1-76-g53706f78a8, OCCT_COMMIT), not the V8_0_1 tag, and Scripts/patches/ is the
+        // stack authored against it. THE PINNED ASSET BELOW IS STILL THE V8_0_1 KERNEL, built before
+        // that, so this block describes it and the lines that follow count against it. The list below
+        // holds the forty-six patches of that asset that are still in Scripts/patches/; the asset holds
+        // fifty, and the four the list no longer names were retired at the rebase and are in the asset:
+        // 0019 (OCCT#1418 merged), 0028 (upstream fixed it its own way), 0054 (replaced by 0079, the
+        // form submitted as OCCT#1623) and 0059 (IR plus 0079 to 0084 builds its cases). Seven of the
+        // forty-six were rebased and so differ in content from the asset's V8_0_1 form while keeping
+        // their name: 0010, 0014, 0015, 0036, 0043, 0048 and 0053 (0070, 0073, 0074, 0076 and 0078 were
+        // rebased too, and are in the unpinned set below). Nothing about the asset
+        // changes until the next repin, which is phase 2 and is not done here.
+        //
+        // Scripts/build-occt.sh built V8_0_1 until the rebase, which absorbed ten of the previously carried patches (0001-0009 and 0013; their files are deleted,
+        // their writeups kept in Scripts/patches/README.md under "Retired patches"). The forty-six that
         // survive, all present in Scripts/patches/, are:
         //
         //   0010  Intf_Interference O(1) tangent-zone lookup + checkpointed breaker            #319
@@ -101,7 +161,6 @@ let occtTarget: Target =
         //   0016  Resource_Manager::Debug atomic + Storage_Schema per-instance scratch    #374/#518
         //   0017  null ReShape context in ComposeShell/WireDivide                              #484
         //   0018  GCPnts degenerate count + duplicate end point                                #555
-        //   0019  AdvApp2Var Jacobi maxima workspace slot                                      #522
         //   0020  BRepFeat_MakeCylindricalHole tool-part selection                             #532
         //   0021  CPnts adaptive arc-length integration                                        #603
         //   0022  ChFi2d_Builder::AddChamfer connexion error check                             #705
@@ -110,7 +169,6 @@ let occtTarget: Target =
         //   0025  GeomFill_Sweep reports the achieved conversion error                         #597
         //   0026  BRepOffsetAPI_ThruSections refuses an uncappable non-planar extremity        #905
         //   0027  ThruSections CreateSmoothed section-edge-count guard                         #913
-        //   0028  GeomPlate_BuildPlateSurface's uninitialised G0/G1/G2 errors                #1018
         //   0029  XCAFDoc_Datum reads the datum point's X from the annotation plane's array  #1022
         //   0030  TopoDS_TShape::myState non-atomic flag-mutation data race                  #1154
         //   (0031, the BSplCLib_Cache/BSplSLib_Cache locks, #1153, is RETIRED at the
@@ -159,10 +217,6 @@ let occtTarget: Target =
         //         in the order it bound them, not in the order of a DataMap hashed on TShape
         //         addresses, so an arc-join offset is one result per input. Pinned by
         //         v4.0.0-kernel.5. Issue3003OffsetOrderTests is ungated by the same change
-        //   0054  ChFi3d_Builder::StartSol drops an obstacle whose neighbour face holds no     #2881
-        //         edge to follow instead of leaving an empty curve for the SurfRst walk to
-        //         dereference: the SIGSEGV inside BRepFilletAPI_MakeFillet::Build at a radius
-        //         of exactly 1.5 on the reporter's model. Pinned by v4.0.0-kernel.5
         //   0055  GProp_SelGProps / GProp_VelGProps Perform(gp_Cone) compute the matrix of     #3010
         //         inertia from the integral and the solid's centre of mass from the solid
         //   0056  BRepLib::Plane() creates its process-global plane as a function-local        #3039
@@ -175,9 +229,6 @@ let occtTarget: Target =
         //   0058  BRepOffsetAPI_MiddlePath::Build carries a path that has reached a vertex       #3105
         //         forward instead of casting it to an edge, and bounds the levels. Pinned by
         //         v4.0.0-kernel.6
-        //   0059  ChFi3d_Builder builds two fillets that meet exactly (radii summing to the      #3207
-        //         width of the face between them) instead of answering IsDone() == false.
-        //         Pinned by v4.0.0-kernel.6
         //   0064  TopOpeBRepBuild CorrectUnclosedWire collects the edges to remove before      #3335
         //         removing them, so BRepFilletAPI_MakeFillet no longer reads the list node a
         //         BRep_Builder::Remove freed under its TopoDS_Iterator. Pinned by
@@ -256,7 +307,7 @@ let occtTarget: Target =
         //     They are the only two patches in the tree with no CI coverage of any kind, which is
         //     worth knowing before trusting "the fix is in the kernel" about either.
         //
-        // Pinned to the v4.0.0-kernel.7 pre-release asset: upstream V8_0_1 plus the fifty patches listed above,
+        // Pinned to the v4.0.0-kernel.7 pre-release asset: upstream V8_0_1 plus the forty-six patches listed above (and the four retired at the IR rebase, named in the KERNEL REBASE paragraph),
         // and nothing else. That was NOT true of v4.0.0-kernel.1, which carried two patches that are
         // not in Scripts/patches/ at all, so read the next paragraph before treating any older asset's
         // enumeration as its contents.
@@ -294,9 +345,9 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The pinned asset lacks seven of them, 0070, 0071, 0072, 0073, 0074, 0076 and 0077: it holds
-        // fifty and Scripts/patches/ holds fifty-seven, so those seven are exercised by no CI job
-        // until the next repin.
+        // The pinned asset lacks fifteen of them, 0070, 0071, 0072, 0073, 0074, 0075, 0076, 0077, 0078 and
+        // 0079, 0080, 0081, 0082, 0083, 0084: it holds forty-six of the sixty-one and Scripts/patches/
+        // holds sixty-one, so those fifteen are exercised by no CI job until the next repin.
         // 0064 (#3335), 0065 (#3350), 0066 (#3464), 0068 (#3449) and
         // 0069 (#3330) were carried after v4.0.0-kernel.6 and are pinned by v4.0.0-kernel.7; the
         // rows for 0053 through 0069 below are history in the way the rows for 0044 through 0052
@@ -344,10 +395,10 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds fifty-seven patches and the pinned asset holds fifty of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 57 against a list of 50,
-        // and the seven that the list lacks are 0070, 0071, 0072, 0073, 0074, 0076 and 0077, written
-        // up below. The
+        // Scripts/patches/ holds sixty-one patches and the pinned asset holds forty-six of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 61 against a list of 46,
+        // and the fifteen that the list lacks are 0070, 0071, 0072, 0073, 0074, 0075, 0076, 0077, 0078
+        // and 0079 to 0084, written up below. The
         // v4.0.0-kernel.4 rebuild closed the divergence that 0044 had
         // opened and that 0045 through 0052 widened, the v4.0.0-kernel.5 rebuild closed the one that
         // 0053 through 0057 opened, the v4.0.0-kernel.6 rebuild closed the one that 0058 and 0059
@@ -617,6 +668,15 @@ let occtTarget: Target =
         //         v4.0.0-kernel.7; BREPKernelRecordCountTests is gated on OCCTSWIFT_LOCAL=1 until
         //         the next repin (#3490).
         //
+        //   0075  A trimmed curve or surface took its parameters on trust: a nan or an infinity
+        //         failed every comparison against the range, or looped ElCLib::AdjustPeriodic on
+        //         a periodic basis, and Geom_TrimmedCurve, Geom2d_TrimmedCurve and
+        //         Geom_RectangularTrimmedSurface never returned, recursed to the end of the stack,
+        //         or built an object with nan bounds. SetTrim refuses a parameter that is not
+        //         finite with Standard_ConstructionError, which the BREP readers turn into a
+        //         refused record. NOT in v4.0.0-kernel.7; BREPKernelTrimParameterTests is gated
+        //         on OCCTSWIFT_LOCAL=1 until the next repin (#3496).
+        //
         //   0076  BinTools_ShapeReader trusted the position a reference names and the byte
         //         after it: a delta past the start of the stream wrapped to a position near 2^64,
         //         a reference to a shape or location still being read recursed until the stack
@@ -624,7 +684,6 @@ let occtTarget: Target =
         //         of the wrong kind in a slot was read as an empty one. NOT in v4.0.0-kernel.7;
         //         BinToolsPositionReferenceTests is gated on OCCTSWIFT_LOCAL=1 until the next
         //         repin (#3495).
-        //
         //   0077  BRepCheck_Edge::InContext used the surface of a face that had none, and
         //         projected "the 3D curve" of an edge that had only a curve on a surface onto a
         //         planar face, through a null handle. Both fault BRepCheck_Analyzer; both now
@@ -632,6 +691,32 @@ let occtTarget: Target =
         //         BREPKernelInconsistentShapeTests is gated on OCCTSWIFT_LOCAL=1 until the next
         //         repin (#3490).
         //
+        //   0079  ChFi3d_Builder::StartSol drops an obstacle with no edge to follow: the form     #1623
+        //         submitted as OCCT#1623, which replaces 0054 (same three lines, plus the GTest
+        //         RimBlendEndingOnBottomRoundDoesNotCrash). NOT in v4.0.0-kernel.7 as such; the
+        //         asset holds 0054, so the fix itself is in it.
+        //
+        //   0080  BRepTools_WireExplorer ends the exploration on a pcurve too short to step       #1666
+        //         along, where it looped forever and BRepCheck_Analyzer never returned on a face
+        //         four fillets had consumed to a point. NOT in v4.0.0-kernel.7.
+        //
+        //   0081  ChFi3d_HasTransversalIntersection reads the crossing of two end-cap arcs         #1667
+        //         (reported as a segment, with no point) as a crossing, so fillets whose arcs
+        //         cross are refused rather than reported done with a solid BRepCheck rejects.
+        //         NOT in v4.0.0-kernel.7.
+        //
+        //   0082  BRepFilletAPI_MakeFillet builds a fillet wider than its face for a single       #1668
+        //         straight edge between two planar faces at a right angle, as a cut by the
+        //         prism between the arc and the faces. NOT in v4.0.0-kernel.7.
+        //
+        //   0083  BRepFilletAPI_MakeFillet reports a result that is not a valid solid as a        #1669
+        //         failure (chamfers keep theirs). NOT in v4.0.0-kernel.7.
+        //
+        //   0084  BRepFilletAPI_MakeFillet builds fillets on opposite edges whose arcs cross       #1670
+        //         as the intersection of the single-fillet shapes. NOT in v4.0.0-kernel.7.
+        //         0079 to 0084 are exercised by the GTests they carry in the kernel build
+        //         (78 fillet, chamfer and wire-explorer GTests pass on the patched IR tree); the
+        //         bridge's own tests for them are phase 2.
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
         // 2026-09-29 unbuilt, because OCCT 8.0.2 was days out and there is a standing hold on repinning
@@ -1090,6 +1175,18 @@ func adjustedForWASM(_ target: Target) -> Target? {
     return target
 }
 
+// The BRepGraph switch for everything that is not the OCCTSwift target itself (that one carries it
+// inline above): the test and executable targets get the OCCTSWIFT_HAS_BREPGRAPH define so a file
+// that names `BRepGraph` can say so with `#if`, and the BRepGraph test target is not declared at all
+// against a kernel without the package. Its sources stay in Tests/OCCTBRepGraphTests.
+func adjustedForBRepGraph(_ target: Target) -> Target? {
+    if target.name == "OCCTBRepGraphTests" && !kernelHasBRepGraph { return nil }
+    if target.type == .test || target.type == .executable {
+        target.swiftSettings = (target.swiftSettings ?? []) + brepGraphSwiftSettings
+    }
+    return target
+}
+
 let package = Package(
     name: "OCCTSwift",
     platforms: [
@@ -1143,9 +1240,10 @@ let package = Package(
             name: "OCCTSwift",
             dependencies: swiftLayerDependencies,
             path: "Sources/OCCTSwift",
+            exclude: brepGraphExcludedSources,
             swiftSettings: [
                 .swiftLanguageMode(.v6)
-            ]
+            ] + brepGraphSwiftSettings
         ),
 
         // Objective-C++ bridge to OCCT, source or prebuilt; see OCCTSWIFT_BRIDGE_PREBUILT above.
@@ -1167,7 +1265,8 @@ let package = Package(
             name: "OCCTFoundationTests", dependencies: ["OCCTSwift"],
             path: "Tests/OCCTFoundationTests"),
         .testTarget(
-            name: "OCCTGeom2dTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTGeom2dTests"),
+            name: "OCCTGeom2dTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTGeom2dTests",
+            exclude: removedInOCCT81TestFiles["OCCTGeom2dTests"] ?? []),
         .testTarget(name: "OCCTIOTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTIOTests"),
         .testTarget(
             name: "OCCTIntegrationTests", dependencies: ["OCCTSwift"],
@@ -1192,7 +1291,8 @@ let package = Package(
         // nbV=1, so proving the per-axis fix needs the raw C entry point, not the Swift wrapper.
         .testTarget(
             name: "OCCTShapeHealingTests", dependencies: ["OCCTSwift", "OCCTBridge"],
-            path: "Tests/OCCTShapeHealingTests"),
+            path: "Tests/OCCTShapeHealingTests",
+            exclude: removedInOCCT81TestFiles["OCCTShapeHealingTests"] ?? []),
         // `Fixtures/` holds .brep files read straight from the source tree via `#filePath`, not
         // through `Bundle.module`, so they are neither build inputs nor resources to copy. Without
         // this exclude SwiftPM reports them as unhandled on every build of this package as the ROOT
@@ -1204,7 +1304,8 @@ let package = Package(
             name: "OCCTStressTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTStressTests",
             exclude: ["Fixtures"]),
         .testTarget(
-            name: "OCCTSurfaceTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTSurfaceTests"),
+            name: "OCCTSurfaceTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTSurfaceTests",
+            exclude: removedInOCCT81TestFiles["OCCTSurfaceTests"] ?? []),
         .testTarget(
             name: "OCCTThreadTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTThreadTests"),
         .testTarget(
@@ -1255,6 +1356,7 @@ let package = Package(
             name: "Censuses",
             dependencies: ["OCCTSwift", "RunnerCore"],
             path: "Scripts/repro/censuses",
+            exclude: kernelHasBRepGraph ? [] : ["Issue761.swift"],
             swiftSettings: [
                 .swiftLanguageMode(.v6)
             ]
@@ -1300,13 +1402,14 @@ let package = Package(
             // The first wasm CI job (#2269) is what surfaced this at all: #2175 guarded the library
             // and nothing built this target for wasm, because that spike consumed OCCTSwift through
             // a separate package.
-            exclude: isWASI
+            exclude: (isWASI
                 ? ["AnalyzeSelfIntersectionTiming.swift", "PocketEnclosureTiming.swift"]
-                : [],
+                : [])
+                + (kernelHasBRepGraph ? [] : ["PocketEnclosureTiming.swift"]),
             swiftSettings: [
                 .swiftLanguageMode(.v6)
             ]
         ),
-    ].compactMap(adjustedForWASM),
+    ].compactMap(adjustedForWASM).compactMap(adjustedForBRepGraph),
     cxxLanguageStandard: .cxx17
 )

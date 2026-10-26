@@ -79,6 +79,8 @@ The parabola vertex is at `center` and the focal distance determines its opening
 
 ### `convertToPeriodic()`
 
+> **Unavailable against the upstream `IR` kernel.** `ShapeCustom_Curve` was deleted in OCCT 8.1 and has no replacement. The text below is for an 8.0.x kernel.
+
 Converts a closed BSpline curve to its periodic form.
 
 ```swift
@@ -90,7 +92,7 @@ The curve must be closed (start point equals end point). The resulting periodic 
 - **Returns:** Periodic BSpline curve, or `nil` if the curve is not closed or periodic conversion is not possible.
 - **OCCT:** `ShapeCustom_Curve::ConvertToPeriodic`.
 - **Example:**
-  ```swift
+  ```swift no-typecheck: Curve3D.convertToPeriodic is unavailable against the upstream IR kernel (ShapeCustom_Curve deleted in OCCT 8.1)
   if let closed = Curve3D.interpolate(points: [
       SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(-1, 0, 0), SIMD3(0, -1, 0)
   ], closed: true) {

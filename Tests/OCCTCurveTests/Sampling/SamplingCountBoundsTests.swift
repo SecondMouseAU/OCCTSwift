@@ -195,18 +195,21 @@ struct Issue558SamplingCountBounds {
         }
     }
 
-    @Test("BRepGraph.sampleEdgeCurve rejects a count it cannot serve")
-    func graphEdgeSampleRequest() throws {
-        guard let graph = BRepGraph(shape: try box()) else {
-            #expect(Bool(false))
-            return
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("BRepGraph.sampleEdgeCurve rejects a count it cannot serve")
+        func graphEdgeSampleRequest() throws {
+            guard let graph = BRepGraph(shape: try box()) else {
+                #expect(Bool(false))
+                return
+            }
+            #expect(graph.sampleEdgeCurve(edgeIndex: 0, count: 6).count == 6)
+            for n in [-1, 0, Self.pastCeiling, Int.max] + Self.pastInt32List {
+                #expect(
+                    graph.sampleEdgeCurve(edgeIndex: 0, count: n).count == 0,
+                    "sampleEdgeCurve(\(n))")
+            }
         }
-        #expect(graph.sampleEdgeCurve(edgeIndex: 0, count: 6).count == 6)
-        for n in [-1, 0, Self.pastCeiling, Int.max] + Self.pastInt32List {
-            #expect(
-                graph.sampleEdgeCurve(edgeIndex: 0, count: n).count == 0, "sampleEdgeCurve(\(n))")
-        }
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
     @Test("Shape.allEdgePolylines keeps its own lower bound and gains the ceiling")
     func allEdgePolylinesRequest() throws {
@@ -362,23 +365,26 @@ struct Issue558SamplingCountBounds {
         }
     }
 
-    @Test("BRepGraph.sampleFaceUVGrid bounds the product, and each factor on its own")
-    func faceUVGrid() throws {
-        guard let graph = BRepGraph(shape: try box()) else {
-            #expect(Bool(false))
-            return
-        }
-        #expect(graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 5, vSamples: 4) != nil)
-        #expect(graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 5000, vSamples: 2001) == nil)
-        #expect(graph.sampleFaceUVGrid(faceIndex: 0, uSamples: -1, vSamples: -1) == nil)
-        #expect(graph.sampleFaceUVGrid(faceIndex: 0, uSamples: -1, vSamples: 3) == nil)
-        #expect(graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 0, vSamples: 3) == nil)
-        #expect(graph.sampleFaceUVGrid(faceIndex: 0, uSamples: Int.max, vSamples: Int.max) == nil)
-        if let pastInt32 = Self.pastInt32 {
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test("BRepGraph.sampleFaceUVGrid bounds the product, and each factor on its own")
+        func faceUVGrid() throws {
+            guard let graph = BRepGraph(shape: try box()) else {
+                #expect(Bool(false))
+                return
+            }
+            #expect(graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 5, vSamples: 4) != nil)
+            #expect(graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 5000, vSamples: 2001) == nil)
+            #expect(graph.sampleFaceUVGrid(faceIndex: 0, uSamples: -1, vSamples: -1) == nil)
+            #expect(graph.sampleFaceUVGrid(faceIndex: 0, uSamples: -1, vSamples: 3) == nil)
+            #expect(graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 0, vSamples: 3) == nil)
             #expect(
-                graph.sampleFaceUVGrid(faceIndex: 0, uSamples: pastInt32, vSamples: 3) == nil)
+                graph.sampleFaceUVGrid(faceIndex: 0, uSamples: Int.max, vSamples: Int.max) == nil)
+            if let pastInt32 = Self.pastInt32 {
+                #expect(
+                    graph.sampleFaceUVGrid(faceIndex: 0, uSamples: pastInt32, vSamples: 3) == nil)
+            }
         }
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
     @Test("Shape.coonsAlgPatch bounds the product, and each factor on its own")
     func coonsPatchGrid() throws {

@@ -48,26 +48,6 @@ OCCTSurfaceRef OCCTSurfacePlateThrough(const double* points,
                                        int32_t       degree,
                                        double        tolerance);
 
-/// Deform a surface to pass through constraint points (NLPlate G0).
-/// constraints: flat array of (u, v, targetX, targetY, targetZ) per point.
-/// resolutionOrder is NLPlate_NLPlate::Solve2's `ord`, the plate's resolution order, and must be
-/// in [2, 9]; anything else returns NULL (#1017).
-OCCTSurfaceRef OCCTSurfaceNLPlateG0(OCCTSurfaceRef initialSurface,
-                                    const double*  constraints,
-                                    int32_t        constraintCount,
-                                    int32_t        resolutionOrder,
-                                    double         tolerance);
-
-/// Deform a surface with position + tangent constraints (NLPlate G0+G1).
-/// constraints: flat (u, v, targetX, targetY, targetZ, d1uX, d1uY, d1uZ, d1vX, d1vY, d1vZ) per
-/// point.
-/// resolutionOrder is bounded the same way as OCCTSurfaceNLPlateG0's (#1017).
-OCCTSurfaceRef OCCTSurfaceNLPlateG1(OCCTSurfaceRef initialSurface,
-                                    const double*  constraints,
-                                    int32_t        constraintCount,
-                                    int32_t        resolutionOrder,
-                                    double         tolerance);
-
 // MARK: - ProjLib: Curve Projection onto Surfaces (v0.22.0)
 
 /// Project a 3D curve onto a surface, returning a 2D (UV) curve.
@@ -146,52 +126,6 @@ OCCTShapeRef _Nullable OCCTProjLibComputeApproxOnPolarSurface(OCCTShapeRef edgeS
 
 // MARK: - v0.69.0: NLPlate G2/G3, Plate_Plate, GeomPlate_BuildAveragePlane,
 // GeomFill_Generator/Bound
-
-// --- NLPlate G0+G2 constraint ---
-
-/// Deform a surface with position + tangent + curvature constraints (NLPlate G0+G2).
-/// constraints: flat array per point of (u, v, targetX, targetY, targetZ,
-///   d1uX,d1uY,d1uZ, d1vX,d1vY,d1vZ,
-///   d2uuX,d2uuY,d2uuZ, d2uvX,d2uvY,d2uvZ, d2vvX,d2vvY,d2vvZ) = 20 doubles each.
-/// No iteration count: NLPlate_NLPlate::Solve2(ord, InitialConsraintOrder) takes none. See the
-/// note on the implementation for why IncrementalSolve is not the answer either (#999).
-OCCTSurfaceRef _Nullable OCCTSurfaceNLPlateG2(OCCTSurfaceRef _Nonnull initialSurface,
-                                              const double* _Nonnull constraints,
-                                              int32_t constraintCount,
-                                              double  tolerance);
-
-/// Deform a surface with G0+G1+G2+G3 constraints.
-/// constraints: flat array per point of 32 doubles each:
-///   (u, v, targetX,Y,Z, d1uX,Y,Z, d1vX,Y,Z, d2uuX,Y,Z, d2uvX,Y,Z, d2vvX,Y,Z,
-///    d3uuuX,Y,Z, d3uuvX,Y,Z, d3uvvX,Y,Z, d3vvvX,Y,Z)
-/// No iteration count, for the same reason as OCCTSurfaceNLPlateG2 (#999).
-OCCTSurfaceRef _Nullable OCCTSurfaceNLPlateG3(OCCTSurfaceRef _Nonnull initialSurface,
-                                              const double* _Nonnull constraints,
-                                              int32_t constraintCount,
-                                              double  tolerance);
-
-/// NLPlate with IncrementalSolve strategy (for challenging constraint sets).
-/// Same constraint format as OCCTSurfaceNLPlateG0.
-OCCTSurfaceRef _Nullable OCCTSurfaceNLPlateIncrementalG0(OCCTSurfaceRef _Nonnull initialSurface,
-                                                         const double* _Nonnull constraints,
-                                                         int32_t constraintCount,
-                                                         int32_t maxOrder,
-                                                         int32_t initConstraintOrder,
-                                                         int32_t nbIncrements);
-
-/// Evaluate derivative of NLPlate solution at a UV point.
-/// Deforms initial surface, solves, and returns derivative (iu,iv) at UV.
-/// Returns false if solve fails. Writes result to outX/Y/Z.
-bool OCCTSurfaceNLPlateEvaluateDerivative(OCCTSurfaceRef _Nonnull initialSurface,
-                                          const double* _Nonnull constraints,
-                                          int32_t constraintCount,
-                                          double  u,
-                                          double  v,
-                                          int32_t iu,
-                                          int32_t iv,
-                                          double* _Nonnull outX,
-                                          double* _Nonnull outY,
-                                          double* _Nonnull outZ);
 
 /// Create a Plate_Plate solver.
 OCCTPlateRef OCCTPlateCreate(void);
@@ -298,14 +232,6 @@ OCCTCurve2DRef _Nullable OCCTProjectCurveOnSurface(OCCTCurve3DRef _Nonnull curve
                                                    double firstParam,
                                                    double lastParam,
                                                    double precision);
-
-// --- ProjLib_ProjectOnSurface ---
-/// Project a 3D curve onto a surface, returning BSpline approximation
-OCCTCurve3DRef _Nullable OCCTProjLibProjectOnSurface(OCCTCurve3DRef _Nonnull curve,
-                                                     double uFirst,
-                                                     double uLast,
-                                                     OCCTSurfaceRef _Nonnull surface,
-                                                     double tolerance);
 
 // MARK: - Plate Constraint Extensions (v0.103.0)
 

@@ -7,6 +7,8 @@ nav_order: 1
 
 # BREP Graph: Durable Identity & UIDs
 
+> **Unavailable against the upstream `IR` kernel.** OCCT 8.1 withdrew the `BRepGraph` package (OCCT#1628, deferred with no date; see OCCT discussion 1656), so a build against that kernel cannot make a `BRepGraph`: `BRepGraph(shape:)` is marked unavailable with this reason, and the members described below are not built. The page describes the API as it is against an 8.0.x kernel (a local `Libraries/OCCT.xcframework` whose headers include `BRepGraph.hxx`). See `docs/occtswift-wrapping-gaps.md`.
+
 A `BRepGraph` gives every node (solid, shell, face, wire, edge, vertex, and the reference and
 product entries around them) an identity that survives mutation of that graph. This page is about how
 that identity works: the three UID flavours, how they are minted and resolved, and the one rule that
@@ -22,7 +24,7 @@ A node **index** is a position in a per-kind vector. It is convenient but not st
 removing topology, or calling `compact()`, renumbers the vectors, so face index 3 today may be a
 different face tomorrow.
 
-```swift
+```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
 let box = Shape.box(width: 10, height: 10, depth: 10)!
 let graph = BRepGraph(shape: box)!
 
@@ -222,7 +224,7 @@ A graph built from a compound of placed instances, which is what a STEP assembly
 sub-shape of every instance resolves through `findNode(for:)`, and the two instances of one part
 resolve to the *same* node:
 
-```swift
+```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
 let box = Shape.box(width: 10, height: 8, depth: 6)!
 let placed = box.moved(dx: 50, dy: 0, dz: 0)!
 let pair = Shape.compound([box, placed])!

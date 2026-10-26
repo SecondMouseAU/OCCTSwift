@@ -1631,22 +1631,27 @@ extension Shape {
         return Shape(handle: ref)
     }
     /// Create a triangulated face from 3D points.
+    ///
+    /// Unavailable in this build: ShapeConstruct_MakeTriangulation was deleted in OCCT 8.1 and the upstream IR kernel has no replacement.
+    @available(
+        *, unavailable,
+        message:
+            "ShapeConstruct_MakeTriangulation was deleted in OCCT 8.1 and the upstream IR kernel has no replacement."
+    )
     public static func triangulationFromPoints(_ points: [(Double, Double, Double)]) -> Shape? {
-        var coords: [Double] = []
-        for p in points {
-            coords.append(p.0)
-            coords.append(p.1)
-            coords.append(p.2)
-        }
-        guard let ref = OCCTShapeConstructTriangulationFromPoints(coords, Int32(points.count))
-        else { return nil }
-        return Shape(handle: ref)
+        fatalError("unavailable")
     }
 
     /// Create a triangulated face from a wire.
+    ///
+    /// Unavailable in this build: ShapeConstruct_MakeTriangulation was deleted in OCCT 8.1 and the upstream IR kernel has no replacement.
+    @available(
+        *, unavailable,
+        message:
+            "ShapeConstruct_MakeTriangulation was deleted in OCCT 8.1 and the upstream IR kernel has no replacement."
+    )
     public static func triangulationFromWire(_ wire: Wire) -> Shape? {
-        guard let ref = OCCTShapeConstructTriangulationFromWire(wire.handle) else { return nil }
-        return Shape(handle: ref)
+        fatalError("unavailable")
     }
 
     /// Restrict BSpline degree and segments with full control (advanced version).

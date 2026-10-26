@@ -26,9 +26,10 @@ Tracked as SecondMouseAU/OCCTSwift#3489, follow-up to #3486 and #3477.
 
 ---
 diff --git a/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.cxx b/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.cxx
+index 4aa6fceed8..400f37dcae 100644
 --- a/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.cxx
 +++ b/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.cxx
-@@ -786,7 +786,8 @@
+@@ -784,7 +784,8 @@ const BinObjMgt_Persistent& BinObjMgt_Persistent::GetLabel(const occ::handle<TDF
    aLen = InverseInt(aLen);
  #endif
    me->myOffset += BP_INTSIZE;
@@ -38,8 +39,8 @@ diff --git a/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.cxx 
    {
      return *this;
    }
-@@ -895,11 +896,12 @@
-                                                                   const int theLength) const
+@@ -893,11 +894,12 @@ const BinObjMgt_Persistent& BinObjMgt_Persistent::GetExtCharArray(char16_t* cons
+                                                                   const int       theLength) const
  {
    alignOffset(BP_EXTCHARSIZE, true);
 -  int aSize = theLength * BP_EXTCHARSIZE;
@@ -53,8 +54,8 @@ diff --git a/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.cxx 
    getArray(theArray, aSize);
  #ifdef DO_INVERSE
    for (int i = 0; i < theLength; i++)
-@@ -919,11 +921,12 @@
-                                                               const int theLength) const
+@@ -917,11 +919,12 @@ const BinObjMgt_Persistent& BinObjMgt_Persistent::GetIntArray(int* const theArra
+                                                               const int  theLength) const
  {
    alignOffset(BP_INTSIZE, true);
 -  int aSize = theLength * BP_INTSIZE;
@@ -68,8 +69,8 @@ diff --git a/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.cxx 
    getArray(theArray, aSize);
  #ifdef DO_INVERSE
    for (int i = 0; i < theLength; i++)
-@@ -943,11 +946,12 @@
-                                                                const int theLength) const
+@@ -941,11 +944,12 @@ const BinObjMgt_Persistent& BinObjMgt_Persistent::GetRealArray(double* const the
+                                                                const int     theLength) const
  {
    alignOffset(BP_INTSIZE, true);
 -  int aSize = theLength * BP_REALSIZE;
@@ -83,8 +84,8 @@ diff --git a/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.cxx 
    getArray(theArray, aSize);
  #ifdef DO_INVERSE
    for (int i = 0; i < theLength; i++)
-@@ -968,11 +972,12 @@
-   const int                  theLength) const
+@@ -965,11 +969,12 @@ const BinObjMgt_Persistent& BinObjMgt_Persistent::GetShortRealArray(float* const
+                                                                     const int    theLength) const
  {
    alignOffset(BP_INTSIZE, true);
 -  int aSize = theLength * BP_SHORTREALSIZE;
@@ -99,21 +100,22 @@ diff --git a/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.cxx 
  #ifdef DO_INVERSE
    for (int i = 0; i < theLength; i++)
 diff --git a/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.hxx b/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.hxx
+index 8e8780fc1a..3bac46de9c 100644
 --- a/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.hxx
 +++ b/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.hxx
-@@ -229,6 +229,11 @@
- 
+@@ -221,6 +221,11 @@ public:
    //! Tells the current position for get/put
    int Position() const;
-+
+ 
 +  //! Returns true if the data left after the current position can hold theNbItems items of at
 +  //! least theItemSize bytes each. Does not overflow, so it can check a count read from the data
 +  //! before memory is allocated for it.
 +  bool HasItems(const int theNbItems, const int theItemSize) const;
- 
++
    //! Sets the current position for get/put.
    //! Resets an error state depending on the validity of thePos.
-@@ -320,6 +325,9 @@
+   //! Returns the new state (value of IsOK())
+@@ -311,6 +316,9 @@ private:
    //! from the current position in myData
    bool noMoreData(const int theSize) const;
  
@@ -124,9 +126,10 @@ diff --git a/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.hxx 
    Standard_EXPORT void putArray(void* const theArray, const int theSize);
  
 diff --git a/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.lxx b/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.lxx
+index 46018fb517..d4fc76130d 100644
 --- a/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.lxx
 +++ b/src/ApplicationFramework/TKBinL/BinObjMgt/BinObjMgt_Persistent.lxx
-@@ -183,10 +183,34 @@
+@@ -183,10 +183,34 @@ inline int BinObjMgt_Persistent::prepareForPut(const int theSize)
  
  inline bool BinObjMgt_Persistent::noMoreData(const int theSize) const
  {

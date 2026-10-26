@@ -34,6 +34,13 @@ overlapping, and grid self-intersection sanity cases.
 New GTests: Intf_TangentZone_Test.cxx (Points() correctness and cache
 invalidation), Intf_Interference_Test.cxx (breaker aborts Insert()
 promptly; a non-tripping or absent breaker leaves behavior unchanged).
+
+Rebased onto upstream IR (53706f78a8): BOPAlgo_FaceSelfIntersect::Perform no longer calls
+IntTools_FaceFace::Perform for the self-interference of one face. It calls
+IntPatch_Intersection::Perform(aSurface, aFirstDomain, tol, tol), whose single-surface form builds an
+IntPatch_InterferencePolyhedron (an Intf_Interference) in IntPatch_PrmPrmIntersection, so the breaker
+scope is now opened around that call, under the same single-threaded condition. The Intf_* hunks are
+unchanged.
 ---
  .../TKBO/BOPAlgo/BOPAlgo_CheckerSI.cxx        | 22 ++++++-
  .../TKGeomAlgo/Intf/Intf_Interference.cxx     | 60 ++++++++++++++++---
@@ -43,47 +50,47 @@ promptly; a non-tripping or absent breaker leaves behavior unchanged).
  5 files changed, 137 insertions(+), 8 deletions(-)
 
 diff --git a/src/ModelingAlgorithms/TKBO/BOPAlgo/BOPAlgo_CheckerSI.cxx b/src/ModelingAlgorithms/TKBO/BOPAlgo/BOPAlgo_CheckerSI.cxx
-index 10aaf74e..f193b185 100644
+index df74373f38..9dc6aafd33 100644
 --- a/src/ModelingAlgorithms/TKBO/BOPAlgo/BOPAlgo_CheckerSI.cxx
 +++ b/src/ModelingAlgorithms/TKBO/BOPAlgo/BOPAlgo_CheckerSI.cxx
-@@ -30,6 +30,7 @@
+@@ -35,6 +35,7 @@
  #include <BOPTools_AlgoTools.hxx>
  #include <BOPTools_Parallel.hxx>
  #include <BRepBuilderAPI_Copy.hxx>
 +#include <Intf_Interference.hxx>
  #include <IntTools_Context.hxx>
- #include <IntTools_FaceFace.hxx>
- #include <Standard_ErrorHandler.hxx>
-@@ -81,7 +82,26 @@ public:
-     {
-       return;
-     }
--    IntTools_FaceFace::Perform(myF, myF, myRunParallel);
-+    // Let aPS's deadline interrupt the self-interference search itself, not
-+    // just gate entry to it. Only when single-threaded: an exception from a
-+    // worker thread of OSD_Parallel::For's parallel path would be unsafe.
-+    if (!myRunParallel)
+ #include <Geom_Surface.hxx>
+ #include <GeomAdaptor_Surface.hxx>
+@@ -301,7 +302,26 @@ void BOPAlgo_FaceSelfIntersect::Perform()
+   const double          aDeflection = aSurface->GetType() == GeomAbs_BSplineSurface ? 0.01 : 0.1;
+   IntPatch_Intersection anIntersection;
+   anIntersection.SetTolerances(aTolerance, aTolerance, aMaxStep, aDeflection);
+-  anIntersection.Perform(aSurface, aFirstDomain, aTolerance, aTolerance);
++  // Let aPS's deadline interrupt the self-interference search itself, not
++  // just gate entry to it. Only when single-threaded: an exception from a
++  // worker thread of OSD_Parallel::For's parallel path would be unsafe.
++  if (!myRunParallel)
++  {
++    Intf_InterferenceBreakerScope aBreakerScope(&aPS);
++    try
 +    {
-+      Intf_InterferenceBreakerScope aBreakerScope(&aPS);
-+      try
-+      {
-+        IntTools_FaceFace::Perform(myF, myF, myRunParallel);
-+      }
-+      catch (Standard_Failure const&)
-+      {
-+        // Aborted by the breaker: leave IsDone() false, same as any other
-+        // reason IntTools_FaceFace::Perform does not finish.
-+      }
++      anIntersection.Perform(aSurface, aFirstDomain, aTolerance, aTolerance);
 +    }
-+    else
++    catch (Standard_Failure const&)
 +    {
-+      IntTools_FaceFace::Perform(myF, myF, myRunParallel);
++      // Aborted by the breaker: leave IsDone() false, same as any other
++      // reason IntPatch_Intersection::Perform does not finish.
 +    }
-   }
- 
-   //
++  }
++  else
++  {
++    anIntersection.Perform(aSurface, aFirstDomain, aTolerance, aTolerance);
++  }
+   if (!anIntersection.IsDone() || UserBreak(aPS))
+   {
+     return;
 diff --git a/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_Interference.cxx b/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_Interference.cxx
-index 5a065e58..332d9335 100644
+index 5a065e58a2..332d93356e 100644
 --- a/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_Interference.cxx
 +++ b/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_Interference.cxx
 @@ -18,6 +18,8 @@
@@ -213,7 +220,7 @@ index 5a065e58..332d9335 100644
 +  Intf_Interference::SetBreaker(myPrev);
 +}
 diff --git a/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_Interference.hxx b/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_Interference.hxx
-index d000c090..78acabe1 100644
+index d000c0908e..78acabe1fb 100644
 --- a/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_Interference.hxx
 +++ b/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_Interference.hxx
 @@ -29,6 +29,7 @@
@@ -265,7 +272,7 @@ index d000c090..78acabe1 100644
 +
  #endif // _Intf_Interference_HeaderFile
 diff --git a/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_TangentZone.cxx b/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_TangentZone.cxx
-index ff603e3c..fb492abc 100644
+index ff603e3cba..fb492abcf1 100644
 --- a/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_TangentZone.cxx
 +++ b/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_TangentZone.cxx
 @@ -36,6 +36,7 @@ Intf_TangentZone::Intf_TangentZone()
@@ -322,7 +329,7 @@ index ff603e3c..fb492abc 100644
  {
    if (Result.Length() != Other.Result.Length())
 diff --git a/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_TangentZone.hxx b/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_TangentZone.hxx
-index 09a54e90..6b63de82 100644
+index 09a54e9099..6b63de82ca 100644
 --- a/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_TangentZone.hxx
 +++ b/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_TangentZone.hxx
 @@ -22,6 +22,7 @@

@@ -50,7 +50,6 @@
 #include <GeomLib_Check2dBSplineCurve.hxx>
 #include <ShapeUpgrade_SplitCurve2dContinuity.hxx>
 #include <ShapeUpgrade_ConvertCurve2dToBezier.hxx>
-#include <Extrema_LocateExtCC2d.hxx>
 #include <Extrema_POnCurv2d.hxx>
 #include <gce_MakeCirc2d.hxx>
 #include <gce_MakeElips2d.hxx>
@@ -131,8 +130,6 @@
 #include <GccAna_Circ2dBisec.hxx>
 #include <GccAna_CircLin2dBisec.hxx>
 #include <GccAna_CircPnt2dBisec.hxx>
-#include <GccAna_Lin2dTanPar.hxx>
-#include <GccAna_Lin2dTanPer.hxx>
 #include <GccAna_Lin2dTanObl.hxx>
 #include <GccAna_Circ2d2TanOn.hxx>
 #include <GccAna_Circ2dTanOnRad.hxx>
@@ -144,7 +141,6 @@
 #include <GccInt_BHyper.hxx>
 #include <GccInt_BParab.hxx>
 #include <Geom2dGcc_Circ2d2TanOn.hxx>
-#include <Geom2dGcc_Circ2dTanOnRad.hxx>
 #include <Geom2dGcc_Lin2dTanObl.hxx>
 #include <IntAna2d_AnaIntersection.hxx>
 #include <IntAna2d_IntPoint.hxx>

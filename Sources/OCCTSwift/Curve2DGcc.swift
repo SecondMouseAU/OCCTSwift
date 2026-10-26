@@ -755,30 +755,17 @@ extension Curve2DGcc {
 
     /// Circles tangent to a curve, center on a curve, with given radius (Geom2dGcc).
     ///
-    /// `radius` is the radius of the circles to find, and it must be positive; zero would ask for
-    /// a solution circle that is a point (#553). A non-positive radius returns an empty array.
-    ///
-    /// ```swift
-    /// guard let line = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)),
-    ///       let centerOn = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 1)) else { return }
-    /// let circles = Curve2DGcc.circlesTangentOnCurveWithRadius(line, centerOn: centerOn, radius: 2)
-    /// ```
+    /// Unavailable in this build: Geom2dGcc_Circ2dTanOnRad was deleted in OCCT 8.1 and the upstream IR kernel has no replacement; GccAna_Circ2dTanOnRad (circle on a line or circle, analytic) is unaffected.
+    @available(
+        *, unavailable,
+        message:
+            "Geom2dGcc_Circ2dTanOnRad was deleted in OCCT 8.1 and the upstream IR kernel has no replacement; GccAna_Circ2dTanOnRad (circle on a line or circle, analytic) is unaffected."
+    )
     public static func circlesTangentOnCurveWithRadius(
         _ curve: Curve2D, _ qualifier: Curve2DQualifier = .unqualified,
         centerOn: Curve2D,
         radius: Double, tolerance: Double = 1e-6
     ) -> [Curve2DCircleSolution] {
-        var buffer = [OCCTGccCircleSolution](repeating: OCCTGccCircleSolution(), count: 32)
-        let n = Int(
-            OCCTGeom2dGccCirc2dTanOnRad(
-                curve.handle, qualifier.rawValue,
-                centerOn.handle,
-                radius, tolerance,
-                &buffer, 32))
-        return (0..<n).map {
-            Curve2DCircleSolution(
-                center: SIMD2(buffer[$0].cx, buffer[$0].cy),
-                radius: buffer[$0].radius)
-        }
+        fatalError("unavailable")
     }
 }

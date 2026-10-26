@@ -1084,6 +1084,8 @@ Before #1514 this returned `ExtremaPointPair`, whose single `param2` carried U a
 
 ### `projectOnSurface(_:range:tolerance:)`
 
+> **Unavailable against the upstream `IR` kernel.** `ProjLib_ProjectOnSurface` was deleted in OCCT 8.1. Use `Surface.projectCurve3D(_:)`, which is `GeomProjLib::Project`. The text below is for an 8.0.x kernel.
+
 Projects this curve onto a surface, returning a B-spline approximation of the on-surface curve.
 
 ```swift

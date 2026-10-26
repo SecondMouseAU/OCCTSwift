@@ -49,7 +49,6 @@
 #include <GeomLib_Check2dBSplineCurve.hxx>
 #include <ShapeUpgrade_SplitCurve2dContinuity.hxx>
 #include <ShapeUpgrade_ConvertCurve2dToBezier.hxx>
-#include <Extrema_LocateExtCC2d.hxx>
 #include <Extrema_POnCurv2d.hxx>
 #include <gce_MakeCirc2d.hxx>
 #include <gce_MakeElips2d.hxx>
@@ -130,8 +129,6 @@
 #include <GccAna_Circ2dBisec.hxx>
 #include <GccAna_CircLin2dBisec.hxx>
 #include <GccAna_CircPnt2dBisec.hxx>
-#include <GccAna_Lin2dTanPar.hxx>
-#include <GccAna_Lin2dTanPer.hxx>
 #include <GccAna_Lin2dTanObl.hxx>
 #include <GccAna_Circ2d2TanOn.hxx>
 #include <GccAna_Circ2dTanOnRad.hxx>
@@ -143,7 +140,6 @@
 #include <GccInt_BHyper.hxx>
 #include <GccInt_BParab.hxx>
 #include <Geom2dGcc_Circ2d2TanOn.hxx>
-#include <Geom2dGcc_Circ2dTanOnRad.hxx>
 #include <Geom2dGcc_Lin2dTanObl.hxx>
 #include <IntAna2d_AnaIntersection.hxx>
 #include <IntAna2d_IntPoint.hxx>
@@ -908,7 +904,12 @@ int32_t OCCTGccAnaCircPnt2dBisec(double             cx,
   }
 }
 
-// --- GccAna_Lin2dTanPar (point version) ---
+// GccAna_Lin2dTanPar and GccAna_Lin2dTanPer were removed in OCCT 8.1 (the GccAna dead-code removal,
+// absent from the upstream `IR` headers). Their cases are GccAna_Lin2dTanObl at an angle of 0
+// (parallel) and pi / 2 (perpendicular) to the reference line: Lin2dTanObl is the line through a
+// point, or tangent to a circle, making `Angle` with a line, which is those two with the angle
+// fixed.
+// --- GccAna_Lin2dTanPar (point version), now GccAna_Lin2dTanObl at angle 0 ---
 int32_t OCCTGccAnaLin2dTanParPt(double               px,
                                 double               py,
                                 double               lpx,
@@ -922,7 +923,7 @@ int32_t OCCTGccAnaLin2dTanParPt(double               px,
   {
     gp_Pnt2d           pt(px, py);
     gp_Lin2d           ref(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
-    GccAna_Lin2dTanPar solver(pt, ref);
+    GccAna_Lin2dTanObl solver(pt, ref, 0.0);
     if (!solver.IsDone())
       return 0;
     int32_t nb = std::min((int32_t)solver.NbSolutions(), max);
@@ -944,7 +945,7 @@ int32_t OCCTGccAnaLin2dTanParPt(double               px,
   }
 }
 
-// --- GccAna_Lin2dTanPar (circle version) ---
+// --- GccAna_Lin2dTanPar (circle version), now GccAna_Lin2dTanObl at angle 0 ---
 int32_t OCCTGccAnaLin2dTanParCirc(double               cx,
                                   double               cy,
                                   double               cr,
@@ -963,7 +964,7 @@ int32_t OCCTGccAnaLin2dTanParCirc(double               cx,
     gp_Circ2d            circ(gp_Ax22d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), cr);
     gp_Lin2d             ref(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
     GccEnt_QualifiedCirc qc(circ, toGccPosition(qualifier));
-    GccAna_Lin2dTanPar   solver(qc, ref);
+    GccAna_Lin2dTanObl   solver(qc, ref, 0.0);
     if (!solver.IsDone())
       return 0;
     int32_t nb = std::min((int32_t)solver.NbSolutions(), max);
@@ -987,7 +988,7 @@ int32_t OCCTGccAnaLin2dTanParCirc(double               cx,
   }
 }
 
-// --- GccAna_Lin2dTanPer (point + line version) ---
+// --- GccAna_Lin2dTanPer (point + line version), now GccAna_Lin2dTanObl at angle pi / 2 ---
 int32_t OCCTGccAnaLin2dTanPerPtLin(double               px,
                                    double               py,
                                    double               lpx,
@@ -1001,7 +1002,7 @@ int32_t OCCTGccAnaLin2dTanPerPtLin(double               px,
   {
     gp_Pnt2d           pt(px, py);
     gp_Lin2d           ref(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
-    GccAna_Lin2dTanPer solver(pt, ref);
+    GccAna_Lin2dTanObl solver(pt, ref, M_PI / 2.0);
     if (!solver.IsDone())
       return 0;
     int32_t nb = std::min((int32_t)solver.NbSolutions(), max);
@@ -1023,7 +1024,7 @@ int32_t OCCTGccAnaLin2dTanPerPtLin(double               px,
   }
 }
 
-// --- GccAna_Lin2dTanPer (circle + line version) ---
+// --- GccAna_Lin2dTanPer (circle + line version), now GccAna_Lin2dTanObl at angle pi / 2 ---
 int32_t OCCTGccAnaLin2dTanPerCircLin(double               cx,
                                      double               cy,
                                      double               cr,
@@ -1042,7 +1043,7 @@ int32_t OCCTGccAnaLin2dTanPerCircLin(double               cx,
     gp_Circ2d            circ(gp_Ax22d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), cr);
     gp_Lin2d             ref(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
     GccEnt_QualifiedCirc qc(circ, toGccPosition(qualifier));
-    GccAna_Lin2dTanPer   solver(qc, ref);
+    GccAna_Lin2dTanObl   solver(qc, ref, M_PI / 2.0);
     if (!solver.IsDone())
       return 0;
     int32_t nb = std::min((int32_t)solver.NbSolutions(), max);
@@ -1275,46 +1276,6 @@ int32_t OCCTGeom2dGccCirc2d2TanOn(OCCTCurve2DRef         c1,
       GccEnt_Position qq1, qq2;
       solver.WhichQualifier(i + 1, qq1, qq2);
       out[i].qualifier = (int32_t)qq1;
-    }
-    return nb;
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return 0;
-  }
-}
-
-// --- Geom2dGcc_Circ2dTanOnRad ---
-int32_t OCCTGeom2dGccCirc2dTanOnRad(OCCTCurve2DRef         curve,
-                                    int32_t                qualifier,
-                                    OCCTCurve2DRef         onCurve,
-                                    double                 radius,
-                                    double                 tolerance,
-                                    OCCTGccCircleSolution* out,
-                                    int32_t                max)
-{
-  if (!curve || !onCurve || curve->curve.IsNull() || onCurve->curve.IsNull())
-    return 0;
-  if (!occtValidCircleRadius(radius))
-    return 0;
-  try
-  {
-    Geom2dAdaptor_Curve      ac(curve->curve), aon(onCurve->curve);
-    Geom2dGcc_QualifiedCurve qc(ac, toGccPosition(qualifier));
-    Geom2dGcc_Circ2dTanOnRad solver(qc, aon, radius, tolerance);
-    if (!solver.IsDone())
-      return 0;
-    int32_t nb = std::min((int32_t)solver.NbSolutions(), max);
-    for (int32_t i = 0; i < nb; i++)
-    {
-      gp_Circ2d sol = solver.ThisSolution(i + 1);
-      out[i].cx     = sol.Location().X();
-      out[i].cy     = sol.Location().Y();
-      out[i].radius = sol.Radius();
-      GccEnt_Position qq;
-      solver.WhichQualifier(i + 1, qq);
-      out[i].qualifier = (int32_t)qq;
     }
     return nb;
   }

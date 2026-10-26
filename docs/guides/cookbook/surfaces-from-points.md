@@ -82,7 +82,7 @@ patch, which is the one setting that stops the approximator acting on its own er
 If you already have a surface and want to **pull it through** specific positions, the non-linear plate
 solver deforms it to meet `(u, v) → target` constraints:
 
-```swift
+```swift no-typecheck: NLPlate is unavailable against the upstream IR kernel (deleted in OCCT 8.1)
 let plane = Surface.plane(origin: SIMD3(100, 0, 0), normal: SIMD3(0, 0, 1))!
 let bumped = plane.nlPlateDeformed(
     constraints: [(uv: SIMD2(0, 0), target: SIMD3(100, 0, 5))],  // lift that point to z = 5

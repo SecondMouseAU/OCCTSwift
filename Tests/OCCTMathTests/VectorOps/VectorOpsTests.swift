@@ -62,39 +62,42 @@ struct VectorOpsTests {
 
     // MARK: - The call sites that neither guarded nor fed OCCT (#2759 audit)
 
-    @Test("an absolute construction axis or plane with a zero or non-finite vector is degenerate")
-    func absoluteEntitiesRefuseZeroVectors() {
-        // OCCT: `gp_Dir(gp_Vec)` raises Standard_ConstructionError on a zero-norm vector
-        // (gp_Dir.hxx), and OCCT's callers test the magnitude first
-        // (PrsDim_AngleDimension::IsValidPoints, PrsDim_AngleDimension.cxx:1166).
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("setup nil")
-            return
-        }
-        for vector in [SIMD3<Double>.zero, SIMD3(.infinity, 0, 0), SIMD3(.nan, 0, 1)] {
-            if case .failure(.degenerate) = graph.resolve(
-                ConstructionAxis.absolute(origin: .zero, direction: vector))
-            {
-            } else {
-                Issue.record("axis: expected .degenerate for \(vector)")
+    #if OCCTSWIFT_HAS_BREPGRAPH
+        @Test(
+            "an absolute construction axis or plane with a zero or non-finite vector is degenerate")
+        func absoluteEntitiesRefuseZeroVectors() {
+            // OCCT: `gp_Dir(gp_Vec)` raises Standard_ConstructionError on a zero-norm vector
+            // (gp_Dir.hxx), and OCCT's callers test the magnitude first
+            // (PrsDim_AngleDimension::IsValidPoints, PrsDim_AngleDimension.cxx:1166).
+            guard let box = Shape.box(width: 10, height: 10, depth: 10),
+                let graph = BRepGraph(shape: box)
+            else {
+                Issue.record("setup nil")
+                return
             }
-            if case .failure(.degenerate) = graph.resolve(
-                ConstructionPlane.absolute(origin: .zero, normal: vector))
+            for vector in [SIMD3<Double>.zero, SIMD3(.infinity, 0, 0), SIMD3(.nan, 0, 1)] {
+                if case .failure(.degenerate) = graph.resolve(
+                    ConstructionAxis.absolute(origin: .zero, direction: vector))
+                {
+                } else {
+                    Issue.record("axis: expected .degenerate for \(vector)")
+                }
+                if case .failure(.degenerate) = graph.resolve(
+                    ConstructionPlane.absolute(origin: .zero, normal: vector))
+                {
+                } else {
+                    Issue.record("plane: expected .degenerate for \(vector)")
+                }
+            }
+            if case .success(let resolved) = graph.resolve(
+                ConstructionAxis.absolute(origin: .zero, direction: SIMD3(0, 0, 4)))
             {
+                #expect(resolved.direction == SIMD3(0, 0, 1))
             } else {
-                Issue.record("plane: expected .degenerate for \(vector)")
+                Issue.record("a valid direction must still resolve")
             }
         }
-        if case .success(let resolved) = graph.resolve(
-            ConstructionAxis.absolute(origin: .zero, direction: SIMD3(0, 0, 4)))
-        {
-            #expect(resolved.direction == SIMD3(0, 0, 1))
-        } else {
-            Issue.record("a valid direction must still resolve")
-        }
-    }
+    #endif  // OCCTSWIFT_HAS_BREPGRAPH
 
     @Test("a hand-built placement from a zero normal is NaN, the documented IEEE result")
     func placementFromZeroNormalIsNaN() {

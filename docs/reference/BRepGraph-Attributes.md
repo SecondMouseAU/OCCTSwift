@@ -5,6 +5,8 @@ parent: API Reference
 
 # BRepGraph. Attributes, Snapshots & References
 
+> **Unavailable against the upstream `IR` kernel.** OCCT 8.1 withdrew the `BRepGraph` package (OCCT#1628, deferred with no date; see OCCT discussion 1656), so a build against that kernel cannot make a `BRepGraph`: `BRepGraph(shape:)` is marked unavailable with this reason, and the members described below are not built. The page describes the API as it is against an 8.0.x kernel (a local `Libraries/OCCT.xcframework` whose headers include `BRepGraph.hxx`). See `docs/occtswift-wrapping-gaps.md`.
+
 These are the pure-Swift value types that sit alongside `BRepGraph`: a typed attribute store (`NodeAttributeStore`) that attaches arbitrary metadata to graph nodes, a `GraphSnapshot` that serializes attributes and the source shape for round-trip persistence, and `TopologyRef`, a recipe-based identity scheme that survives graph mutations. No C++ bridge code is involved in these types. See the main **BRepGraph** page (coming) for the graph structure, node counts, adjacency queries, and history primitives (`NodeRef`, `HistoryRecord`, `NodeKind`) that these types build on.
 
 ## Topics
@@ -109,7 +111,7 @@ public var doublesValue: [Double]? { get }
 ```
 
 - **Example:**
-  ```swift
+  ```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
   let attr: BRepGraph.AttrValue = .doubles([0.12, 0.34, 0.56])
   if let params = attr.doublesValue {
       print("params:", params)

@@ -252,6 +252,8 @@ public var result: Shape? { get }
 
 ### `DiskInfo.size(path:)`
 
+> **Unavailable against the upstream `IR` kernel.** `OSD_Disk` was deleted in OCCT 8.1 and has no replacement. The text below is for an 8.0.x kernel.
+
 Get the total disk size in kilobytes for the given path.
 
 ```swift
@@ -262,13 +264,15 @@ public static func size(path: String = "/") -> Int64
 - **Returns:** Total disk capacity in KB.
 - **OCCT:** `OSD_Disk::DiskSize` via `OCCTDiskSize`.
 - **Example:**
-  ```swift
+  ```swift no-typecheck: DiskInfo is unavailable against the upstream IR kernel (OSD_Disk deleted in OCCT 8.1)
   let totalKB = DiskInfo.size()
   ```
 
 ---
 
 ### `DiskInfo.freeSpace(path:)`
+
+> **Unavailable against the upstream `IR` kernel.** `OSD_Disk` was deleted in OCCT 8.1 and has no replacement. The text below is for an 8.0.x kernel.
 
 Get the free space in kilobytes for the given path.
 
@@ -279,13 +283,15 @@ public static func freeSpace(path: String = "/") -> Int64
 - **Returns:** Available free space in KB.
 - **OCCT:** `OSD_Disk::DiskFree` via `OCCTDiskFree`.
 - **Example:**
-  ```swift
+  ```swift no-typecheck: DiskInfo is unavailable against the upstream IR kernel (OSD_Disk deleted in OCCT 8.1)
   let freeKB = DiskInfo.freeSpace(path: "/tmp")
   ```
 
 ---
 
 ### `DiskInfo.isValid(path:)`
+
+> **Unavailable against the upstream `IR` kernel.** `OSD_Disk` was deleted in OCCT 8.1 and has no replacement. The text below is for an 8.0.x kernel.
 
 Check whether a disk path is accessible.
 
@@ -304,6 +310,8 @@ public static func isValid(path: String) -> Bool
 
 ### `DiskInfo.name(path:)`
 
+> **Unavailable against the upstream `IR` kernel.** `OSD_Disk` was deleted in OCCT 8.1 and has no replacement. The text below is for an 8.0.x kernel.
+
 Get the volume name for a given path.
 
 ```swift
@@ -313,7 +321,7 @@ public static func name(path: String = "/") -> String?
 - **Returns:** Volume label string, or `nil` if unavailable.
 - **OCCT:** `OSD_Disk` name query via `OCCTDiskName`.
 - **Example:**
-  ```swift
+  ```swift no-typecheck: DiskInfo is unavailable against the upstream IR kernel (OSD_Disk deleted in OCCT 8.1)
   if let vol = DiskInfo.name() { print(vol) }
   ```
 

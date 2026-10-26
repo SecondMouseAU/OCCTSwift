@@ -1440,13 +1440,16 @@ extension Curve3D {
 
     /// Convert a closed BSpline curve to periodic form.
     ///
-    /// The curve must be closed (first point == last point). The result is a periodic
-    /// BSpline curve that seamlessly wraps around.
+    /// Unavailable in this build: ShapeCustom_Curve was deleted in OCCT 8.1 and the upstream IR kernel has no replacement; Surface.convertToPeriodic (ShapeCustom_Surface) is unaffected.
     ///
     /// - Returns: Periodic curve, or nil if conversion is not possible
+    @available(
+        *, unavailable,
+        message:
+            "ShapeCustom_Curve was deleted in OCCT 8.1 and the upstream IR kernel has no replacement; Surface.convertToPeriodic (ShapeCustom_Surface) is unaffected."
+    )
     public func convertToPeriodic() -> Curve3D? {
-        guard let ref = OCCTCurve3DConvertToPeriodic(handle) else { return nil }
-        return Curve3D(handle: ref)
+        fatalError("unavailable")
     }
 
     /// Split result containing the two curve segments.
@@ -1791,17 +1794,18 @@ extension Curve3D {
     }
 
     /// Project this curve onto a surface, returning BSpline approximation.
+    ///
+    /// Unavailable in this build: ProjLib_ProjectOnSurface was deleted in OCCT 8.1; use Surface.projectCurve3D(_:) (GeomProjLib::Project) or Surface.projectCurve(_:tolerance:) for the UV curve.
+    @available(
+        *, unavailable,
+        message:
+            "ProjLib_ProjectOnSurface was deleted in OCCT 8.1; use Surface.projectCurve3D(_:) (GeomProjLib::Project) or Surface.projectCurve(_:tolerance:) for the UV curve."
+    )
     public func projectOnSurface(
         _ surface: Surface, range: ClosedRange<Double>? = nil,
         tolerance: Double = 1e-3
     ) -> Curve3D? {
-        let d = range ?? domain
-        guard
-            let h = OCCTProjLibProjectOnSurface(
-                handle, d.lowerBound, d.upperBound,
-                surface.handle, tolerance)
-        else { return nil }
-        return Curve3D(handle: h)
+        fatalError("unavailable")
     }
 
     /// Create a circle through 3 points (gce_MakeCirc).
@@ -2867,7 +2871,10 @@ extension Curve3D {
     /// ``extrema(from:)``'s array
     /// ([#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633)).
     ///
-    /// `nil` means the solver reported nothing at all, which on a curve it could build is rare.
+    /// `nil` means the solver reported nothing at all, which on a curve it could build is rare. One
+    /// case is not rare: the upstream `IR` kernel's `ExtremaPC_Curve` refuses an unbounded domain
+    /// it cannot solve analytically (a `Curve3D.circularHelix`, whose domain is +-2e100) with
+    /// `ExtremaPC::Status::InvalidInput`, so `trimmed(from:to:)` such a curve first.
     ///
     /// ```swift
     /// if let arc = Curve3D.arcOfCircle(

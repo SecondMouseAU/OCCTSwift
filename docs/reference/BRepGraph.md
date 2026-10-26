@@ -5,6 +5,8 @@ parent: API Reference
 
 # BRepGraph
 
+> **Unavailable against the upstream `IR` kernel.** OCCT 8.1 withdrew the `BRepGraph` package (OCCT#1628, deferred with no date; see OCCT discussion 1656), so a build against that kernel cannot make a `BRepGraph`: `BRepGraph(shape:)` is marked unavailable with this reason, and the members described below are not built. The page describes the API as it is against an 8.0.x kernel (a local `Libraries/OCCT.xcframework` whose headers include `BRepGraph.hxx`). See `docs/occtswift-wrapping-gaps.md`.
+
 `BRepGraph` is OCCTSwift's graph-based view of B-Rep topology, wrapping OCCT's `BRepGraph` package. It indexes all faces, edges, vertices, wires, shells, solids, coedges, and compounds of a `Shape` as flat integer-indexed entity vectors with O(1) cross-references, enabling cache-friendly traversal, fast adjacency queries, and parallel geometry extraction. Obtain one via `BRepGraph(shape:)`.
 
 > **BRepGraph is large, documented across several pages.** This is the core (construction, counts, topology queries, explorers, validate/compact/deduplicate, statistics, geometry readback); see the other **BRepGraph, …** pages for topology detail/history/mesh, builders & editor mutation, editor geometry/sampling/durable-identity, and attributes/snapshots/references.
@@ -43,7 +45,7 @@ Ingests the shape's full B-Rep topology into an indexed graph. Pass `parallel: t
 - **Returns:** A fully built `BRepGraph`, or `nil` if ingestion fails.
 - **OCCT:** `BRepGraph::ShapesView::Add(shape, opts)` with `opts.Parallel` set accordingly.
 - **Example:**
-  ```swift
+  ```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
   if let box = Shape.box(width: 10, height: 10, depth: 10),
      let graph = BRepGraph(shape: box) {
       print(graph.faceCount)   // 6
@@ -270,7 +272,7 @@ public func adjacentFaces(of faceIndex: Int) -> [Int]
 - **Returns:** Array of face indices that share at least one edge with the given face.
 - **OCCT:** Derived from `BRepGraph_FacesOfEdge` iteration over all edges, two faces are adjacent iff they share an edge.
 - **Example:**
-  ```swift
+  ```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
   if let box = Shape.box(width: 10, height: 10, depth: 10),
      let graph = BRepGraph(shape: box) {
       let neighbors = graph.adjacentFaces(of: 0)
@@ -781,7 +783,7 @@ Reads all topology and geometry counts in a single call.
 
 - **OCCT:** `BRepGraph::TopoView` fields, `Solids/Shells/Faces/Wires/Edges/Vertices/CoEdges/Compounds().Nb()`, `Gen().NbNodes()`, `Geometry().NbFaceSurfaces/NbEdgeCurves3D/NbCoEdgeCurves2D()`.
 - **Example:**
-  ```swift
+  ```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
   if let box = Shape.box(width: 10, height: 10, depth: 10),
      let graph = BRepGraph(shape: box) {
       print(graph.stats)
@@ -840,7 +842,7 @@ accessor that hands you that path (#2835).
 A placed shape the graph never ingested does not resolve, so this stays a lookup of the
 construction input rather than a match on `TShape` alone.
 
-```swift
+```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
 let box = Shape.box(width: 10, height: 8, depth: 6)!
 let placed = box.moved(dx: 50, dy: 0, dz: 0)!
 let pair = Shape.compound([box, placed])!
@@ -871,7 +873,7 @@ public func hasNode(for shape: Shape) -> Bool
 
 The same predicate as `findNode(for:)` returning non-`nil`, on the same identity rules.
 
-```swift
+```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
 let box = Shape.box(width: 10, height: 8, depth: 6)!
 let placed = box.moved(dx: 50, dy: 0, dz: 0)!
 let graph = BRepGraph(shape: Shape.compound([box, placed])!)!
@@ -959,7 +961,7 @@ and no `Occurrence` node at all, because `OCCTBRepGraphCreate` passes
 and cannot serve as one (measured: `Products=0 Occurrences=0 RootProductIds().Size()=0`). The root to
 pass is the node of the shape the graph was built from, which `findNode(for:)` gives you.
 
-```swift
+```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
 let box = Shape.box(width: 10, height: 8, depth: 6)!
 let placed = box.moved(dx: 50, dy: 0, dz: 0)!
 let pair = Shape.compound([box, placed])!
@@ -998,7 +1000,7 @@ Resolves `shape` with `findNode(for:)` and enumerates that node's occurrences, s
 of a placed instance answers every placement of the part it belongs to, including the one it was
 picked from.
 
-```swift
+```swift no-typecheck: BRepGraph is unavailable against the upstream IR kernel (OCCT#1628)
 let box = Shape.box(width: 10, height: 8, depth: 6)!
 let placed = box.moved(dx: 50, dy: 0, dz: 0)!
 let pair = Shape.compound([box, placed])!

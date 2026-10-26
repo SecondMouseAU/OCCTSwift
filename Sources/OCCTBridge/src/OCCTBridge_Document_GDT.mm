@@ -176,7 +176,6 @@
 #include <TColStd_PackedMapOfInteger.hxx>
 #include <TDF_Transaction.hxx>
 #include <TDF_CopyTool.hxx>
-#include <TDF_ComparisonTool.hxx>
 #include <TDF_DataSet.hxx>
 #include <TDF_RelocationTable.hxx>
 #include <TDocStd_XLinkTool.hxx>

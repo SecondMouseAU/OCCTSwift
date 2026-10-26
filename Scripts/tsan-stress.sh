@@ -209,13 +209,27 @@ apply_patches() {
     fi
 }
 
-# The OCCT tag this gate must be built from, read out of build-occt.sh rather than repeated here,
-# so a version bump cannot move one and leave the other behind.
+# The OCCT base this gate must be built from, read out of build-occt.sh rather than repeated here,
+# so a version bump cannot move one and leave the other behind. Since the rebase onto upstream IR
+# that is a commit (build-occt.sh's OCCT_COMMIT, which the environment may override as it does
+# there); with OCCT_COMMIT empty it is the tag, as before.
 expected_occt_tag() {
-    local v rc
-    v=$(grep -m1 '^OCCT_VERSION=' "$SCRIPT_DIR/build-occt.sh" | cut -d'"' -f2)
-    rc=$(grep -m1 '^OCCT_RC=' "$SCRIPT_DIR/build-occt.sh" | cut -d'"' -f2)
-    if [ -n "$rc" ]; then echo "V${v//./_}_${rc}"; else echo "V${v//./_}"; fi
+    local c v rc
+    if [ -n "${OCCT_COMMIT+set}" ]; then
+        c="$OCCT_COMMIT"
+    else
+        c=$(sed -n 's/^OCCT_COMMIT="${OCCT_COMMIT-\([0-9a-f]*\)}"$/\1/p' "$SCRIPT_DIR/build-occt.sh" | head -1)
+    fi
+    if [ -n "$c" ]; then echo "$c"; return; fi
+    v=$(grep -m1 '^OCCT_TAG=' "$SCRIPT_DIR/build-occt.sh" | cut -d'"' -f2)
+    echo "$v"
+}
+
+# The base the tree in $SRC_DIR is at: its commit when the wanted base is a commit, else its tag.
+current_occt_base() {
+    local want="$1"
+    if [ "${#want}" -eq 40 ]; then git -C "$SRC_DIR" rev-parse HEAD 2>/dev/null || true
+    else git -C "$SRC_DIR" describe --tags --exact-match HEAD 2>/dev/null || true; fi
 }
 
 # What the instrumented kernel in $INSTALL_DIR was built from: the OCCT tag plus a digest of every
@@ -230,7 +244,7 @@ expected_occt_tag() {
 # exactly like a race that is fixed.
 tsan_stamp() {
     local tag digest
-    tag=$(git -C "$SRC_DIR" describe --tags --exact-match HEAD 2>/dev/null || echo "untagged")
+    tag=$(git -C "$SRC_DIR" describe --tags --exact-match HEAD 2>/dev/null || git -C "$SRC_DIR" rev-parse --short=10 HEAD 2>/dev/null || echo "untagged")
     digest=$(cat "$SCRIPT_DIR"/patches/*.patch 2>/dev/null | shasum -a 256 | cut -d' ' -f1)
     echo "$tag ${digest:0:16}"
 }
@@ -247,10 +261,10 @@ do_build() {
     # not destroyed silently.
     local want current
     want=$(expected_occt_tag)
-    current=$(git -C "$SRC_DIR" describe --tags --exact-match HEAD 2>/dev/null || true)
+    current=$(current_occt_base "$want")
     if [ "$current" != "$want" ]; then
-        echo "ERROR: $SRC_DIR is at '${current:-an untagged commit}', but this gate must be built" >&2
-        echo "       from $want, the tag build-occt.sh names. A TSan run against another kernel" >&2
+        echo "ERROR: $SRC_DIR is at '${current:-an unknown commit}', but this gate must be built" >&2
+        echo "       from $want, the base build-occt.sh names. A TSan run against another kernel" >&2
         echo "       proves nothing about the one being released." >&2
         echo "" >&2
         echo "       Check for work worth keeping first:" >&2

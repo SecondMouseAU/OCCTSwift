@@ -72,7 +72,12 @@ struct ExtremaPCTests {
     /// and any distance above 4.9.
     @Test func pointToHelix() throws {
         let helix = try #require(Curve3D.circularHelix(radius: 5.0, pitch: 10.0))
-        let d = helix.minimumDistance(from: SIMD3(0, 0, 0))
+        // The upstream IR kernel's ExtremaPC refuses an unbounded domain (ExtremaPC::Status::
+        // InvalidInput) that V8_0_1 solved, and a helix is unbounded until it is trimmed. Two turns
+        // of it give the same answer, the start at exactly the radius.
+        #expect(helix.minimumDistance(from: SIMD3(0, 0, 0)) == nil)
+        let twoTurns = try #require(helix.trimmed(from: 0, to: 4 * .pi))
+        let d = twoTurns.minimumDistance(from: SIMD3(0, 0, 0))
         #expect(d != nil)
         if let d { #expect(abs(d - 5.0) < 1e-9) }
     }

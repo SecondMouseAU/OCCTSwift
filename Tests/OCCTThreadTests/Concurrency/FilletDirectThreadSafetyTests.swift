@@ -52,9 +52,18 @@ struct Issue3097FilletDirectThreadSafetyTests {
         },
         // Box and sphere, the shape the pure-C++ gate scenario uses: a curved seam,
         // so the numerical blend solver runs.
-        Case(name: "box and sphere", radius: 0.5) {
+        //
+        // The sphere is centred on the box and has radius 8, not the corner-centred radius 6 this
+        // case used to be. On the upstream IR kernel that union does not fillet at all: all 35
+        // edges at r = 0.1 or 0.5 is not done (an 8.0.1 kernel built a valid solid, volume
+        // 1791.52 at r = 0.1), and with the carried fillet patches 0079 to 0084 reversed in the kernel it is
+        // done but invalid, volume 1801 against the union's 1791.7. That is a kernel regression in
+        // IR, not something this test can exercise. Measured, same inputs, both kernels: the
+        // centred sphere of radius 8 at r = 0.3 is done and valid on both with the same volume,
+        // 2146.39.
+        Case(name: "box and sphere", radius: 0.3) {
             guard let box = Shape.box(width: 10, height: 10, depth: 10),
-                let sph = Shape.sphere(center: SIMD3<Double>(5, 5, 5), radius: 6)
+                let sph = Shape.sphere(center: .zero, radius: 8)
             else { return nil }
             return box.union(sph)
         },

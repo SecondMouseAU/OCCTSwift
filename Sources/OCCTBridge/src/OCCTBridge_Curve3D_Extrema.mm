@@ -104,7 +104,6 @@
 #include <GC_MakeEllipse.hxx>
 #include <GC_MakeHyperbola.hxx>
 #include <GC_MakeSegment.hxx>
-#include <ShapeCustom_Curve.hxx>
 #include <ShapeUpgrade_SplitCurve3d.hxx>
 #include <TColGeom_HArray1OfCurve.hxx>
 #include <TColStd_HSequenceOfReal.hxx>

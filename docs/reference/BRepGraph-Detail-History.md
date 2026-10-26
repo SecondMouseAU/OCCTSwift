@@ -5,6 +5,8 @@ parent: API Reference
 
 # BRepGraph. Topology Detail, History & Mesh
 
+> **Unavailable against the upstream `IR` kernel.** OCCT 8.1 withdrew the `BRepGraph` package (OCCT#1628, deferred with no date; see OCCT discussion 1656), so a build against that kernel cannot make a `BRepGraph`: `BRepGraph(shape:)` is marked unavailable with this reason, and the members described below are not built. The page describes the API as it is against an 8.0.x kernel (a local `Libraries/OCCT.xcframework` whose headers include `BRepGraph.hxx`). See `docs/occtswift-wrapping-gaps.md`.
+
 This page covers the detail-query, history, mesh-storage, assembly, and structural reference members of `BRepGraph`. For the core construction, counts, adjacency, geometry, and serialization API see [BRepGraph](BRepGraph.md).
 
 ## Topics

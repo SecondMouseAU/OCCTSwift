@@ -42,17 +42,19 @@ import Testing
         #expect(results.allSatisfy { vectorDistance($0.center, SIMD2(10, 0)) < 1e-9 })
     }
 
-    @Test("Geom2dGcc circle tangent to curve center on curve given radius")
-    func geom2dCircTanOnRad() throws {
-        let c1 = try #require(Curve2D.circle(center: SIMD2(0, 0), radius: 5))
-        let onCurve = try #require(Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(0, 1)))
-        let results = Curve2DGcc.circlesTangentOnCurveWithRadius(
-            c1, centerOn: onCurve, radius: 3)
-        // Centres on x = 0 at y = +-2 (inside) and +-8 (outside).
-        let ys = results.map(\.center.y).sorted()
-        try #require(ys.count == 4)
-        for (y, e) in zip(ys, [-8.0, -2, 2, 8]) {
-            #expect(abs(y - e) < 1e-9)
+    #if OCCTSWIFT_OCCT_80_CLASSES
+        @Test("Geom2dGcc circle tangent to curve center on curve given radius")
+        func geom2dCircTanOnRad() throws {
+            let c1 = try #require(Curve2D.circle(center: SIMD2(0, 0), radius: 5))
+            let onCurve = try #require(Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(0, 1)))
+            let results = Curve2DGcc.circlesTangentOnCurveWithRadius(
+                c1, centerOn: onCurve, radius: 3)
+            // Centres on x = 0 at y = +-2 (inside) and +-8 (outside).
+            let ys = results.map(\.center.y).sorted()
+            try #require(ys.count == 4)
+            for (y, e) in zip(ys, [-8.0, -2, 2, 8]) {
+                #expect(abs(y - e) < 1e-9)
+            }
         }
-    }
+    #endif  // OCCTSWIFT_OCCT_80_CLASSES
 }

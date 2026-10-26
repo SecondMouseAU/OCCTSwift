@@ -72,15 +72,26 @@ through BRepGProp_VinertGK and math_KronrodSingleIntegration, a separate
 integrator that never reaches this function, and BRepGProp.cxx:311 is OCCT's only
 BRepGProp_Vinert call site and passes a point.
 
+Rebased onto upstream IR (53706f78a8): IR's BRepGPropTest.AdaptivePlaneLimitedInertia (#1640) pins the
+matrix of inertia of a by-plane Vinert about the LOCATION (160, 104, 200, -72, -36, -48 for the box
+[0, 3] x [0, 4] x [0, 2] against the plane z = 0), and does not check the mass. That is the effect of
+this defect, not a property worth keeping: GProp_GProps::MatrixOfInertia() reduces the stored matrix
+to the centre of mass with the stored mass and centre (GProp::HOperator), and the mass and centre
+being zero made the reduction vanish. With the mass kept the matrix is the centroidal one, 40, 26
+and 50 on the diagonal (m (b^2 + c^2) / 12 with m = 24) and zero off it, so the test now asserts the
+mass, the centre (1.5, 2, 1) and those values.
+
 SecondMouseAU/OCCTSwift#2827.
 ---
- .../TKTopAlgo/BRepGProp/BRepGProp_Gauss.cxx            |  3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ .../TKTopAlgo/BRepGProp/BRepGProp_Gauss.cxx          |  3 ++-
+ .../TKTopAlgo/GTests/BRepGProp_Test.cxx              | 20 ++++++++++++++------
+ 2 files changed, 16 insertions(+), 7 deletions(-)
 
 diff --git a/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Gauss.cxx b/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Gauss.cxx
+index b0beff12f0..349e8a9b2b 100644
 --- a/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Gauss.cxx
 +++ b/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Gauss.cxx
-@@ -499,7 +499,8 @@
+@@ -451,7 +451,8 @@ void BRepGProp_Gauss::convert(const BRepGProp_Gauss::Inertia& theInertia,
                                double&                         theOutMass)
  {
    convert(theInertia, theOutGravityCenter, theOutMatrixOfInertia, theOutMass);
@@ -90,3 +101,35 @@ diff --git a/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Gauss.cxx b/sr
    {
      const double anInvMass = 1.0 / theInertia.Mass;
      if (theIsByPoint)
+diff --git a/src/ModelingAlgorithms/TKTopAlgo/GTests/BRepGProp_Test.cxx b/src/ModelingAlgorithms/TKTopAlgo/GTests/BRepGProp_Test.cxx
+index bc4f8a967a..267aedda70 100644
+--- a/src/ModelingAlgorithms/TKTopAlgo/GTests/BRepGProp_Test.cxx
++++ b/src/ModelingAlgorithms/TKTopAlgo/GTests/BRepGProp_Test.cxx
+@@ -382,13 +382,21 @@ TEST(BRepGPropTest, AdaptivePlaneLimitedInertia)
+   BRepGProp_Domain anAdaptiveDomain(aFace);
+   BRepGProp_Vinert anAdaptive(anAdaptiveFace, anAdaptiveDomain, aReferencePlane, aLocation, 1.0e-8);
+ 
++  // The solid between the face and the plane is the 3 x 4 x 2 box [0, 3] x [0, 4] x [0, 2]: mass 24,
++  // centre (1.5, 2, 1). MatrixOfInertia is about the centre of mass, so it is m (b^2 + c^2) / 12 on
++  // the diagonal and zero off it. (The values about the location, 160, 104, 200, -72, -36 and -48,
++  // are what the matrix held while the by-plane mass and centre were discarded as zero.)
++  EXPECT_NEAR(anAdaptive.Mass(), 24.0, 1.0e-10);
++  EXPECT_NEAR(anAdaptive.CentreOfMass().X(), 1.5, 1.0e-10);
++  EXPECT_NEAR(anAdaptive.CentreOfMass().Y(), 2.0, 1.0e-10);
++  EXPECT_NEAR(anAdaptive.CentreOfMass().Z(), 1.0, 1.0e-10);
+   const gp_Mat anAdaptiveInertia = anAdaptive.MatrixOfInertia();
+-  EXPECT_NEAR(anAdaptiveInertia.Value(1, 1), 160.0, 1.0e-10);
+-  EXPECT_NEAR(anAdaptiveInertia.Value(2, 2), 104.0, 1.0e-10);
+-  EXPECT_NEAR(anAdaptiveInertia.Value(3, 3), 200.0, 1.0e-10);
+-  EXPECT_NEAR(anAdaptiveInertia.Value(1, 2), -72.0, 1.0e-10);
+-  EXPECT_NEAR(anAdaptiveInertia.Value(1, 3), -36.0, 1.0e-10);
+-  EXPECT_NEAR(anAdaptiveInertia.Value(2, 3), -48.0, 1.0e-10);
++  EXPECT_NEAR(anAdaptiveInertia.Value(1, 1), 40.0, 1.0e-10);
++  EXPECT_NEAR(anAdaptiveInertia.Value(2, 2), 26.0, 1.0e-10);
++  EXPECT_NEAR(anAdaptiveInertia.Value(3, 3), 50.0, 1.0e-10);
++  EXPECT_NEAR(anAdaptiveInertia.Value(1, 2), 0.0, 1.0e-10);
++  EXPECT_NEAR(anAdaptiveInertia.Value(1, 3), 0.0, 1.0e-10);
++  EXPECT_NEAR(anAdaptiveInertia.Value(2, 3), 0.0, 1.0e-10);
+   expectGPropsNear(anAdaptive, aFixed, 1.0e-10);
+ }
+ 

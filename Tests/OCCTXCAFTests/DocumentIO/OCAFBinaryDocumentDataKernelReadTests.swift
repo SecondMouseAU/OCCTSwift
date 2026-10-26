@@ -9,7 +9,7 @@ import Testing
 
 // #3489 (follow-up to #3486): four hazards in the document data of a binary OCAF file, past the
 // storage sections the bridge walks, that only a kernel change can bound. Carried patches
-// `0070` to `0072` fix three of them; the fourth is recorded under "Not covered".
+// `0070` to `0072` fix three of them, and `0078` the fourth: label nesting.
 //
 //  - `0071`: the array and list attribute drivers allocate `last - first + 1` elements before they
 //    check the record holds them. A record of a few dozen bytes asked for 1 to 17 GiB. On a 32-bit
@@ -22,6 +22,10 @@ import Testing
 //  - `0072`: five `BinTools` set readers read the name of their table into a `char[255]` with an
 //    unbounded `>>`. The shape section of a file is reached through any TOC entry named
 //    `SHAPE_SECTION_POS`, at any offset, and a 4 KB token terminated the process.
+//  - `0078`: `BinLDrivers_DocumentRetrievalDriver::ReadSubTree` recurses once per nested label, and
+//    a file chooses its own depth: 20000 levels (a 320 KB file) overflowed the stack of a thread
+//    with 8 MB, and 1000 overflow a 512 KB worker, which is what a Swift test runs on. The reader
+//    now refuses a label nested more than 512 deep.
 //
 // The files are built here rather than shipped: `Blob` writes the layout
 // `Scripts/repro/3489/ocaf.py` documents, which that script's `selftest` checks against a document
@@ -29,15 +33,14 @@ import Testing
 // wrote are read back with their values, so a builder that made files nothing reads could not pass
 // for a fix.
 //
-// Gated on `OCCTSWIFT_LOCAL=1` while the pinned asset lacks the patches: three of the four classes
+// Gated on `OCCTSWIFT_LOCAL=1` while the pinned asset lacks the patches: all four classes
 // below hang or kill the test process on an unpatched kernel, which is what a test of this fix is
 // for, and not something `main` should run. `kernel-integration.yml` runs it. The gate comes off
-// at the repin that pins `0070` to `0072`.
+// at the repin that pins `0070` to `0072` and `0078`.
 //
-// Not covered: label nesting. A document whose labels nest 20000 deep overflows the stack of the
-// recursive `ReadSubTree` (1000 loads), and the limit is a property of the thread, not of the
-// file. OCCT has no depth guard to follow and any cap here would be an arbitrary constant, so it
-// stays in `okf/references/known-occt-bugs.md`, not mitigated.
+// The nesting bound is a constant, 512 levels, and stack depth is a property of the thread: a
+// thread with a stack under about 400 KB can still overflow below it. OCCT has no depth guard to
+// follow. The first bound tried, 4096, passed on an 8 MB stack and killed this test's process.
 //
 // Not covered either: how much a refused record allocated for the drivers that free what they
 // allocated before they fail (`NamedData`, `DimTol`, `NoteBinData`, `GraphNode`, `Scope`,
@@ -334,6 +337,58 @@ struct OCAFBinaryDocumentDataKernelReadTests {
             let (doc, status) = try load(
                 Self.document(records: [Blob.record(type: reference, payload: payload)]))
             #expect(doc != nil && status == .ok, "tag list \(payload.count) bytes: got \(status)")
+        }
+    }
+
+    // MARK: - Label nesting (patch 0078)
+
+    /// `depth` labels nested one inside the next, the innermost holding `innermost`.
+    ///
+    /// Built level by level, not through `Blob.label`, which copies the child at every level and
+    /// is quadratic. Each level is its size (itself included), the end of attributes, a child with
+    /// tag 1, the child, and the end of children.
+    private static func nestedLabels(depth: Int, innermost: [UInt8]) -> [UInt8] {
+        var sizes: [Int] = []
+        var size = innermost.count
+        for _ in 0..<depth {
+            size += 8 + 4 + 4 + 4
+            sizes.append(size)
+        }
+        var out: [UInt8] = []
+        out.reserveCapacity(size)
+        for s in sizes.reversed() { out += Blob.uint64(s) + Blob.int(-1) + Blob.int(1) }
+        out += innermost
+        for _ in 0..<depth { out += Blob.int(-2) }
+        return out
+    }
+
+    private static func document(nestedTo depth: Int) -> [UInt8] {
+        let leaf = Blob.label(records: [
+            Blob.record(type: typeNumber("TDataStd_Integer"), payload: Blob.ints(7))
+        ])
+        let root =
+            Blob.uint64(0) + Blob.int(-1) + Blob.int(1)
+            + nestedLabels(depth: depth, innermost: leaf) + Blob.int(-2)
+        // The root's size field counts everything after it, itself included.
+        var sized = root
+        sized.replaceSubrange(0..<8, with: Blob.uint64(root.count))
+        return Blob.file(types: types, data: Blob.toc() + Blob.int(0) + sized)
+    }
+
+    @Test(
+        "A document nested far past any real one is refused, not read until the stack is gone",
+        .enabled(if: OCAFBinaryDocumentDataKernelReadTests.isLocalKernel),
+        .timeLimit(.minutes(1)))
+    func labelNestingIsBounded() throws {
+        // 20000 levels is a 320 KB file and overflowed the 8 MB stack of the thread that read it.
+        for depth in [600, 5000, 20000] {
+            let (_, status) = try load(Self.document(nestedTo: depth))
+            #expect(status == .unrecognizedFileFormat, "nested \(depth) deep: got \(status)")
+        }
+        // Control: shallower than the bound, still loads.
+        for depth in [1, 100, 400] {
+            let (doc, status) = try load(Self.document(nestedTo: depth))
+            #expect(doc != nil && status == .ok, "nested \(depth) deep: got \(status)")
         }
     }
 
