@@ -21,7 +21,7 @@ retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), a
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry), and
 `0031` retired 2026-10-10 at the `v4.0.0-kernel.6` repin (#3065: the supported pattern is one
 adaptor per worker, so the lock it added is not needed).
-The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0066, 0068–0075.
+The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0066, 0068–0078.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -3728,7 +3728,7 @@ The classes of `Scripts/repro/3487` that `0073` was measured on, unthinned on `0
 
 **Real files still read.** All 15 tracked `.brep` files, the 18 files of the #3487 corpus and the 13 of the #3494 fixtures read to the same result on `kernel.7` and on `0074` (faces, validity: 46 files, identical, including the 4 that are invalid and the 2 that fault on a use, on both); 28 binary files (`BinTools_ShapeReader`, `BinTools::Read`) the same. Meshed round trips (`Triangulations`, `PolygonOnTriangulations`, `Polygon3D`, normals) are among them. `OCCTIOTests` (244 tests) passes on `0074`, `BREPDamagedInputTests` among them (its every-prefix test takes 28 to 32 s against its 60 s limit at a machine load of about 280); `BRepGraphAttributeTests`, `BRepToolsUtilitiesTests`, `BRepToolExtrasTests`, `BRepToolCompletionsTests`, `BinToolsTests`, `OCAFBinaryDocumentDataKernelReadTests`, the fillet and chamfer fixtures (`FilletMergeWireRemovalTests`, `ChamferParallelSpineTangentTests`, `FilletObstacleTests`, `FilletModelValidityTests`), `StressRoundTrip*`, `StressCrossFormatConsistencyTests`, `StressBRepCheckInContextGuardTests`, `ShapeTopologyExtensionTests` and `Issue336ChainedHistoryTests` pass.
 
-**Left, and why.** (a) A trim parameter that is not a number faults the constructor of a trimmed curve or surface: a value hazard in `Geom_TrimmedCurve::SetTrim` and `Geom_RectangularTrimmedSurface::SetTrim` (periodic basis, `ElCLib::AdjustPeriodic` with `nan`), reachable from any caller and not a count. (b) The position references of `BinTools_ShapeReader` (`ReadReference`, `GoTo`) are not range checked and a cycle is not detected. (c) A structurally inconsistent shape the reader returns and `BRepCheck` then faults on: the use site, 2,209 cases of the text count class and 92 of the struct class, all coordinate or reference values. (d) On a stream that cannot be measured (the bridge's, `OcctBrepWordLimitBuf`, has no `seekoff`) a count up to 2^24 is allowed and sizes an array of at most about 400 MB that the failing stream then frees; the bridge guard throws at the end of the file in any case. **#3490 stays open** under (a) to (c).
+**Left, and why.** (a) A trim parameter that is not a number faults the constructor of a trimmed curve or surface: a value hazard in `Geom_TrimmedCurve::SetTrim` and `Geom_RectangularTrimmedSurface::SetTrim` (periodic basis, `ElCLib::AdjustPeriodic` with `nan`), reachable from any caller and not a count. (b) The position references of `BinTools_ShapeReader` (`ReadReference`, `GoTo`) are not range checked and a cycle is not detected (closed by `0076`). (c) A structurally inconsistent shape the reader returns and `BRepCheck` then faults on: the use site, 2,209 cases of the text count class and 92 of the struct class (closed by `0077`; what remains after it is a coordinate or tolerance of the wrong size, which spins the analyzer). (d) On a stream that cannot be measured (the bridge's, `OcctBrepWordLimitBuf`, has no `seekoff`) a count up to 2^24 is allowed and sizes an array of at most about 400 MB that the failing stream then frees; the bridge guard throws at the end of the file in any case. **#3490 stayed open** under (a) to (c) when this patch merged; (b) is `0076` and (c) is `0077`.
 
 **Upstream checked 2026-10-19:** none of the 13 files has a commit on master since 2026-08-01, and no open PR touches them. **Not filed upstream.** The pieces are independent (`Standard_IStreamHasItems` with the text readers, the binary readers, the location power, the triangle and polygon node checks).
 
@@ -3753,6 +3753,88 @@ Reached from the text and binary BREP readers (`GeomTools_{Curve,Curve2d,Surface
 
 **Retire** once the bundled OCCT includes this fix.
 
+## 0076-BinTools_ShapeReader-refuses-a-position-reference-that-leaves-the-stream-3495.patch
+
+**`BinTools_ShapeReader` refuses a position reference that leaves the stream, loops, or names the wrong kind of record** ([#3495](https://github.com/SecondMouseAU/OCCTSwift/issues/3495), follow-up to [#3490](https://github.com/SecondMouseAU/OCCTSwift/issues/3490) and `0074`; not filed upstream).
+
+`BinTools_ShapeReader` (behind `Shape.fromBinaryData` and `Shape.loadBinary`) reads a shape, location, curve, surface, polygon or triangulation either inline or from a position earlier in the file (`BinTools_IStream::ReadReference`, then `GoTo`). `0074` left its position references open, with the measured symptom: 11 cases of `x_located` in the `bin` count matrix returned a shape whose `TopExp_Explorer` faulted, 10 faults and 1 spin. The issue proposed refusing a position at or beyond the end of the stream and a position already being read. Probing the cases first, they are **not** one defect but five, and only two of them are the proposed pair:
+
+1. **A delta past the start of the stream wraps.** `ReadReference` returns `position - delta - 1` in `uint64_t`. A reference always names a record *before* itself, so "at or beyond the end" cannot happen; what happens is a delta larger than the position, which wraps to a position near 2^64. `GoTo` fails the stream and the reader goes on over end-of-file bytes (type 255). Refused when the delta is zero or `>= position`.
+2. **A reference to a record that is being read recurses without end.** The position table is written when a record *ends*, so a reference to a shape or location that has begun and not ended is not found and the record is read again from inside itself. The `3679 = 100000000` case of `x_located` is a compound whose sub-shape list ran on to a reference to the compound that holds it: the same shape is read 1,630 times, each from inside the last, then the stack ends (a hand-written two-record stream does the same, below). `BinTools_ShapeReader` now keeps the positions it is reading (`myActivePos`, a member of the class, cleared by `Clear`) and refuses a reference to one of them. Not a depth bound: a written file nests as deep as its shape does.
+3. **A chain of references to references recurses once per link**, and the writer never writes one (a reference names the start of the record it wrote). Refused when the target is itself a reference, which also makes curves, surfaces, polygons and triangulations (which have no nesting of their own) constant depth.
+4. **The byte after a shape reference is an orientation and was cast unchecked.** `TopAbs_Orientation(theStream.ReadByte())`: 9 of the 10 faults are a byte of 4 or more (`x_located@3660=-1`, `@3680=-1`, `@3701=-1` and the other values at the same three offsets), which reach `TopAbs::Compose` in `TopoDS_Iterator::updateCurrentShape` (`ori=-1660838384` in the shape the explorer faulted on). The continuity byte of an edge (`GeomAbs_Shape`) is cast the same way. Both are checked against their enumerations.
+5. **A record of the wrong kind in a slot was read as an empty one.** `ReadLocation` took any type byte that was not a reference, `EmptyLocation`, `LocationEnd`, `SimpleLocation` or `Location` as the identity, consuming nothing; the curve, curve 2d, surface, polygon, polygon on triangulation and triangulation readers returned a null for any type that was not theirs. A damaged byte therefore kept the rest of the file in step with a structure the writer never wrote, which is the `x_located` cases that returned a shape and then faulted in `BRepCheck_Analyzer` (`@2699`, `@3135`, `@3571`, `@3613`, each two values), and 34 more in `box`, `compound`, `cylinder` and `x_meshes`. A slot now accepts its own type, the type for a null of its kind and a reference, and nothing else. A reference to a null shape (`EmptyShape`, `EndShape`) is refused too: the caller took the null for the end of its list.
+
+**The rule**, one for every site: a reference names the start of a record before itself, in the stream, that is not a reference and is not being read; a type or enumeration byte is one its slot can hold. A file `BinTools_ShapeWriter` wrote is read as before: it never references a reference, a record it is inside or a position that holds no record, and it writes only valid bytes. Failure is `Standard_Failure`, as the reader reports a damaged record already, and the bridge catches it.
+
+**Why a member and not a depth bound or a static.** The check has to know which records are open, which no function of the stream position alone says. A member keeps the reader reentrant (two readers in two threads share nothing), and `BinMNaming_NamedShapeDriver` and `BinMXCAFDoc_LocationDriver`, which hold a `BinTools_ShapeReader` for a whole document, recompile with the new header like every unit that includes it. The OCAF drivers read through `ReadLocation` across many attributes, so the set is empty between calls (an RAII guard removes a position on return and on throw).
+
+**Measured**, `Scripts/repro/3494` (`counts.py`, mode `bin`, 156,474 cases of 15 files), macOS arm64, the baseline being `v4.0.0-kernel.7` with the changed units of `0070` to `0074` compiled from the patched tree and swapped in with `ar r` (not a `build-occt.sh` run; `kernel-integration.yml` is the full build):
+
+| build | reader faulted | reader spun | returned, then faulted | returned, then spun |
+|---|---|---|---|---|
+| `0074` | 29 (27 SIGSEGV, 2 SIGBUS) | 41 | 44 | 796 |
+| `0076` | 20 | 40 | 0 | 708 |
+
+`x_located` has nothing left (9 faults, 1 spin and 10 returned-then-faulted before; `#3495` counted 11 of the first two, and a stack overflow is classed SIGSEGV or SIGBUS from one run to the next), all 44 returned-then-faulted cases are gone, and 88 returned-then-spun cases with them (`compound`, `x_tiny_mesh`: a structure the analyzer then walked for ever). What is left is **not** a position: the 20 faults and 40 spins are a trim parameter that is not a number in `x_surfaces` (#3496), and the 708 spins are a tolerance or coordinate of the wrong size in `BRepCheck_Analyzer` (`USE-HANG`, 584 in `compound`, 124 in `x_tiny_mesh`). Fifteen undamaged binary files (the 3487 corpus and the 3494 fixtures) read identically on both builds (faces, validity); `OCCTXCAFTests` (520 tests, binary OCAF documents read through `BinMNaming_NamedShapeDriver`) and `OCCTIOTests` (256) pass.
+
+**Verification.** `BinToolsPositionReferenceTests` (9 tests, `OCCTIOTests`, gated on `OCCTSWIFT_LOCAL=1` until the pinned asset carries this), each test its own process. Streams are written by hand from the format, a compound being `C8 07 00 ...  C7` and a reference `01 <delta> 07 <orientation>`. "Unpatched" is the `0074` baseline above:
+
+| test | unpatched | patched |
+|---|---|---|
+| `aShapeThatTheWriterWroteReadsBack` (control: box, a located copy and a shared one) | pass | pass |
+| `aReferenceToAShapeAlreadyReadIsTheSameShape` (control: orientation 0 to 3) | pass | pass |
+| `anOrientationThatTheEnumerationLacksIsRefused` | fails (4, 5, 127, 128 and 255 all read) | pass |
+| `aReferenceToTheShapeThatHoldsItIsRefused` | SIGBUS (the stack) | pass |
+| `aReferenceToAnEnclosingShapeTwoLevelsUpIsRefused` | SIGBUS (the stack) | pass |
+| `aReferenceToAReferenceIsRefused` | fails (read) | pass |
+| `aReferenceToTheEndOfAListIsRefused` | fails (read) | pass |
+| `aLocationSlotHoldingAnotherKindOfRecordIsRefused` | fails (read as the identity) | pass |
+| `aReferenceBeforeTheStartOfTheStreamIsRefused` | **pass** | pass |
+
+The last test passes on the baseline too: a wrapped position fails the stream, and the next read throws on the type 255. It is kept as the boundary of the new delta check (a delta of 4 or more at position 4, and zero), not as a proof of failure. A sweep that replaced four bytes at every offset of a located compound with -1, `Int32.min`, `Int32.max` and 10^8 was tried as a further test and **also passed on the baseline** (22 s, no fault on that shape: the faults of `x_located` need its particular layout), so it was dropped rather than kept as a test that cannot fail.
+
+**Upstream checked 2026-10-20:** the last commit on `master` to `BinTools_ShapeReader.cxx` and `BinTools_IStream.cxx` is `1db802567` (2026-04-29, clang-tidy fixes), and no open PR matches `BinTools`. **Not filed upstream.**
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0077-BRepCheck_Edge-InContext-copes-with-a-face-without-a-surface-and-an-edge-without-a-3D-curve-3490.patch
+
+**`BRepCheck_Edge::InContext` copes with a face that has no surface and with an edge that has no 3D curve** ([#3490](https://github.com/SecondMouseAU/OCCTSwift/issues/3490) item 3, the root cause of [#2746](https://github.com/SecondMouseAU/OCCTSwift/issues/2746)/[#2750](https://github.com/SecondMouseAU/OCCTSwift/issues/2750) and [#2789](https://github.com/SecondMouseAU/OCCTSwift/issues/2789); not filed upstream).
+
+`0074` closed with one class open: "a structurally inconsistent shape the reader returns and `BRepCheck` then faults on", 2,209 cases of the text count class and 92 of the struct class. Grouping the faults by site (`Scripts/repro/3487/sites.py`, 150 of 359 sampled cases of the thinned set, then the rest by the same frame) gives **one site for all of them**, `BRepCheck_Edge::InContext(face)`, and two preconditions, both already known to this repository from files that did not need a reader:
+
+1. **The face has no surface** (#2789, `Su->DynamicType()` in the `!pcurvefound` branch). A face index outside the `Surfaces` table builds a face without a surface (the readers skip a reference outside its table, `0074`). `pcurvefound` is set only by a representation whose surface is handle-equal to `Su`, and a null `Su` equals none, so such a face always takes the `!pcurvefound` branch and dies on `Su->DynamicType()`; `Su->Transformed(...)` in the geometric control is the same dereference.
+2. **The edge has no 3D curve and its reference is a curve on a surface** (#2746). `Minimum()` then makes that curve on a surface `myCref` and sets `myHCurve` to an `Adaptor3d_CurveOnSurface`, which is not a `GeomAdaptor_Curve`. The loop over the edge's representations skips `myCref` itself, so a planar face finds no other curve on its surface and projects "the 3D curve" onto the plane through `occ::down_cast<GeomAdaptor_Curve>(myHCurve)->Curve()`, a null handle. A curve index outside the `Curves` table is how a file loses the 3D curve; `BRep_Builder::UpdateEdge(E, Handle(Geom_Curve)(), tol)` on a box face does it with no file at all (`Scripts/repro/3495`).
+
+Both are one line each: a face without a surface reports `BRepCheck_NoCurveOnSurface` for its edge and stops, and a planar face whose reference is a curve on a surface reports the same, which is what the edge already reported on a face that is not a plane. Both shapes are invalid, as they were whenever they did not fault.
+
+**The bridge guards stay.** `occtShapeHasPCurveOnlyEdge` and `occtShapeHasSurfacelessFace` (#2750, #2789) refuse the same two shapes in front of `BRepCheck_Analyzer` at 20 bridge sites, and their tests cannot tell that the kernel no longer needs them. They are retired, with a regression that fails if they come back, at the repin that pins this patch, not before: the pinned asset does not carry it.
+
+**Measured**, `Scripts/repro/3494` `counts.py` mode `str` (`BRepTools::Read` on a stream), 99,620 cases of 31 files, and `Scripts/repro/3487` `matrix.py` mode `str`, on the `0074` baseline and with `0076` and `0077`:
+
+| class | `0074` | `0076` + `0077` |
+|---|---|---|
+| count, returned then faulted | 2,208 | 0 |
+| count, returned then spun | 1 | 1 |
+| struct (`ref`), returned then faulted | 92 | 0 |
+| byte, returned then faulted | 407 | 0 |
+| byte, returned then spun | 12 | 12 |
+
+The spins that remain are a tolerance or coordinate of the wrong size (a value, not a structure). The binary matrix (`bin`, 156,474 cases) is the table of `0076`.
+
+**Verification.** `BREPKernelInconsistentShapeTests` (3 tests, `OCCTIOTests`, gated on `OCCTSWIFT_LOCAL=1` until the pinned asset carries this), each test its own process, a box whose first edge's 3D curve index or first face's surface index is 999. `Shape.isValid` is guarded by the bridge (above), so the tests reach the analyzer through `Shape.connectedEdges`, which runs `BRepCheck_Analyzer` on its input unguarded:
+
+| test | unpatched | patched |
+|---|---|---|
+| `theUndamagedBoxIsValid` (control) | pass | pass |
+| `anEdgeWithoutA3DCurveOnAPlanarFaceIsInvalidNotAFault` | SIGSEGV | pass |
+| `aFaceWithoutASurfaceIsInvalidNotAFault` | SIGSEGV | pass |
+
+**Upstream checked 2026-10-20:** the last commit on `master` to `BRepCheck_Edge.cxx` is `1db802567` (2026-04-29, clang-tidy fixes); the open PRs that match `BRepCheck` are fillet and offset work (#1462, #1592, #1600, #1624, #1642) and none touches `InContext`. **Not filed upstream.**
+
+**Retire** once the bundled OCCT includes this fix.
+
 # Retired patches
 
 The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so
@@ -3763,6 +3845,20 @@ this depth; read them as history, not as a description of anything the build sti
 Before each file was deleted its hunks were checked against the as-merged upstream form in the
 pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
 Each section opens with that verdict.
+
+## 0078-BinLDrivers-ReadSubTree-refuses-a-label-nested-too-deeply-3489.patch
+
+**A binary OCAF file whose labels nest past 512 levels is refused, not read until the stack is gone** ([#3489](https://github.com/SecondMouseAU/OCCTSwift/issues/3489), follow-up to [#3486](https://github.com/SecondMouseAU/OCCTSwift/issues/3486)).
+
+`BinLDrivers_DocumentRetrievalDriver::ReadSubTree` reads a label and then calls itself once for each child label, so a file chooses how deep the call stack goes. Measured on the macOS arm64 slice of `v4.0.0-kernel.7` with `0070` to `0074` applied, through `TDocStd_Application::Open` (`Scripts/repro/3486/probe.mm`): 1000, 3000, 9000 and 12000 levels load, 16000 and 20000 levels (a 320 KB file) overflow the 8 MB stack of the thread that opened the file and the process dies with SIGSEGV. Roughly 600 bytes of stack are used per level (8 MB over the 12000 to 16000 levels where it gives out), so a thread with a smaller stack overflows sooner: nothing a caller can do about the depth short of reading the file first. The bridge cannot bound it: `occtOcafDeclaredSizesFit` walks the storage sections, and the nesting is in the document data after them, which only the per-attribute and per-label layout of `BinLDrivers` describes.
+
+The reader now counts the levels it is nested in on the calling thread (a function-local `thread_local` in `BinLDrivers_DocumentRetrievalDriver.cxx`, so no header and no class layout changes, and a subclass that overrides `ReadSubTree` and calls this one is counted too) and, at the 513th, sends "labels nested too deeply" as a `Message_Fail`, sets `PCDM_RS_UnrecognizedFileFormat` and returns -1, which both call sites in `Read` and the recursion already treat as a failed read. An explicit stack was weighed and not taken: the read keeps a progress scope, a filter position and a skip flag per level, and `ReadSubTree` is `virtual` so a subclass cannot follow a rewrite. The bound had to come from the smallest stack a caller is likely to read on, not the main thread's. Measured with `ulimit -s 512` (the size of a dispatch or Swift concurrency worker's stack): 700 levels load, 1000 overflow. A first version bounded at 4096 passed on the 8 MB stack and still killed the Swift test process, which runs on such a worker. 512 levels take about 300 KB, which that worker holds, and a document is nested far less deeply than that. It remains a constant: it bounds the file and not the thread, and a thread with a stack under about 400 KB can still overflow below it.
+
+Measured after, same harness: 100 and 400 levels load with status ok; 600, 4000 and 20000 are refused at once with status `PCDM_RS_UnrecognizedFileFormat` (12). `XmlMDF::ReadSubTree`, the XML counterpart, also recurses per label; it is not touched and its depth limit was not measured.
+
+**Upstream checked 2026-10-20:** `BinLDrivers_DocumentRetrievalDriver.cxx` on `IR` has no depth bound; its last change is the deep-XBF-references fix of 2026-09-04 (#1528). **Not yet filed upstream.**
+
+**Retire** once the bundled OCCT includes this fix.
 
 ## 0031-bspline-adaptor-cache-thread-safety-1153.patch
 

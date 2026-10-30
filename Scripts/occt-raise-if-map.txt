@@ -58,7 +58,7 @@
 # the stray check in docs/guides/building-occt.md's "Shipping a rebuild" answers it.
 #
 # occt-version: 8.0.1
-# derived against: 56 carried patch(es) in Scripts/patches/, every one of them verified
+# derived against: 59 carried patch(es) in Scripts/patches/, every one of them verified
 # derived against: applied in the tree the rows below were derived from.
 # patch: 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319 79fe529c26ef
 # patch: 0011-XCAFDoc_ShapeTool-AutoNamingScope-341 76898e2438a2
@@ -116,16 +116,19 @@
 # patch: 0073-Text-shape-readers-bound-a-token-and-stop-at-a-failed-stream-3490 72cc40f22a5c
 # patch: 0074-Shape-readers-refuse-a-count-the-stream-cannot-supply-3490 c0350f73b62e
 # patch: 0075-Trimmed-curve-and-surface-refuse-a-parameter-that-is-not-a-number-3496 61d5774a23e0
+# patch: 0076-BinTools_ShapeReader-refuses-a-position-reference-that-leaves-the-stream-3495 57c60912bbcd
+# patch: 0077-BRepCheck_Edge-InContext-copes-with-a-face-without-a-surface-and-an-edge-without-a-3D-curve-3490 bd474bef9dbc
+# patch: 0078-BinLDrivers-ReadSubTree-refuses-a-label-nested-too-deeply-3489 fe3a18021a55
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    827 site(s) in  283 class(es)
 # totals: inline-throw       501 site(s) in  212 class(es)
-# totals: outofline-throw   3796 site(s) in  833 class(es)
+# totals: outofline-throw   3807 site(s) in  833 class(es)
 # totals: outofline-delegated  5947 site(s) in  924 class(es)
 # totals: inherited-live    2587 site(s) in 2587 class(es)
-# totals: inline-dead-at-depth  9911 site(s) in  100 class(es)
+# totals: inline-dead-at-depth  9912 site(s) in  100 class(es)
 #
-# member attribution: 336 of 5043 row(s) carry at least one <file-scope> site, 264 name no member at all
+# member attribution: 337 of 5043 row(s) carry at least one <file-scope> site, 264 name no member at all
 #
 # packages examined: 404
 # packages: AIS,APIHeaderSection,Adaptor2d,Adaptor3d,AdvApp2Var,AdvApprox,AppBlend,AppCont,AppDef,AppParCurves,AppStd,AppStdL
@@ -844,7 +847,7 @@ BinTools_Curve2dSet outofline-throw 6 Standard_Failure <file-scope>,Read,ReadCur
 BinTools_CurveSet outofline-throw 6 Standard_Failure <file-scope>,Read,ReadCurve,WriteCurve
 BinTools_IStream outofline-throw 4 Standard_Failure,Storage_StreamTypeMismatchError ReadReference,operator>>
 BinTools_LocationSet outofline-throw 6 Standard_Failure Read,Write
-BinTools_ShapeReader outofline-throw 9 Standard_Failure ReadLocation,ReadPolygon,ReadPolygon3d,ReadShape,ReadTriangulation
+BinTools_ShapeReader outofline-throw 20 Standard_Failure <file-scope>,ReadCurve,ReadCurve2d,ReadLocation,ReadPolygon,ReadPolygon3d,ReadShape,ReadSurface,ReadTriangulation
 BinTools_ShapeReader outofline-delegated 1 Standard_NullObject Poly_PolygonOnTriangulation
 BinTools_ShapeSet outofline-throw 23 Standard_Failure Read,ReadPolygon3D,ReadPolygonOnTriangulation,ReadShape,ReadSubs,ReadTriangulation,WritePolygon3D,WritePolygonOnTriangulation,WriteShape,WriteTriangulation
 BinTools_ShapeSet outofline-delegated 2 Standard_NullObject,Standard_OutOfRange Poly_PolygonOnTriangulation,Poly_Triangle
@@ -2925,7 +2928,7 @@ NCollection_LinearVector inline-dead-at-depth 94 Standard_OutOfMemory,Standard_O
 NCollection_List inline-raise 4 Standard_NoSuchObject <file-scope>
 NCollection_List inline-dead-at-depth 623 Standard_NoSuchObject +133-more,BOPAlgo,BOPTest,BRepOffsetAPI,LocOpe,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepDS,TopOpeBRepTool
 NCollection_Map inline-raise 3 Standard_NoSuchObject,Standard_OutOfRange <file-scope>
-NCollection_Map inline-dead-at-depth 306 Standard_NoSuchObject,Standard_OutOfRange +76-more,BOPAlgo,BRepGraph,DNaming,LocOpe,StepTidy,TNaming,TopOpeBRepBuild,TopOpeBRepTool
+NCollection_Map inline-dead-at-depth 307 Standard_NoSuchObject,Standard_OutOfRange +77-more,BOPAlgo,BRepGraph,DNaming,LocOpe,StepTidy,TNaming,TopOpeBRepBuild,TopOpeBRepTool
 NCollection_Mat3 inline-throw 1 Standard_ConstructionError <file-scope>
 NCollection_Mat4 inline-throw 1 Standard_ConstructionError <file-scope>
 NCollection_OrderedDataMap inline-raise 4 Standard_NoSuchObject,Standard_OutOfRange <file-scope>

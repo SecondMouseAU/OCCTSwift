@@ -2161,6 +2161,13 @@ public static func fromBinaryData(_ data: Data) -> Shape?
 
 - **Parameters:** `data`, binary data previously produced by `toBinaryData()`.
 - **Returns:** The restored `Shape`, or `nil` if the data is invalid.
+- **Damaged data:** a reference to a position outside the data, to a record that is still being read
+  (a compound that refers to the compound holding it), to another reference or to a null shape, an
+  orientation or continuity byte the enumeration lacks, and a record of the wrong kind in a location,
+  curve, surface, polygon or triangulation slot return `nil` once carried patch `0076` is in the
+  kernel (the pinned asset does not carry it yet). Without it the first of these recurses until the
+  stack ends and the orientation faults in `TopExp_Explorer`. A coordinate or trim parameter that is
+  not a number is not covered.
 - **OCCT:** `BinTools_ShapeReader::Read`
 
 ---
@@ -2195,7 +2202,8 @@ public static func loadBinary(from url: URL) -> Shape?
 ```
 
 - **Parameters:** `url`, source file URL.
-- **Returns:** The restored `Shape`, or `nil` if the file is missing or invalid.
+- **Returns:** The restored `Shape`, or `nil` if the file is missing or invalid. A damaged position
+  reference is refused the way `fromBinaryData(_:)` documents, once carried patch `0076` is in the kernel.
 - **OCCT:** `BinTools_ShapeReader::Read` (file overload)
 - **Example:**
   ```swift
