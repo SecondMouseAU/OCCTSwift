@@ -3835,17 +3835,6 @@ The spins that remain are a tolerance or coordinate of the wrong size (a value, 
 
 **Retire** once the bundled OCCT includes this fix.
 
-# Retired patches
-
-The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so
-re-applying it would fail (the change is already in the source tree) and `build-occt.sh` would abort.
-The writeups are kept because for several of these they are the only record of the root cause at
-this depth; read them as history, not as a description of anything the build still does.
-
-Before each file was deleted its hunks were checked against the as-merged upstream form in the
-pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
-Each section opens with that verdict.
-
 ## 0078-BinLDrivers-ReadSubTree-refuses-a-label-nested-too-deeply-3489.patch
 
 **A binary OCAF file whose labels nest past 512 levels is refused, not read until the stack is gone** ([#3489](https://github.com/SecondMouseAU/OCCTSwift/issues/3489), follow-up to [#3486](https://github.com/SecondMouseAU/OCCTSwift/issues/3486)).
@@ -3859,6 +3848,17 @@ Measured after, same harness: 100 and 400 levels load with status ok; 600, 4000 
 **Upstream checked 2026-10-20:** `BinLDrivers_DocumentRetrievalDriver.cxx` on `IR` has no depth bound; its last change is the deep-XBF-references fix of 2026-09-04 (#1528). **Not yet filed upstream.**
 
 **Retire** once the bundled OCCT includes this fix.
+
+# Retired patches
+
+The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so
+re-applying it would fail (the change is already in the source tree) and `build-occt.sh` would abort.
+The writeups are kept because for several of these they are the only record of the root cause at
+this depth; read them as history, not as a description of anything the build still does.
+
+Before each file was deleted its hunks were checked against the as-merged upstream form in the
+pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
+Each section opens with that verdict.
 
 ## 0031-bspline-adaptor-cache-thread-safety-1153.patch
 
