@@ -130,7 +130,9 @@ After (`bridge`, 109,801 cases, 2026-10-18):
 
 A fault or spin in `byte`, `count`, `ref` and `root` is the open class below; the counts differ by a few from run to run, because a fault that reads freed or uninitialised memory lands on SIGSEGV or SIGBUS depending on what the heap holds.
 
-### What it does not cover
+### What it did not cover on `v4.0.0-kernel.7`
+
+The sections above are the `v4.0.0-kernel.7` measurement. `v4.0.0-kernel.8` carries the readers' fixes; its re-run is under "Re-measured on `v4.0.0-kernel.8`" below.
 
 A BREP that is **complete but wrong**: the shape-table index of a sub-shape or root reference that
 the file made up, an offset curve whose basis did not read, and a readable shape that is structurally
@@ -156,8 +158,53 @@ why this is a partial fix. Also not covered, and by design:
 Tracked in #3490, with the carried-patch outline: bound the index in
 `TopTools_ShapeSet::Read(TopoDS_Shape&, IS, nbshapes)`, check `myMap(l1)` in
 `TopTools_LocationSet::Read`, extract through `std::setw(sizeof buffer)`, null-check the basis of an
-offset curve, and stop the `while (val > 0)` loops on `IS.fail()`. It is a kernel patch and needs a
-rebuild and a decision; it is not authored here.
+offset curve, and stop the `while (val > 0)` loops on `IS.fail()`. Carried as `0073`, `0074`,
+`0076` and `0077`, shipped in `v4.0.0-kernel.8`.
+
+## Re-measured on `v4.0.0-kernel.8`
+
+`Scripts/repro/3487/run-all.sh` unchanged, against the `macos-arm64` slice of the published
+`OCCT.xcframework.zip` of `v4.0.0-kernel.8` (SwiftPM checksum `8d737fb2...80e7`), 2026-11-04, six
+jobs, 3 minutes. The probe's copy of `OcctBrepWordLimitBuf` was compared with the bridge's before the run: same 64 KiB refill, same whitespace set, same 254 byte limit.
+
+`bridge` (what ships), 109,801 cases, the same corpus and classes as the `v4.0.0-kernel.7` table above:
+
+| class | cases | refused | accepted | faulted in the reader | spun in the reader | returned, then faulted or spun on use |
+|---|---|---|---|---|---|---|
+| prefix | 28,977 | 28,977 | 0 | 0 | 0 | 0 |
+| long | 54 | 54 | 0 | 0 | 0 | 0 |
+| header | 90 | 90 | 0 | 0 | 0 | 0 |
+| root | 162 | 108 | 54 | 0 | 0 | 0 |
+| count | 1,314 | 1,280 | 34 | 0 | 0 | 0 |
+| ref | 2,725 | 1,239 | 1,486 | 0 | 0 | 0 |
+| byte | 76,479 | 28,046 | 48,429 | 0 | 0 | 4 |
+
+On `v4.0.0-kernel.7` the same run had 8,521 reader faults (36 root, 108 count, 1,239 ref, 7,138
+byte) and 495 shapes that faulted or spun on use. Accepted shapes that `BRepCheck_Analyzer` calls
+invalid are inside the accepted column (`ref` 253, `byte` 13,043): the reader returns damaged geometry, it
+does not validate it.
+
+The four use-site cases are one input, `fused` with the radius of its first circle pcurve (byte
+143, `5`) replaced by `00`, `ff`, `-` or `*`, which reads as radius 0. `BRepCheck_Analyzer` never returns on it
+(`BRepCheck_Wire::SelfIntersect`, `Geom2dInt_GInter::InternalPerform`,
+`IntCurve_IntConicConic::Perform`); no carried patch touches that code. Filed as #3506, with the
+reproducer. The `strxe` mode (the stream without the word limit) gives the same four.
+
+The bare reader, with no bridge guard, thinned as before:
+
+| mode and class | cases | refused | accepted | faulted in the reader | spun in the reader | returned, then faulted or spun on use |
+|---|---|---|---|---|---|---|
+| `path`, prefix | 3,741 | 3,723 | 18 | 0 | 0 | 0 |
+| `str`, long | 12 | 12 | 0 | 0 | 0 | 0 |
+| `str`, header | 20 | 20 | 0 | 0 | 0 | 0 |
+| `str`, root | 36 | 24 | 12 | 0 | 0 | 0 |
+| `str`, count | 292 | 284 | 8 | 0 | 0 | 0 |
+| `str`, ref | 700 | 306 | 394 | 0 | 0 | 0 |
+| `str`, byte | 355 | 152 | 203 | 0 | 0 | 0 |
+
+On `v4.0.0-kernel.7` the same bare runs faulted on 2,006 of the 3,741 prefixes and spun on 414, and
+the `str` rows had 437 faults and 91 spins. The one prefix per file that `path` accepts is the one that
+drops only the trailing space (`+1 0` without it), which the bridge's end-of-file check refuses and the bare reader does not.
 
 ## The binary sibling
 
