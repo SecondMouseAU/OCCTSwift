@@ -574,23 +574,9 @@ fi
 # check-inventory-prose.py also parses each filename's first four characters as
 # the patch number and raises on a non-numeric name, and both the kernel cache key and the TSan
 # stamp hash patches/*.patch, so a WASI-only change would move them for no native-kernel reason.
-apply_patch_dir() {
-    local dir="$1" label="$2"
-    [ -d "$dir" ] && ls "$dir"/*.patch >/dev/null 2>&1 || return 0
-    echo ">>> Applying $label..."
-    local p
-    for p in "$dir"/*.patch; do
-        if git -C occt-src apply --reverse --check "$p" 2>/dev/null; then
-            echo "    already applied: $(basename "$p")"
-        elif git -C occt-src apply --check "$p" 2>/dev/null; then
-            git -C occt-src apply "$p"
-            echo "    applied: $(basename "$p")"
-        else
-            echo "    ERROR: cannot apply $(basename "$p") cleanly" >&2
-            exit 1
-        fi
-    done
-}
+# The loop, and how it reads a patch that a later one rewrote, are shared with build-occt.sh: a tree
+# that script patched must not stop this one (#3502).
+source "$SCRIPT_DIR/lib/apply-patches.sh"
 
 apply_patch_dir "$SCRIPT_DIR/patches" "carried OCCT patches"
 apply_patch_dir "$SCRIPT_DIR/patches-wasi" "WASI-only OCCT patches"
