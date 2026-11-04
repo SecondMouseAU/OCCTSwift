@@ -48,12 +48,12 @@ The cohort moved to v1.0.0 on 2026-05-07 alongside [OCCT 8.0.0 GA](https://githu
 and to v2.0.0 under Rule 2, on the accumulated breaks recorded below. v3.0.0 is a further
 Rule 2 major on a much smaller set: the kernel does not move, and the breaks are listed
 below. v4.0.0 is a third Rule 2 major, on the breaks tabulated under it below, and is in
-pre-release as `v4.0.0-beta.6`.
+pre-release as `v4.0.0-beta.7`.
 
 #### v4.0.0
 
 **A major by Rule 2, on a much larger set than v3.0.0.** OCCT does not move: the kernel stays at
-`V8_0_1`, rebuilt as `v4.0.0-kernel.7` to carry every patch in `Scripts/patches/` where the v3.0.0
+`V8_0_1`, rebuilt as `v4.0.0-kernel.8` to carry every patch in `Scripts/patches/` where the v3.0.0
 asset carried seventeen. A kernel rebuild is a MINOR trigger at most and forces nothing on its own.
 What forces the major is Rule 2, carried by the breaking changes tabulated below.
 
@@ -78,6 +78,16 @@ no acknowledgement standing. Five patches are new since `v4.0.0-kernel.6`: `0064
 `Package.swift` are the `OCCT.xcframework.zip` asset of that release, whose published digest is the
 checksum recorded there. What each patch changes for a caller is recorded under "What
 `v4.0.0-beta.6` adds to the picture" below.
+
+**The kernel pin of `v4.0.0-beta.7`, a frozen measurement of 2026-11-04.** `Package.swift` pins
+`v4.0.0-kernel.8` (#3504). That release carries fifty-nine patches in the native asset and the same
+fifty-nine in the wasm asset (`0010` to `0078`, the retired numbers absent), with the eleven
+WASI-only source changes on top of the wasm one, and `Scripts/check-wasm-kernel-parity.py` reports
+the two clean with no acknowledgement standing. Nine patches are new since `v4.0.0-kernel.7`:
+`0070`, `0071`, `0072` and `0078` (#3489), `0073`, `0074` and `0077` (#3490), `0075` (#3496) and
+`0076` (#3495). The `url:` and `checksum:` in `Package.swift` are the `OCCT.xcframework.zip` asset
+of that release, whose published digest is the checksum recorded there. What each patch changes for
+a caller is recorded under "What `v4.0.0-beta.7` adds to the picture" below.
 
 Many of these breaks share one shape, and it is worth naming because it explains the release:
 **a function that could not fail, and did, gains the ability to say so.**
@@ -496,6 +506,81 @@ documentation. The exceptions are #3462, #3463, #3467 and #3468, graded MINOR ab
 patch PRs #3460, #3465 and #3466, whose effect reaches a consumer through the repin and is recorded
 there. #3415 states NONE and touches `Sources/OCCTSwift/Shape+Surface.swift`: the one hunk is a test path in a
 `///` comment renamed with its file, so no declaration changes.
+
+**What `v4.0.0-beta.7` adds to the picture.** Fourteen pull requests merged since
+`v4.0.0-beta.6`, counting the repin (#3504), of which four carry a `No-Changelog` statement because
+they are CI, tooling or documentation (#3480, #3482, #3484, #3499). No public Swift declaration was
+added, changed or removed. The consumer-visible set is a kernel repin, a run of crash-to-refusal
+fixes for damaged BREP and binary OCAF files, and one input the BREP text readers now refuse that
+they used to load, which has [its own table](#new-in-v400-beta7-every-break-and-what-a-caller-does)
+below with a migration. Nothing was removed.
+
+**Additive API, MINOR.** None in Swift. In the C bridge, `OCCTDocumentOCAFDeclaredSizesFit` (#3485),
+a test seam with no Swift wrapper. `OCCTBridge` is not a product.
+
+**Crash to refusal, PATCH.** Calls that killed the process, hung, exhausted memory or overflowed the
+stack on a damaged file now return their documented failure value, so no caller can have depended
+on the old behaviour.
+
+- `Shape.loadBREP(from:)`, `Shape.loadBREP(fromPath:)` and `Shape.fromBREPString(_:)` throw
+  `ImportError.importFailed` or return `nil` for a BREP that ends early, such as one cut short by an
+  interrupted write, and for a text word of 255 bytes or more (#3492, #3487). The one input that
+  went from loading to refused is in the break table.
+- `Document.loadOCAF(from:)` returns `(nil, .driverFailure)` for a binary OCAF file whose storage
+  sections declare a string length or a section count larger than the bytes the file holds (#3485,
+  #3477), and for one that declares a type, root or reference index outside its tables or a table
+  name of 512 bytes (#3488, #3486). Each of those faulted or aborted before, or loaded after an
+  out-of-range access.
+
+**Through the repin to `v4.0.0-kernel.8` (#3504)**, the same class of refusal reaches the kernel's
+own readers. A consumer on `v4.0.0-beta.6` or earlier, which pins `v4.0.0-kernel.7` or an older
+kernel, sees none of it.
+
+- Binary OCAF, patches `0070`, `0071`, `0072` and `0078` (#3489; PRs #3491 and #3498): an array or
+  list span the record cannot hold, a tag count that overflows, a table name longer than the
+  reader's buffer and a label nested past 512 levels are refused with a reader status, where the
+  file hung the reader, exhausted memory or overflowed the stack of the thread that opened it.
+- Text and binary BREP, patches `0073`, `0074`, `0075` and `0076` (#3490, #3495, #3496; PRs #3493,
+  #3494, #3497 and #3500): a token longer than the buffer, a failed stream, a count the stream
+  cannot supply, a reference outside its table, a position reference that leaves the stream and a
+  trim parameter that is not a number are refused, and the reader returns `nil` or throws
+  `ImportError` where it faulted or spun. A trimmed curve or surface record with a NaN or infinite
+  parameter is dropped and the rest of the file reads as before.
+- `BRepCheck_Analyzer` reports `NoCurveOnSurface` for a face with no surface, or an edge with only a
+  curve on a surface, where it faulted (patch `0077`, #3490, PR #3500).
+
+**Internal.** The macOS CI jobs run on `macos-latest` (#3482), the code-style job pins swift-format
+and SwiftLint (#3484), the release-mode scribble job sets `MallocMediumZone=0` against a libmalloc
+crash on macOS 15 (#3480), and the upstream-process pages, skills and policies under `okf/` and
+`.claude/` are rewritten around OCCT's own AI instructions (#3499). None of it changes anything a
+consumer compiles against.
+
+**How the beta.7 set was checked.** Every `## SemVer impact` statement was read, and every statement
+of anything above NONE was read against its diff. The public declarations of
+`git diff v4.0.0-beta.6 HEAD -- Sources/OCCTSwift` (3 files, 45 changed lines) were compared line by
+line: no declaration is added, changed or removed. The changes are doc comments and one internal
+test helper, `Document.ocafDeclaredSizesFit`. The C headers under `Sources/OCCTBridge/include` were
+compared the same way: one function is added (`OCCTDocumentOCAFDeclaredSizesFit`, #3485) and none
+changes. This is a screen over declarations and not a `swift-api-digester` run, and it cannot see a
+changed value behind an unchanged signature: those are the PRs' own statements, read against their
+diffs.
+
+**Where the assembly disagreed with a PR's own grade.**
+
+- #3492 states PATCH. It is recorded PATCH for everything it refuses that used to crash or spin, and
+  MAJOR for the one edge its own statement names: a complete BREP whose trailing whitespace was
+  stripped used to load and is now refused. The signatures are unchanged and the result is not, so a
+  caller that trims a stored BREP string before loading it gets `nil` from the same call. The rule is
+  that a wrong MINOR costs a consumer's build. It is in the break table below.
+- #3488 also refuses a file that used to load after an out-of-range access. It stays PATCH, since
+  the access was outside the tables the file itself declares.
+- #3485, #3491, #3493, #3494, #3497, #3498 and #3500 state PATCH or None for a reader or kernel
+  change that alters behaviour only for damaged input, and stay PATCH.
+
+**Pull requests with no `## SemVer impact` section.** One merged without the heading: #3499, which
+touches skills, agent definitions, `CLAUDE.md`, a script under `Scripts/occt-staging` and pages under
+`okf/`, and no file under `Sources/`. #3480, #3482 and #3484 state None and touch CI workflows,
+scripts, a test file and policy pages.
 
 ##### Every break, and what a caller does
 
@@ -1019,6 +1104,31 @@ three trailing output parameters, `nDx`, `nDy` and `nDz`, which receive the unit
 where it echoed the caller's input, and `.zero` for a failed construction (graded MINOR, see above).
 **Migration.** Pass three `double*` and read the direction from them; the Swift wrapper in
 `Sources/OCCTSwift` is the worked example.
+
+##### New in v4.0.0-beta.7: every break, and what a caller does
+
+Breaks recorded after beta.6. The tables above are unchanged. Each row links to its section.
+
+| Break | Kind | Detail |
+|---|---|---|
+| `Shape.loadBREP(from:)`, `Shape.loadBREP(fromPath:)` and `Shape.fromBREPString(_:)` refuse a BREP whose trailing whitespace was stripped | different result, no signature change | [#3487](#v400-a-brep-whose-trailing-whitespace-was-stripped-is-refused-3487) |
+
+##### v4.0.0: a BREP whose trailing whitespace was stripped is refused (#3487)
+
+`BRepTools::Read` faults on a BREP that ends early, and no check on the text tells a cut file from a
+whole one except by its last byte: a written BREP ends in a space (`+1 0 `), so a token that the end
+of the file ends is the mark of a cut. `Shape.loadBREP(from:)`, `Shape.loadBREP(fromPath:)` and
+`Shape.fromBREPString(_:)` now refuse every strict prefix of a written BREP (PR #3492, stated
+PATCH). A complete BREP whose trailing whitespace was removed (`+1 0` where the writer wrote
+`+1 0 `) is a strict prefix of itself, so it is refused with them: the loaders throw
+`ImportError.importFailed` and `fromBREPString` returns `nil`, where they returned the shape.
+Admitting it would admit a prefix that cuts inside a multi-digit root location and parses as the
+wrong location without saying so.
+
+**Migration.** The output of `toBREPString()` and of the BREP writers loads as before. A pipeline
+that trims a stored BREP (a text field, a JSON or database value, an editor that removes the last
+space) should stop trimming it, or append a newline or a space after the root reference before
+loading: the reader accepts any whitespace there.
 
 #### v3.0.0
 
