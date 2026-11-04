@@ -38,6 +38,17 @@
 // The healthy-box control in each pair is what proves the guard is not simply answering "invalid"
 // to everything.
 
+// Since v4.0.0-kernel.8 (patch 0077, #3503) the analyzer survives this shape, and the guard is gone
+// from every entry point whose answer was the analyzer's own: isValid, isValidSolid, analyzeValidity,
+// analyze, the IGES exports, the face-building checks and the pcurve clause of the boolean checks.
+// These tests still pin those answers, and they now run the kernel: on kernel.7 each of them ends
+// its process. Measured with the guards switched off, each test in its own process.
+//
+// The guard stays where it is the answer rather than a safeguard. checkResult and
+// detailedCheckStatuses count the offending edges, and the analyzer reports this shape with a
+// different count and extra statuses; isSubShapeValid and the status lookups answer nil or -1 by
+// design (#2755); healed() goes on to ShapeFix_Shape, which was not measured.
+
 import Foundation
 import Testing
 

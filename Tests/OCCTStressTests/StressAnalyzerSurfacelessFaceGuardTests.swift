@@ -36,6 +36,13 @@
 // The healthy-box control in each test is what proves the guard is not simply answering "invalid" to
 // everything.
 
+// Since v4.0.0-kernel.8 (patch 0077, #3503) the analyzer survives this shape, and the guard is gone
+// from every entry point whose answer was the analyzer's own; see StressBRepCheckInContextGuardTests
+// for which. These tests still pin those answers and now run the kernel. Two clauses stay: the
+// boolean checks refuse a surface-less face because BRepAlgoAPI_Check's self-interference test
+// faults on it in IntTools_FaceFace (#3509), which 0077 does not touch, and the same guards
+// as in the pcurve-only suite keep checkResult, detailedCheckStatuses and isSubShapeValid.
+
 import Foundation
 import Testing
 

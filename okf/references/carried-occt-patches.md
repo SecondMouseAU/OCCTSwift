@@ -145,7 +145,8 @@ document data of a binary OCAF file past the storage sections the bridge walks, 
 `BREPKernelDamagedReadTests` (`0073`) and `BREPKernelRecordCountTests` (`0074`) in the BREP readers
 (#3490), `BREPKernelTrimParameterTests` (`0075`, #3496), `BinToolsPositionReferenceTests` (`0076`,
 #3495) and `BREPKernelInconsistentShapeTests` (`0077`, #3490). The two bridge guards `0077` makes
-redundant stay for now (#3503).
+redundant are retired where their answer was the analyzer's own (#3503); see `0077` in
+`Scripts/patches/README.md` for the sites that keep one.
 
 | Was unpinned until v4.0.0-kernel.8 | What it left exposed |
 |---|---|
