@@ -1,4 +1,4 @@
-# #3489: what carried patches 0070 to 0072 change in a binary OCAF file's document data
+# #3489: what carried patches 0070 to 0072 and 0078 change in a binary OCAF file's document data
 
 Follow-up to #3486 (`Scripts/repro/3486/`, which has the first measurement of every case but the
 list drivers, `NamedData` and the table names past the first). Measured 2026-10-18 against the
@@ -47,14 +47,31 @@ no allocation logged, 0.0 s, in every row.
 kinds), reopens the file and compares the values: `roundtrip OK` on both, so the bound refuses no
 file the writer produces.
 
-## Not patched: label nesting
+## Label nesting (patch 0078)
 
-`deep_1000` loads and `deep_20000` SIGSEGVs (`Scripts/repro/3486`), unchanged. `ReadSubTree`
-recurses once per nested label and the limit is the stack of the thread that calls `Open`, not
-anything in the file, so there is no quantity to compare against. OCCT's OCAF readers have no depth
-guard to follow: the only depth bounds in the source are `BRepGraph`'s, which derive theirs from the
-node count of the graph they walk. Options: rewrite `ReadSubTree` as a loop with an explicit stack
-(a kernel refactor, not a bounds check), or a stack-size constant, which is arbitrary.
+`deep_1000` loads and `deep_20000` SIGSEGVs, unchanged by `0070` to `0074`. `ReadSubTree` recurses
+once per nested label and the limit is the stack of the thread that calls `Open`, not anything in
+the file. OCCT's OCAF readers have no depth guard to follow (upstream `IR` checked 2026-10-20).
+Measured on the `kernel.7` slice with `0070` to `0074` compiled in (`cases.py nesting`), then with
+`0078`:
+
+| Levels | Before `0078` | After `0078` |
+|---|---|---|
+| 100, 400 | status 0 | status 0 |
+| 600, 1000, 4000, 12000 | status 0 | status 12 (`UnrecognizedFileFormat`), a `labels nested too deeply` line |
+| 16000, 20000 | SIGSEGV | status 12 |
+
+About 600 bytes of stack a level: 8 MB gives out between 12000 and 16000 levels, and `ulimit -s
+512` (a dispatch or Swift concurrency worker) between 700 and 1000. The bound is 512, a constant
+sized for the second: a first bound of 4096 passed on 8 MB and killed the Swift test process. A
+thread with a stack under about 400 KB can still overflow below it. The
+bridge cannot bound it, because `occtOcafDeclaredSizesFit` reads the storage sections and the
+nesting is in the document data after them.
+
+## SHAPE_SECTION_POS (#3489 case 4)
+
+The token reads that killed the process are `0072` to `0074`. `cases.py offsets` points the entry
+at 0, 8, 1000, 2^20, 2^40 and 2^63 - 1: status ok or 12 and no fault on the `0070`-to-`0074` build.
 
 ## Not measured: wasm
 

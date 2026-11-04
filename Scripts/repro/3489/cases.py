@@ -1,6 +1,6 @@
 """#3489: write each crafted file and open it with `probe`, under the 3477 malloc interposer.
 
-  W=<work dir holding probe, interpose.dylib>  PROBE=probe  python3 cases.py [arrays|label|shape]
+  W=<work dir holding probe, interpose.dylib>  PROBE=probe  python3 cases.py [arrays|label|shape|nesting|offsets]
 
 See README.md for how to build the probe and the interposer, and for the measured table. Each line
 is `case rc seconds status BIG`: `BIG` is the first allocation of 8 MiB or more the load made.
@@ -109,6 +109,29 @@ def shape():
             run(f"token_{size}_at_{name}", with_section(body))
 
 
+def nesting():
+    """Labels nested one inside the next (patch 0078): 400 loads, 600 and up are refused."""
+    for n in (100, 400, 500, 600, 1000, 4000, 12000, 16000, 20000):
+        inner = label([integer_record()])
+        sizes, size = [], len(inner)
+        for _ in range(n):
+            size = 8 + 4 + 4 + size + 4
+            sizes.append(size)
+        body = b"".join(U64(s) + I(-1) + I(1) for s in reversed(sizes)) + inner + I(-2) * n
+        run(f"deep_{n}", build(info_blob=INFO, data=document_data(body)))
+
+
+def offsets():
+    """SHAPE_SECTION_POS at an offset that is not the section: the start, the end, far past it."""
+    sec = b"SHAPE_SECTION\nOpen CASCADE Topology V4, (c) Open Cascade\nLocations 0\n"
+    for off in (0, 8, 1000, 1 << 20, 1 << 40, (1 << 63) - 1):
+        blob = build(info_blob=INFO, data=document_data(
+            tocs=[toc(b"SHAPE_SECTION_POS:", values=(off, len(sec), 0)), toc()]))
+        run(f"shape_pos_{off}", blob + sec)
+
+
 if __name__ == "__main__":
-    for w in sys.argv[1:] or ["arrays", "label", "shape"]:
-        {"arrays": arrays, "label": label_, "shape": shape}[w]()
+    modes = {"arrays": arrays, "label": label_, "shape": shape, "nesting": nesting,
+             "offsets": offsets}
+    for w in sys.argv[1:] or ["arrays", "label", "shape", "nesting", "offsets"]:
+        modes[w]()
