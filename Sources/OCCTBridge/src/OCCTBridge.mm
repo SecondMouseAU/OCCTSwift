@@ -753,7 +753,11 @@ bool occtHasSelfIntersectingWire(const TopoDS_Shape& s)
 {
   if (s.IsNull())
     return false;
-  // #2750: BRepCheck_Analyzer faults on a face edge with no valid 3D curve and a pcurve
+  // Since v4.0.0-kernel.8 the analyzer survives both shapes below; the guard stays because this
+  // function's caller goes on to ShapeFix_Shape, whose behaviour on them was not measured (#3503).
+  // Shape.healed() on the pcurve-only fixture answers a shape without it instead of nil.
+  //
+  // #2750: BRepCheck_Analyzer faulted on a face edge with no valid 3D curve and a pcurve
   // (#2746), which is reachable from a .brep file alone. This guard exists to PREVENT a crash, so
   // it answers the same way this function's own catch (...) below already does: true, refuse the
   // operation. That is the contract here, not a claim that a self-intersecting wire was found;

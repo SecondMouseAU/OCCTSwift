@@ -403,17 +403,9 @@ bool OCCTExportIGESProgress(OCCTShapeRef              shape,
   opencascade::handle<BridgeProgressIndicator> indicator;
   try
   {
-    // #2750: BRepCheck_Analyzer faults on a face edge with no valid 3D curve and a pcurve (#2746),
-    // and this export already refuses an invalid shape. Such an edge IS invalid, by OCCT's own
-    // BRepCheck_No3DCurve, so the guard reaches the same refusal one step earlier.
-    if (occtShapeHasPCurveOnlyEdge(shape->shape))
-      return false;
-    // #2777: a face with no surface faults on the way out, whatever edges it carries. The writer
-    // reaches three untested dereferences of that handle and the BRepCheck_Analyzer below is one of
-    // them, so the guard sits ahead of it. The shape is invalid either way, which is the refusal
-    // this function already gives an analyzer-invalid one. See occtShapeHasSurfacelessFace.
-    if (occtShapeHasSurfacelessFace(shape->shape))
-      return false;
+    // The analyzer reports a face with no surface, and an edge with no 3D curve and a pcurve, as
+    // invalid (patch 0077, v4.0.0-kernel.8), which is the refusal below, so no predicate sits in
+    // front of it (#3503). Until then the analyzer faulted on both, and the writer on the second.
     BRepCheck_Analyzer analyzer(shape->shape);
     if (!analyzer.IsValid())
       return false;
@@ -548,17 +540,9 @@ bool OCCTExportIGESWithUnit(OCCTShapeRef shape, const char* path, const char* un
   std::lock_guard<std::mutex> igesLock(igesMutex());
   try
   {
-    // #2750: BRepCheck_Analyzer faults on a face edge with no valid 3D curve and a pcurve (#2746),
-    // and this export already refuses an invalid shape. Such an edge IS invalid, by OCCT's own
-    // BRepCheck_No3DCurve, so the guard reaches the same refusal one step earlier.
-    if (occtShapeHasPCurveOnlyEdge(shape->shape))
-      return false;
-    // #2777: a face with no surface faults on the way out, whatever edges it carries. The writer
-    // reaches three untested dereferences of that handle and the BRepCheck_Analyzer below is one of
-    // them, so the guard sits ahead of it. The shape is invalid either way, which is the refusal
-    // this function already gives an analyzer-invalid one. See occtShapeHasSurfacelessFace.
-    if (occtShapeHasSurfacelessFace(shape->shape))
-      return false;
+    // The analyzer reports a face with no surface, and an edge with no 3D curve and a pcurve, as
+    // invalid (patch 0077, v4.0.0-kernel.8), which is the refusal below, so no predicate sits in
+    // front of it (#3503). Until then the analyzer faulted on both, and the writer on the second.
     BRepCheck_Analyzer analyzer(shape->shape);
     if (!analyzer.IsValid())
       return false;
@@ -584,17 +568,9 @@ bool OCCTExportIGESBRepMode(OCCTShapeRef shape, const char* path)
   std::lock_guard<std::mutex> igesLock(igesMutex());
   try
   {
-    // #2750: BRepCheck_Analyzer faults on a face edge with no valid 3D curve and a pcurve (#2746),
-    // and this export already refuses an invalid shape. Such an edge IS invalid, by OCCT's own
-    // BRepCheck_No3DCurve, so the guard reaches the same refusal one step earlier.
-    if (occtShapeHasPCurveOnlyEdge(shape->shape))
-      return false;
-    // #2777: a face with no surface faults on the way out, whatever edges it carries. The writer
-    // reaches three untested dereferences of that handle and the BRepCheck_Analyzer below is one of
-    // them, so the guard sits ahead of it. The shape is invalid either way, which is the refusal
-    // this function already gives an analyzer-invalid one. See occtShapeHasSurfacelessFace.
-    if (occtShapeHasSurfacelessFace(shape->shape))
-      return false;
+    // The analyzer reports a face with no surface, and an edge with no 3D curve and a pcurve, as
+    // invalid (patch 0077, v4.0.0-kernel.8), which is the refusal below, so no predicate sits in
+    // front of it (#3503). Until then the analyzer faulted on both, and the writer on the second.
     BRepCheck_Analyzer analyzer(shape->shape);
     if (!analyzer.IsValid())
       return false;
@@ -625,15 +601,8 @@ bool OCCTExportIGESMultiShape(const OCCTShapeRef* shapes, int32_t count, const c
       if (!shapes[i] || shapes[i]->shape.IsNull())
         continue;
       // Validate each shape before adding to IGES writer.
-      // #2750: this one shape faults inside the analyzer (#2746) and is invalid by OCCT's own
-      // BRepCheck_No3DCurve, so it is skipped exactly as an analyzer-invalid shape already is.
-      if (occtShapeHasPCurveOnlyEdge(shapes[i]->shape))
-        continue;
-      // #2777: a face with no surface faults on the way out, whatever edges it carries, and the
-      // analyzer below is one of the three sites that dereference the handle. Skipped exactly as an
-      // analyzer-invalid shape already is. See occtShapeHasSurfacelessFace.
-      if (occtShapeHasSurfacelessFace(shapes[i]->shape))
-        continue;
+      // The analyzer reports a face with no surface, and an edge with no 3D curve and a pcurve, as
+      // invalid (patch 0077), so such a shape is skipped below like any invalid one (#3503).
       BRepCheck_Analyzer analyzer(shapes[i]->shape);
       if (!analyzer.IsValid())
         continue;
@@ -767,17 +736,9 @@ bool OCCTExportIGES(OCCTShapeRef shape, const char* path)
   {
     // Validate shape before IGES export, since the OCCT translator can segfault on
     // invalid geometry
-    // #2750: BRepCheck_Analyzer faults on a face edge with no valid 3D curve and a pcurve (#2746),
-    // and this export already refuses an invalid shape. Such an edge IS invalid, by OCCT's own
-    // BRepCheck_No3DCurve, so the guard reaches the same refusal one step earlier.
-    if (occtShapeHasPCurveOnlyEdge(shape->shape))
-      return false;
-    // #2777: a face with no surface faults on the way out, whatever edges it carries. The writer
-    // reaches three untested dereferences of that handle and the BRepCheck_Analyzer below is one of
-    // them, so the guard sits ahead of it. The shape is invalid either way, which is the refusal
-    // this function already gives an analyzer-invalid one. See occtShapeHasSurfacelessFace.
-    if (occtShapeHasSurfacelessFace(shape->shape))
-      return false;
+    // The analyzer reports a face with no surface, and an edge with no 3D curve and a pcurve, as
+    // invalid (patch 0077, v4.0.0-kernel.8), which is the refusal below, so no predicate sits in
+    // front of it (#3503). Until then the analyzer faulted on both, and the writer on the second.
     BRepCheck_Analyzer analyzer(shape->shape);
     if (!analyzer.IsValid())
       return false;

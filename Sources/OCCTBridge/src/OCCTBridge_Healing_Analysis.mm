@@ -331,26 +331,11 @@ OCCTShapeAnalysisResult OCCTShapeAnalyze(OCCTShapeRef shape, double tolerance)
 
   try
   {
-    // Use BRepCheck_Analyzer for comprehensive validation.
-    // #2750: a face edge with no valid 3D curve and a pcurve faults inside BRepCheck_Analyzer
-    // (#2746), so measure it with the predicate instead of the analyzer. The verdict is the same
-    // one the analyzer would give: such an edge is what BRepCheck_No3DCurve describes. Only this
-    // one field is affected, so the rest of the analysis below still runs and still reports its
-    // own measurements rather than the all-zero result an early return would hand back.
-    // #2789: and the second shape, a face with no surface that carries a wire, which faults at
-    // BRepCheck_Edge.cxx:463 rather than at #2746's line. Same verdict for the same reason:
-    // BRepCheck_Face::Minimum reports BRepCheck_NoSurface for such a face without faulting, so
-    // "invalid topology" is OCCT's own answer and not a stand-in for one. See
-    // occtShapeHasSurfacelessFace.
-    if (occtShapeHasPCurveOnlyEdge(shape->shape) || occtShapeHasSurfacelessFace(shape->shape))
-    {
-      result.hasInvalidTopology = true;
-    }
-    else
-    {
-      BRepCheck_Analyzer analyzer(shape->shape, true);
-      result.hasInvalidTopology = !analyzer.IsValid();
-    }
+    // Use BRepCheck_Analyzer for comprehensive validation. A face with no surface and an edge with
+    // no 3D curve and a pcurve are invalid topology by its own verdict (patch 0077, #3503); until
+    // v4.0.0-kernel.8 it faulted on both and a predicate answered here instead.
+    BRepCheck_Analyzer analyzer(shape->shape, true);
+    result.hasInvalidTopology = !analyzer.IsValid();
 
     // Count small edges using ShapeAnalysis_ShapeTolerance
     ShapeAnalysis_ShapeTolerance shapeTol;
@@ -871,7 +856,13 @@ OCCTShapeCheckResult OCCTCheckShape(OCCTShapeRef shape)
     result.firstError = OCCTCheckCheckFail;
     return result;
   }
-  // #2750: BRepCheck_Analyzer faults on a face edge with no valid 3D curve and a pcurve (#2746).
+  // Since v4.0.0-kernel.8 (patch 0077) the analyzer no longer faults on either shape below. The two
+  // counts stay because they are the answer, not a safeguard: the analyzer path below counts errors
+  // from FACE results alone, so on these shapes it reports invalid with a different count and extra
+  // statuses (3 against 1 for the pcurve-only fixture, 2 against 1 for the surface-less one,
+  // measured on kernel.8, #3503).
+  //
+  // #2750: BRepCheck_Analyzer faulted on a face edge with no valid 3D curve and a pcurve (#2746).
   // This struct has a refusal channel (isValid false, firstError OCCTCheckCheckFail) and it is
   // not the right answer: the predicate is a measurement, and an edge in that state is exactly
   // what BRepCheck_No3DCurve names, so report the error rather than a failure to look.
@@ -1006,6 +997,10 @@ int32_t OCCTCheckShapeDetailed(OCCTShapeRef     shape,
 {
   if (!shape || !outStatuses || maxStatuses <= 0)
     return 0;
+  // Since v4.0.0-kernel.8 the counts below are the answer and not a safeguard, as in OCCTCheckShape
+  // above: the analyzer reports the same shapes with extra statuses (the pcurve-only fixture lists
+  // no3DCurve twice and unorientableShape, #3503).
+  //
   // #2750: same guard, same reasoning as OCCTCheckShape above (#2746). This entry point returns a
   // list of statuses, so it reports one BRepCheck_No3DCurve per offending edge rather than 0,
   // which would read as "checked, nothing wrong".
@@ -1078,17 +1073,9 @@ bool OCCTBRepCheckAnalyzerIsValid(OCCTShapeRef shape, bool geometryChecks)
 {
   if (!shape)
     return false;
-  // #2750: refuse the analyzer on the one shape that faults inside it (#2746). false is the
-  // answer, not a fallback: a non-degenerated edge with no valid 3D curve is invalid by OCCT's
-  // own BRepCheck_No3DCurve, so the guard and the analyzer agree on the verdict. This entry point
-  // has no channel for "could not check" and does not need one here.
-  //
-  // #2789: the same for a face with no surface that carries a wire. The `geometryChecks` argument
-  // does NOT decide this one: the faulting line, BRepCheck_Edge.cxx:463, sits outside that
-  // function's `if (myGctrl)` blocks, and the fixture exits 139 with geometric controls off,
-  // measured. So the guard is unconditional here even though the analyzer's own flag is not.
-  if (occtShapeHasPCurveOnlyEdge(shape->shape) || occtShapeHasSurfacelessFace(shape->shape))
-    return false;
+  // Until v4.0.0-kernel.8 the analyzer faulted on a face with no surface and on an edge with no 3D
+  // curve and a pcurve (#2746, #2789), and a predicate answered here first. Patch 0077 makes it
+  // report both as invalid, so the guard is gone (#3503).
   try
   {
     BRepCheck_Analyzer analyzer(shape->shape, geometryChecks);
@@ -1107,7 +1094,12 @@ int32_t OCCTBRepCheckSubShapeValid(OCCTShapeRef parentShape,
 {
   if (!parentShape)
     return OCCTSubShapeValidityNotChecked;
-  // #2750, #2789: the analyzer walks the WHOLE parent shape whichever sub-shape is asked after, so
+  // Since v4.0.0-kernel.8 the analyzer survives both shapes, but this refusal stays because it is
+  // the contract: Swift's isSubShapeValid answers nil for a parent the analyzer cannot vouch for
+  // (#2755), and the real analyzer would answer a verdict about the named sub-shape instead.
+  // Changing that is a decision about the Swift API, not a safeguard to retire (#3503).
+  //
+  // #2750, #2789: the analyzer walked the WHOLE parent shape whichever sub-shape is asked after, so
   // either of the two shapes it cannot survive crashes this call from anywhere in the parent: an
   // edge of a face with no valid 3D curve and a pcurve (#2746, BRepCheck_Edge.cxx's `pcurvefound`
   // branch) or a face with no surface that carries a wire (#2789, BRepCheck_Edge.cxx:463, the
@@ -2802,19 +2794,9 @@ bool OCCTShapeIsValid(OCCTShapeRef shape)
 {
   if (!shape)
     return false;
-  // #2750: see OCCTBRepCheckAnalyzerIsValid above (#2746). Same predicate, same verdict, and the
-  // same reason false is an answer rather than a stand-in.
-  if (occtShapeHasPCurveOnlyEdge(shape->shape))
-    return false;
-  // #2777: BRepCheck_Analyzer also faults on a face with no surface that carries a wire, a third
-  // defect of that family, and this function is the one analyzer site every IGES export reaches
-  // first: Exporter.validateExportInputs calls Shape.isValid before any writeIGES overload touches
-  // the bridge's own export function, so guarding those five without this one leaves the Swift path
-  // dying here. False is the verdict OCCT itself reaches for the same face when it has no edges and
-  // the analyzer survives (measured: IsValid false), so the guard agrees with the kernel rather
-  // than substituting for it. The other BRepCheck_Analyzer sites are #2789.
-  if (occtShapeHasSurfacelessFace(shape->shape))
-    return false;
+  // Until v4.0.0-kernel.8 the analyzer faulted on a face with no surface and on an edge with no 3D
+  // curve and a pcurve (#2746, #2789), and a predicate answered here first. Patch 0077 makes it
+  // report both as invalid, so the guard is gone (#3503).
   try
   {
     BRepCheck_Analyzer analyzer(shape->shape);

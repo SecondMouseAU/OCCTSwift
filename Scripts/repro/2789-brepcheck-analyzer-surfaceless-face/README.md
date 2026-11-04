@@ -376,3 +376,31 @@ No patch is carried here.
 - #2777: the IGES writer, the predicate this issue reuses, and the analyzer table this one extends.
 - #2790: the three other `ShapeCustom` converters, and the two sites `ShapeCustom::` did not find.
 - #2755: the "not checked" channel `isSubShapeValid` needed, decided and implemented in the same PR.
+
+## Re-measured on `v4.0.0-kernel.8` (#3503)
+
+Everything above is the `v4.0.0-kernel.2` measurement. `run.sh` unchanged, against the `macos-arm64`
+slice of the published `v4.0.0-kernel.8` (SwiftPM checksum `8d737fb2...80e7`), 2026-11-04: 89 cases,
+82 exit 0 and 7 exit 139, no `OSD::SetSignal` handler.
+
+| entry | cases | result |
+|---|---|---|
+| `BRepCheck_Analyzer`, geometric controls on and off, on the surface-less face (bare and with a wire), the polygon-wire face, the pcurve-only-edge fixture and a box; plus its sub-shape queries | 24 | all exit 0; `IsValid` false on every damaged shape, true on the box |
+| `BRepCheck_Edge::InContext` | 9 | all exit 0; `NoCurveOnSurface` on the four edges of the surface-less face (patch `0077`) |
+| `BRepCheck_Wire::InContext`, `Closed`, `Closed2d`, `SelfIntersect`, `Orientation` on the surface-less face | 16 | all exit 0: `SelfIntersectingWire` with geometric controls on, a caught `Standard_NullObject` (`GeomAdaptor_Surface::Load`) with them off and in `Closed2d` |
+| other BRepCheck entries (`Minimum` of `Face`/`Edge`/`Wire`/`Vertex`, `IntersectWires`, `ClassifyWires`, `OrientationOfWires`, `BRepCheck_Vertex::InContext`) | 12 | all exit 0 |
+| fixture and geometry probes (`crefs`, `pcurve`, `makefaceplane`, `describe`) | 14 | all exit 0 |
+| `BRepAlgoAPI_Check` | 6 | box, bare face and the pcurve-only fixture exit 0; the three surface-less faces with a wire exit 139 (#3509) |
+| `dynamictype` and `adaptor` | 8 | 4 exit 0; 4 exit 139 by construction, they dereference the null surface themselves |
+
+The `BRepCheck_Wire.cxx:1203` doubt under "Second, latent defect" does not reproduce: with the edge
+loop surviving, the wire check on a face with no surface answers `SelfIntersectingWire` or throws a
+catchable `Standard_NullObject`. The `algocheck` fault is a different one, in
+`BOPAlgo_ArgumentAnalyzer::TestSelfInterferences` to `IntTools_FaceFace::Perform` to
+`CorrectSurfaceBoundaries`, and is not touched by `0077`.
+
+The guards were then switched off at the analyzer sites and each test of the five guard suites in
+`Tests/OCCTStressTests` run in its own process (`swift test --skip-build --filter`, one test each):
+all 33 pass with the guards on; with them off 26 pass, none faults, and 7 fail on an expectation
+(`checkResult` and `detailedCheckStatuses` on both fixtures, `isSubShapeValid` on both, `healed()` on
+the pcurve-only one), which are the sites that keep a guard.
