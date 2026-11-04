@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### BREP readers: carried kernel patch 0075 refuses a trim parameter that is not a number (#3496)
+
+A BREP record whose trimmed-curve or trimmed-surface parameter is not a number (`nan`, `inf`) no longer crashes or hangs the reader, once the kernel carries patch `0075` (not in `v4.0.0-kernel.7`): the record is dropped and the rest of the file reads as before (#3496).
+
 ### Binary OCAF: carried kernel patch 0078 refuses labels nested past 512 (#3489)
 
 A binary OCAF file whose labels nest more than 512 deep is refused with `PCDM_RS_UnrecognizedFileFormat` instead of overflowing the stack of the thread that opens it (carried OCCT patch 0078, #3489). It reaches users at the next kernel repin.
