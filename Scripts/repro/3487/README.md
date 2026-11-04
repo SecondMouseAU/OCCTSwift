@@ -158,8 +158,8 @@ why this is a partial fix. Also not covered, and by design:
 Tracked in #3490, with the carried-patch outline: bound the index in
 `TopTools_ShapeSet::Read(TopoDS_Shape&, IS, nbshapes)`, check `myMap(l1)` in
 `TopTools_LocationSet::Read`, extract through `std::setw(sizeof buffer)`, null-check the basis of an
-offset curve, and stop the `while (val > 0)` loops on `IS.fail()`. Carried as `0073`, `0074`,
-`0076` and `0077`, shipped in `v4.0.0-kernel.8`.
+offset curve, and stop the `while (val > 0)` loops on `IS.fail()`. Carried as `0073`, `0074`
+and `0077`, shipped in `v4.0.0-kernel.8` (`0076` is the binary reader's, #3495).
 
 ## Re-measured on `v4.0.0-kernel.8`
 

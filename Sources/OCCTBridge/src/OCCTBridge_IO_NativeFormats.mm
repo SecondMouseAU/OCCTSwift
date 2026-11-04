@@ -711,7 +711,7 @@ char* OCCTShapeToBREPString(OCCTShapeRef shape)
 // every strict prefix of a BREP stops inside some extraction and is refused.
 //
 // A BREP that is complete but wrong (an index past a table, a count the body does not match) no
-// longer faults the reader since v4.0.0-kernel.8 (patches 0073, 0074, 0076 and 0077, #3490); that
+// longer faults the reader since v4.0.0-kernel.8 (patches 0073, 0074 and 0077, #3490); that
 // is the kernel's, not this stream's. What it returns is not validated: see
 // Scripts/repro/3487/README.md for the measurement and what it leaves. A file whose trailing
 // whitespace was stripped is refused with the truncated ones.
