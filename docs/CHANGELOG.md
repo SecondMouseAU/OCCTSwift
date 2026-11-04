@@ -21,6 +21,14 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### BREP readers: carried kernel patch 0075 refuses a trim parameter that is not a number (#3496)
+
+A BREP record whose trimmed-curve or trimmed-surface parameter is not a number (`nan`, `inf`) no longer crashes or hangs the reader, once the kernel carries patch `0075` (not in `v4.0.0-kernel.7`): the record is dropped and the rest of the file reads as before (#3496).
+
+### Binary OCAF: carried kernel patch 0078 refuses labels nested past 512 (#3489)
+
+A binary OCAF file whose labels nest more than 512 deep is refused with `PCDM_RS_UnrecognizedFileFormat` instead of overflowing the stack of the thread that opens it (carried OCCT patch 0078, #3489). It reaches users at the next kernel repin.
+
 ### BREP: carried kernel patches 0076 and 0077 close the binary reader's position references and the BRepCheck fault on an inconsistent shape (#3495, #3490)
 
 `Shape.fromBinaryData` and `Shape.loadBinary` no longer fault or recurse on a file whose position references leave the stream, loop back into a record being read, name another reference or a null shape, carry an orientation or continuity byte the enumeration lacks, or put a record of the wrong kind in a slot, once the kernel carries patch `0076` (not in `v4.0.0-kernel.7`; the Swift tests are gated on `OCCTSWIFT_LOCAL=1` until the repin). `BRepCheck_Analyzer` no longer faults on a face with no surface or on a planar face whose edge has only a curve on a surface, once the kernel carries `0077`. On the binary count matrix all 44 returned-then-faulted cases and 9 of 29 reader faults are gone; on the text matrices 2,208 of 2,208 count cases, 92 of 92 struct cases and 407 of 407 byte cases that returned a shape and then faulted do not. Open: a `nan` trim parameter (#3496) and a tolerance or coordinate of the wrong size that spins the analyzer.
