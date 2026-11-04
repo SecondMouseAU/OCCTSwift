@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Kernel repin to v4.0.0-kernel.8: patches 0070 to 0078 pinned (#3489, #3490, #3495, #3496)
+
+The pinned kernel is now `v4.0.0-kernel.8`, OCCT `V8_0_1` plus 59 carried patches, for both the Apple and the wasm kernels. Nine patches that were merged but not in the previous asset are now shipped. A damaged or hostile binary OCAF file is refused instead of hanging, exhausting memory or overflowing the stack: an array or list span the record cannot hold, a tag count that overflows, a table name longer than the reader's buffer, and a label nested past 512 levels (`0070` to `0072` and `0078`, #3489). A damaged text or binary BREP is refused instead of faulting or spinning: a token longer than the buffer, a failed stream, a count the stream cannot supply, a reference outside its table, a position reference that leaves the stream, and a trim parameter that is not a number (`0073`, `0074`, `0075` and `0076`, #3490, #3495, #3496). `BRepCheck_Analyzer` reports `NoCurveOnSurface` for a face with no surface, or an edge with only a curve on a surface, instead of faulting (`0077`, #3490).
+
 ### BREP readers: carried kernel patch 0075 refuses a trim parameter that is not a number (#3496)
 
 A BREP record whose trimmed-curve or trimmed-surface parameter is not a number (`nan`, `inf`) no longer crashes or hangs the reader, once the kernel carries patch `0075` (not in `v4.0.0-kernel.7`): the record is dropped and the rest of the file reads as before (#3496).
