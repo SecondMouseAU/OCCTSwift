@@ -3540,8 +3540,8 @@ extension Shape {
     ///
     /// Returns `nil` for a string that ends early (#3487): every strict prefix of
     /// ``toBREPString()``'s output is refused, as is a string whose trailing whitespace was
-    /// stripped. A complete string that refers to a shape or curve it does not hold is not
-    /// checked; see ``loadBREP(from:)``.
+    /// stripped. A complete string that refers to a shape or curve it does not hold no longer
+    /// faults the reader, but what is returned is not validated; see ``loadBREP(from:)``.
     public static func fromBREPString(_ brep: String) -> Shape? {
         guard let ref = OCCTShapeFromBREPString(brep) else { return nil }
         return Shape(handle: ref)

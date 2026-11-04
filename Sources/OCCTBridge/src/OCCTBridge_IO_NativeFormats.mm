@@ -710,9 +710,11 @@ char* OCCTShapeToBREPString(OCCTShapeRef shape)
 // is refused at the extraction, before the reader uses the value. The write order is fixed, so
 // every strict prefix of a BREP stops inside some extraction and is refused.
 //
-// This does not validate a BREP that is complete but wrong (an index past a table, a count the
-// body does not match); see Scripts/repro/3487/README.md for what that leaves. A file whose
-// trailing whitespace was stripped is refused with the truncated ones.
+// A BREP that is complete but wrong (an index past a table, a count the body does not match) no
+// longer faults the reader since v4.0.0-kernel.8 (patches 0073, 0074 and 0077, #3490); that
+// is the kernel's, not this stream's. What it returns is not validated: see
+// Scripts/repro/3487/README.md for the measurement and what it leaves. A file whose trailing
+// whitespace was stripped is refused with the truncated ones.
 //
 // The same reader overflows a second way: every `IS >> buffer` extracts a whitespace-delimited word
 // into a `char[255]` with no width limit, so a word of 255 bytes or more is a stack overflow

@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### The BREP readers' caveat is retired: a complete-but-wrong file no longer faults the reader on `v4.0.0-kernel.8` (#3490)
+
+The `v4.0.0-kernel.8` kernel carries `0073`, `0074` and `0077` for the text readers, and the `Scripts/repro/3487/` matrix re-run against it finds no fault and no hang in the reader: 109,801 damaged files through the bridge (8,521 faults on `v4.0.0-kernel.7`), 3,741 bare-reader prefixes (2,006 faults and 414 spins before) and 1,415 structural and byte cases. The `Shape.loadBREP` and `Shape.fromBREPString` documentation no longer says to avoid a BREP from an untrusted source. What the reader returns is still not validated, and `Shape.isValid` does not return on a shape whose pcurve is a circle of radius 0, which a complete BREP can carry (#3506).
+
 ### Kernel repin to v4.0.0-kernel.8: patches 0070 to 0078 pinned (#3489, #3490, #3495, #3496)
 
 The pinned kernel is now `v4.0.0-kernel.8`, OCCT `V8_0_1` plus 59 carried patches, for both the Apple and the wasm kernels. Nine patches that were merged but not in the previous asset are now shipped. A damaged or hostile binary OCAF file is refused instead of hanging, exhausting memory or overflowing the stack: an array or list span the record cannot hold, a tag count that overflows, a table name longer than the reader's buffer, and a label nested past 512 levels (`0070` to `0072` and `0078`, #3489). A damaged text or binary BREP is refused instead of faulting or spinning: a token longer than the buffer, a failed stream, a count the stream cannot supply, a reference outside its table, a position reference that leaves the stream, and a trim parameter that is not a number (`0073`, `0074`, `0075` and `0076`, #3490, #3495, #3496). `BRepCheck_Analyzer` reports `NoCurveOnSurface` for a face with no surface, or an edge with only a curve on a surface, instead of faulting (`0077`, #3490).

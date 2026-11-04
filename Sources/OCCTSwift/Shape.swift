@@ -2000,9 +2000,14 @@ public final class Shape: @unchecked Sendable {
     /// trailing whitespace was stripped (a written BREP ends in a space), and so is a word of 255
     /// bytes or more in the text the reader takes (the reader copies words into a 255 byte buffer).
     ///
-    /// A file that is complete but wrong is not checked: a reference to a shape that is not in the
-    /// file, or a count the body does not match, can still fault `BRepTools::Read`. Do not load a
-    /// BREP from a source you do not trust.
+    /// A file that is complete but wrong no longer faults the reader (#3490). A reference to a
+    /// shape or curve that is not in the file, a count the stream cannot supply and a token the
+    /// reader's buffer cannot hold either throw ``ImportError/importFailed(_:)`` or return what
+    /// the reader could follow. Measured on `v4.0.0-kernel.8` over 109,801 damaged files: none
+    /// faulted or hung the reader. What is returned is not validated. The shape can be invalid,
+    /// and a check or an operation on a damaged one can still fail to return (a pcurve that is a
+    /// circle of radius 0 hangs `isValid`, #3506), so check a BREP from a source you do not trust
+    /// before running anything long on it.
     ///
     /// ```swift
     /// let url = URL(fileURLWithPath: "/tmp/part.brep")
