@@ -326,6 +326,9 @@ belonging to two **retired** patches sat in this tree unnoticed and were compile
 v4.0.0-kernel.1 asset, which therefore ships thirty-one patches under a twenty-nine-patch label.
 `build-occt.sh` applies patches idempotently and never reverts, so a retired patch's edits stay
 until somebody deletes them by hand.
+`build-occt-wasm.sh` applies them through the same helper (`Scripts/lib/apply-patches.sh`), so a tree
+one script has patched builds under the other; `Scripts/test-apply-patches.sh` tests it under the
+macOS system bash (3.2) and any newer one.
 
 ```bash
 comm -23 \

@@ -24,6 +24,7 @@ on:
     paths:
       - 'Scripts/patches/**'
       - 'Scripts/build-occt.sh'
+      - 'Scripts/lib/**'
   push:
     branches:
       - main
@@ -31,6 +32,7 @@ on:
     paths:
       - 'Scripts/patches/**'
       - 'Scripts/build-occt.sh'
+      - 'Scripts/lib/**'
   workflow_dispatch:
 
 concurrency:
@@ -46,6 +48,12 @@ jobs:
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v7
+
+      # #3502. The patch-apply loop build-occt.sh and build-occt-wasm.sh share, run on a synthetic
+      # stack under /bin/bash, which is bash 3.2 on this runner (no `mapfile`). Seconds, needs only
+      # git, and it fails before the 79 minute build rather than after it.
+      - name: Test the patch-apply helper
+        run: /bin/bash Scripts/test-apply-patches.sh
 
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -86,7 +94,7 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: Libraries/OCCT.xcframework
-          key: occt-xcframework-${{ hashFiles('Scripts/patches/*.patch', 'Scripts/build-occt.sh') }}
+          key: occt-xcframework-${{ hashFiles('Scripts/patches/*.patch', 'Scripts/build-occt.sh', 'Scripts/lib/*.sh') }}
 
       # The one third-party product this build enables (every other USE_* is OFF). Without it cmake
       # fails configure outright with "Could not find headers of used third-party products".
@@ -104,7 +112,7 @@ jobs:
         uses: actions/cache/save@v6
         with:
           path: Libraries/OCCT.xcframework
-          key: occt-xcframework-${{ hashFiles('Scripts/patches/*.patch', 'Scripts/build-occt.sh') }}
+          key: occt-xcframework-${{ hashFiles('Scripts/patches/*.patch', 'Scripts/build-occt.sh', 'Scripts/lib/*.sh') }}
 
       # #2885. Two committed derivations of Libraries/occt-src, re-derived against the tree the
       # step above just patched. THIS JOB IS THE ONLY ONE THAT HAS THAT TREE: ci.yml's
@@ -163,7 +171,7 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: Libraries/OCCT.xcframework
-          key: occt-xcframework-${{ hashFiles('Scripts/patches/*.patch', 'Scripts/build-occt.sh') }}
+          key: occt-xcframework-${{ hashFiles('Scripts/patches/*.patch', 'Scripts/build-occt.sh', 'Scripts/lib/*.sh') }}
           fail-on-cache-miss: true
 
       - name: Cache SwiftPM artifacts
