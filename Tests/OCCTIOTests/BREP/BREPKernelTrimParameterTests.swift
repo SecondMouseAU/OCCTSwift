@@ -14,18 +14,15 @@ import Testing
 // record is dropped and the shapes that do not refer to it read as before. The tests therefore
 // ask that the read returns at all, and that what it returns is the box.
 //
-// Gated on `OCCTSWIFT_LOCAL=1` while the pinned asset lacks `0075`; `kernel-integration.yml` runs
-// it. The gate comes off at the repin that pins it. On a kernel without the patch the failure is
-// the process: the cases on a periodic basis end it (the surface recurses to the end of the
-// stack) and one on a basis that is not periodic never returns.
+// `v4.0.0-kernel.8` is the first asset to hold `0075`. On a kernel without it the failure is the
+// process: the cases on a periodic basis end it (the surface recurses to the end of the stack)
+// and one on a basis that is not periodic never returns.
 //
 // Every damaged file is the box with one trimmed record added to a table no shape refers to, so
 // the box reads whatever the record says. The undamaged records are the control: a reader that
 // refused every trimmed record would pass the rest.
 @Suite("BREP trim parameters must be numbers", .serialized)
 struct BREPKernelTrimParameterTests {
-
-    private static let isLocalKernel = ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"
 
     private enum Table: String, CaseIterable {
         case curve2ds = "Curve2ds"
@@ -87,7 +84,7 @@ struct BREPKernelTrimParameterTests {
             adding: record.replacingOccurrences(of: "<p>", with: parameters), to: table)
     }
 
-    @Test(.enabled(if: BREPKernelTrimParameterTests.isLocalKernel))
+    @Test
     func trimmedRecordsWithNumbersReadBack() throws {
         let cases: [(Table, String, String)] = [
             (.curves, Record.lineCurve, "0 3"), (.curves, Record.circleCurve, "0 3"),
@@ -103,7 +100,7 @@ struct BREPKernelTrimParameterTests {
     }
 
     /// Not periodic: a `nan` fails every comparison against the range, so the object was built.
-    @Test(.enabled(if: BREPKernelTrimParameterTests.isLocalKernel))
+    @Test
     func aNonNumberOnABasisThatIsNotPeriodicIsDropped() throws {
         let cases: [(Table, String, String)] = [
             (.curves, Record.lineCurve, "nan nan"), (.curves, Record.lineCurve, "nan 3"),
@@ -122,7 +119,7 @@ struct BREPKernelTrimParameterTests {
     /// Periodic: `AdjustPeriodic` looped on the parameter, and the surface recursed.
     ///
     /// The case in the issue, `10 nan nan 0 4`, is the cylinder one.
-    @Test(.enabled(if: BREPKernelTrimParameterTests.isLocalKernel))
+    @Test
     func aNonNumberOnAPeriodicBasisIsDropped() throws {
         let cases: [(Table, String, String)] = [
             (.curves, Record.circleCurve, "nan nan"), (.curves, Record.circleCurve, "nan 3"),

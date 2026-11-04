@@ -120,31 +120,34 @@ are not `Sendable`. See `Scripts/patches/README.md`'s retired `0031` entry.
 
 ## Pinned against carried
 
-**There are two pinned kernels, and they are on different patch sets right now.** The heading below
+**There are two pinned kernels, and they are on the same patch set right now.** The heading below
 means the xcframework; the wasm asset has its own section after it. Collapsing them would repeat the
 mistake the rest of this page is about.
 
 ### The xcframework
 
-`Scripts/patches/` holds fifty-nine patches, of which the pinned asset carries fifty. **These
+`Scripts/patches/` holds fifty-nine patches, of which the pinned asset carries fifty-nine. **These
 are the counts `CLAUDE.md` used to restate and no longer does** (#2954); both are derived from
 `Scripts/patches/` and `Package.swift` by `check-inventory-prose.py`, which fails the PR that lets
-this page and the tree disagree. The v4.0.0-kernel.7 asset `Package.swift` pins lacks nine of them, `0070`, `0071`, `0072`, `0073`, `0074`, `0075`, `0076`, `0077` and `0078`, so **there are nine native
-divergences**, written up below, per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md). It was
-built from a `V8_0_1` tree whose only modifications are the fifty patches it holds (the
-modified-file set was computed against the patches' own file lists, see `Package.swift`), so none of
-a retired patch's edits is in it.
+this page and the tree disagree. The v4.0.0-kernel.8 asset `Package.swift` pins lacks none of them,
+so **there is no native divergence**, per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md). It was
+built from a `V8_0_1` tree whose only modifications are the fifty-nine patches it holds (the
+modified-file set was computed against the patches' own file lists: 139 files, none unexplained, see
+`Package.swift`), so none of a retired patch's edits is in it.
 `0031` left at v4.0.0-kernel.6 and is not in either asset.
 
-**The eight open divergences.** The first three and the eighth are in the document data of a binary OCAF file, past
-the storage sections the bridge walks (#3489, follow-up to #3486 and #3477), and each is gated in
-`OCAFBinaryDocumentDataKernelReadTests` on `OCCTSWIFT_LOCAL=1`, which `kernel-integration.yml`
-runs, until the repin that pins it. The fourth and the fifth are in the BREP readers (#3490, follow-up
-to #3487), gated the same way, in `BREPKernelDamagedReadTests` and `BREPKernelRecordCountTests`. The
-sixth is in the binary shape reader (#3495) and the seventh in `BRepCheck` (#3490), gated in
-`BinToolsPositionReferenceTests` and `BREPKernelInconsistentShapeTests`.
+**The divergence that stood until v4.0.0-kernel.8 is closed.** `0070` to `0078` were merged after
+v4.0.0-kernel.7 and were live nowhere until the v4.0.0-kernel.8 rebuild pinned all nine. The table
+below is kept as the record of what each left exposed while it was unpinned; it is history now, not a
+live gap. The suites that waited on them were gated on `OCCTSWIFT_LOCAL=1` and are ungated by the
+repin: `OCAFBinaryDocumentDataKernelReadTests` (`0070` to `0072` and `0078`, the first three in the
+document data of a binary OCAF file past the storage sections the bridge walks, #3489),
+`BREPKernelDamagedReadTests` (`0073`) and `BREPKernelRecordCountTests` (`0074`) in the BREP readers
+(#3490), `BREPKernelTrimParameterTests` (`0075`, #3496), `BinToolsPositionReferenceTests` (`0076`,
+#3495) and `BREPKernelInconsistentShapeTests` (`0077`, #3490). The two bridge guards `0077` makes
+redundant stay for now (#3503).
 
-| Unpinned | What it leaves exposed |
+| Was unpinned until v4.0.0-kernel.8 | What it left exposed |
 |---|---|
 | `0070-BinObjMgt_Persistent-compares-a-size-from-the-file-without-overflow-3489` | `BinObjMgt_Persistent::GetLabel` tests `tagCount * 4` for room in `int`, so a tag count of 2^29 or more wraps to a value that passes and the loop that follows runs past the data: a reference attribute whose payload declares 2^30 tags does not return (60 s timeout, memory growing). The same product is formed by `GetIntArray`, `GetRealArray`, `GetShortRealArray` and `GetExtCharArray`, and `Position() + theSize` itself overflows for a size near `INT_MAX`. No bridge guard can bound it: the count sits inside an attribute payload only its driver reads. |
 | `0071-BinMDataStd-array-and-list-drivers-bound-a-declared-span-by-the-data-left-3489` | Fifteen binary attribute drivers allocate `last - first + 1` elements, or a declared size, before they check the record holds them: a file of about 400 bytes requests 1 to 17 GiB (`IntegerArray`, `RealArray`, `ByteArray`, `BooleanArray`, `ExtStringArray`, `ReferenceArray`, the three lists, `NamedData`; the `DimTol`, `NoteBinData`, `VisMaterial`, `GraphNode` and `Scope` sites by the same reading). Status ok on 64-bit after up to 26 s of page touching; on 32-bit wasm the allocation fails and takes every later allocation of the process with it (#3477). |
@@ -154,7 +157,7 @@ sixth is in the binary shape reader (#3495) and the seventh in `BRepCheck` (#349
 | `0075-Trimmed-curve-and-surface-refuse-a-parameter-that-is-not-a-number-3496` | `Geom_TrimmedCurve::SetTrim`, `Geom2d_TrimmedCurve::SetTrim` and the eight argument `Geom_RectangularTrimmedSurface::SetTrim` take their parameters on trust. On a periodic basis `ElCLib::AdjustPeriodic` never brings a `nan` or an infinity into range, so the curves never return and the surface never returns or recurses (`UReverse` and `VReverse` call `SetTrim` again) to the end of the stack; on a basis that is not periodic every comparison with a `nan` is false, so an object with `nan` bounds is built and faults on use. Reached from the text and binary BREP readers (`10 nan nan 0 4` in a `Surfaces` table, or the bytes of a double) and from any caller of the constructors. |
 | `0076-BinTools_ShapeReader-refuses-a-position-reference-that-leaves-the-stream-3495` | `BinTools_ShapeReader` (behind `Shape.fromBinaryData` and `Shape.loadBinary`) trusts the position a reference names and the byte after it. `BinTools_IStream::ReadReference` returns `position - delta - 1` in unsigned arithmetic, so a delta past the start of the stream wraps to a position near 2^64 and the reader goes on over end-of-file bytes. A reference to a shape or a location that is still being read is not in the position table (the entry is written when the record ends), so it is read again from inside itself: a compound that refers to the compound holding it recurses until the stack ends; a chain of references to references recurses once per link. A reference to an `EmptyShape` or `EndShape` byte returns a null that the caller takes for the end of its list. The byte after a shape reference is cast to a `TopAbs_Orientation` unchecked (an orientation of 255 faults `TopExp_Explorer`), the continuity byte of an edge to a `GeomAbs_Shape`, and a record of another kind in a location, curve, surface, polygon or triangulation slot is read as an empty one. Measured on `Scripts/repro/3494`'s `bin` matrix against `0074`: 9 of 29 reader faults, 1 of 41 spins, all 44 returned-then-faulted cases and 88 of 796 returned-then-spun cases are gone (the 20 faults and 40 spins left are all `nan` trim parameters). Left by it: a trim parameter that is not a number (#3496), a coordinate or tolerance that is not a finite number of sensible size (708 `BRepCheck_Analyzer` spins in the `bin` matrix). |
 | `0077-BRepCheck_Edge-InContext-copes-with-a-face-without-a-surface-and-an-edge-without-a-3D-curve-3490` | `BRepCheck_Edge::InContext` uses the surface of a face that has none (`Su->DynamicType()`, `Su->Transformed`) and, for an edge whose only curve is a curve on a surface, projects `occ::down_cast<GeomAdaptor_Curve>(myHCurve)` onto a planar face through a null handle (the loop over the edge's representations skips `myCref`, so the face finds no other curve on its surface). Both fault `BRepCheck_Analyzer` (`isValid`) with an uncatchable SIGSEGV, and the second needs no damaged file: a box face whose edge loses its 3D curve with `BRep_Builder::UpdateEdge(E, Handle(Geom_Curve)(), tol)`. The readers return such shapes from a file that names a surface or 3D curve it does not hold, which is how 2,208 of the 99,620 text count cases of `Scripts/repro/3494` returned a shape and then faulted. |
-| `0078-BinLDrivers-ReadSubTree-refuses-a-label-nested-too-deeply-3489` | `BinLDrivers_DocumentRetrievalDriver::ReadSubTree` recurses once per nested label and a binary OCAF file chooses its own depth: 1000 to 12000 levels load, 16000 and 20000 (a 320 KB file) overflow the 8 MB stack of the thread that opened it (SIGSEGV), at roughly 600 bytes of stack a level, and 1000 levels overflow a 512 KB worker. The bridge cannot bound it, since the nesting is in the document data after the storage sections it walks. Patched, a label nested past 512 levels is a `Message_Fail` and `PCDM_RS_UnrecognizedFileFormat`, at once. Gated in `OCAFBinaryDocumentDataKernelReadTests` on `OCCTSWIFT_LOCAL=1`. The bound is a constant sized for a 512 KB worker stack, where 700 levels load and 1000 overflow; a thread with a smaller stack can still overflow below it. |
+| `0078-BinLDrivers-ReadSubTree-refuses-a-label-nested-too-deeply-3489` | `BinLDrivers_DocumentRetrievalDriver::ReadSubTree` recurses once per nested label and a binary OCAF file chooses its own depth: 1000 to 12000 levels load, 16000 and 20000 (a 320 KB file) overflow the 8 MB stack of the thread that opened it (SIGSEGV), at roughly 600 bytes of stack a level, and 1000 levels overflow a 512 KB worker. The bridge cannot bound it, since the nesting is in the document data after the storage sections it walks. Patched, a label nested past 512 levels is a `Message_Fail` and `PCDM_RS_UnrecognizedFileFormat`, at once. The bound is a constant sized for a 512 KB worker stack, where 700 levels load and 1000 overflow; a thread with a smaller stack can still overflow below it. |
 
 **The divergence that stood until v4.0.0-kernel.7 is closed.** `0064`, `0065`, `0066`, `0068` and
 `0069` were merged after v4.0.0-kernel.6 and were live nowhere until the v4.0.0-kernel.7 rebuild
@@ -234,8 +237,8 @@ older asset. `Package.swift`'s pin block records that exception against
 
 `libOCCT-wasm.a` and its header tree are a **second** pinned asset, recorded in
 `Scripts/wasm-kernel-pin.txt` rather than in `Package.swift`, because SwiftPM has no `binaryTarget`
-for a bare static library. Both kernels carry the same patches, `0010` to `0069`; `0070` to `0078` are on neither. As of this
-writing the pinned native asset carries fifty, and so does this one, plus the eleven in
+for a bare static library. Both kernels carry the same patches, `0010` to `0078`. As of this
+writing the pinned native asset carries fifty-nine, and so does this one, plus the eleven in
 `Scripts/patches-wasi/` that only the wasm build applies. They were built from one tree in one
 sitting and published to one release tag, so **there is no divergence between the two platforms to
 record**.

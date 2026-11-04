@@ -15,8 +15,7 @@ import Testing
 // a count that points past the end of a short file is half-refused by the guard on an unpatched
 // kernel: the cases here are the ones the guard does not cover (a negative count, a product that
 // overflows, a count the 2^31 loops of an unpatched kernel never reach the end of, a reference the
-// file made up). They are gated on `OCCTSWIFT_LOCAL=1` while the pinned asset lacks `0074`;
-// `kernel-integration.yml` runs them. The gate comes off at the repin that pins it.
+// file made up). `v4.0.0-kernel.8` is the first asset to hold `0074`.
 //
 // Every damaged file is a box this test writes with one record added to a table of it that no
 // shape refers to, so the box reads whatever the record says; the record is then damaged with an
@@ -24,8 +23,6 @@ import Testing
 // refused every record would pass the rest.
 @Suite("BREP readers bound a declared count", .serialized)
 struct BREPKernelRecordCountTests {
-
-    private static let isLocalKernel = ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"
 
     /// The sections of the BREP text a record can be added to, in file order.
     private enum Table: String, CaseIterable {
@@ -95,7 +92,7 @@ struct BREPKernelRecordCountTests {
         return text
     }
 
-    @Test(.enabled(if: BREPKernelRecordCountTests.isLocalKernel))
+    @Test
     func recordsWithDeclaredCountsReadBack() throws {
         let cases: [(Table, String)] = [
             (.curve2ds, Record.curve2dBSpline), (.curves, Record.curve3dBSpline),
@@ -112,7 +109,7 @@ struct BREPKernelRecordCountTests {
     }
 
     /// A negative pole, knot or node count sized an array backwards.
-    @Test(.enabled(if: BREPKernelRecordCountTests.isLocalKernel))
+    @Test
     func aNegativeCountIsRefused() throws {
         let cases: [(Table, String, String, String)] = [
             (.curves, Record.curve3dBSpline, "7 0 0  2 3 2  ", "7 0 0  2 -1 2  "),
@@ -132,7 +129,7 @@ struct BREPKernelRecordCountTests {
     }
 
     /// A pole grid whose two counts are fine and whose product is not.
-    @Test(.enabled(if: BREPKernelRecordCountTests.isLocalKernel))
+    @Test
     func aPoleGridWhoseSizeOverflowsIsRefused() throws {
         let text = try #require(
             Self.damaged(
@@ -147,7 +144,7 @@ struct BREPKernelRecordCountTests {
     /// The bridge guard ends that read at the end of the file in the end, so the file is refused
     /// either way; an unpatched kernel takes 42 s to get there, which is what the time limit
     /// records. A reader that sizes nothing from the count refuses it in milliseconds.
-    @Test(.enabled(if: BREPKernelRecordCountTests.isLocalKernel))
+    @Test
     func aCountFarBeyondTheFileIsRefusedAtOnce() throws {
         let cases: [(Table, String, String, String)] = [
             (.curves, Record.curve3dBSpline, "7 0 0  2 3 2  ", "7 0 0  2 2147483647 2  "),
@@ -166,7 +163,7 @@ struct BREPKernelRecordCountTests {
     }
 
     /// A triangle names the nodes of its triangulation by index.
-    @Test(.enabled(if: BREPKernelRecordCountTests.isLocalKernel))
+    @Test
     func aTriangleWithANodeTheTriangulationLacksIsRefused() throws {
         for triangle in ["2 3 99 \n", "2 3 -1 \n", "0 3 1 \n"] {
             let text = try #require(
@@ -182,7 +179,7 @@ struct BREPKernelRecordCountTests {
     /// 10^8 is the stack; a written file never raises a composed location (a composed entry names
     /// single ones), so the table is written in: two translations, a location composed of both, and
     /// a power of that (`2 3 5 0`: entry 3, power 5).
-    @Test(.enabled(if: BREPKernelRecordCountTests.isLocalKernel))
+    @Test
     func aLargePowerOfAComposedLocationIsRefused() throws {
         let text = try #require(Self.boxText())
         let translation = "1\n1 0 0 5 \n0 1 0 0 \n0 0 1 0 \n"
@@ -202,7 +199,7 @@ struct BREPKernelRecordCountTests {
     ///
     /// The box has no triangulations, so any index is outside the table. The face is left without a
     /// surface, which the reader does not refuse; what it must not do is look the index up.
-    @Test(.enabled(if: BREPKernelRecordCountTests.isLocalKernel))
+    @Test
     func aFaceNamingATriangulationOutsideTheTableDoesNotLookItUp() throws {
         let text = try #require(Self.boxText())
         let damaged = try #require(

@@ -47,7 +47,7 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the fifty-four carried patches are documented in Scripts/patches/README.md
+// OCCT V8.0.1 plus the fifty-nine carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target =
     isWASI
@@ -86,10 +86,10 @@ let occtTarget: Target =
             name: "OCCT",
             path: "Libraries/OCCT.xcframework"
         )
-        // OCCT V8_0_1 + the fifty carried patches listed below.
+        // OCCT V8_0_1 + the fifty-nine carried patches listed below.
         //
         // Scripts/build-occt.sh builds V8_0_1, which absorbed ten of the previously carried patches (0001-0009 and 0013; their files are deleted,
-        // their writeups kept in Scripts/patches/README.md under "Retired patches"). The fifty that
+        // their writeups kept in Scripts/patches/README.md under "Retired patches"). The fifty-nine that
         // survive, all present in Scripts/patches/, are:
         //
         //   0010  Intf_Interference O(1) tangent-zone lookup + checkpointed breaker            #319
@@ -195,6 +195,28 @@ let occtTarget: Target =
         //   0069  OCAF binary readers report a damaged file through the reader status          #3330
         //         instead of a null-header SIGSEGV or a section loop that never ends. Pinned
         //         by v4.0.0-kernel.7
+        //   0070  BinObjMgt_Persistent room checks divide instead of multiplying, so a         #3489
+        //         tag count of 2^29 or more no longer runs a loop past the data.
+        //         Pinned by v4.0.0-kernel.8
+        //   0071  Fifteen binary attribute drivers compare a declared span with the            #3489
+        //         bytes left in the record before they allocate it. Pinned by v4.0.0-kernel.8
+        //   0072  Five BinTools set readers read a table name with the buffer size,            #3489
+        //         where an unbounded >> overflowed a char[255]. Pinned by v4.0.0-kernel.8
+        //   0073  The text shape readers carry the buffer size, stop each loop on a            #3490
+        //         failed stream, refuse an index outside its table and read a 32 character
+        //         number whole. Pinned by v4.0.0-kernel.8
+        //   0074  The shape readers refuse a count the stream cannot hold before an            #3490
+        //         array is sized from it. Pinned by v4.0.0-kernel.8
+        //   0075  A trimmed curve or surface refuses a parameter that is not finite            #3496
+        //         with Standard_ConstructionError. Pinned by v4.0.0-kernel.8
+        //   0076  BinTools_ShapeReader checks the position a reference names and the           #3495
+        //         byte after it. Pinned by v4.0.0-kernel.8
+        //   0077  BRepCheck_Edge::InContext reports NoCurveOnSurface for a face with           #3490
+        //         no surface and an edge with only a curve on a surface, where it read a null
+        //         handle. Pinned by v4.0.0-kernel.8
+        //   0078  BinLDrivers_DocumentRetrievalDriver::ReadSubTree refuses a label             #3489
+        //         nested past 512 levels, where a file chose its own depth. Pinned by
+        //         v4.0.0-kernel.8
         //
         // This list said "fifteen" above a list of eleven until the release check ran, which is the
         // #585 failure shape in miniature: `ls Scripts/patches/*.patch | wc -l` agreed with the count
@@ -209,7 +231,7 @@ let occtTarget: Target =
         //
         // It derives from each patch's own text a header line, a string literal, a thread_local
         // wrapper symbol or a name the patch introduces, then looks for it in all three slices. On
-        // this asset it answers 16 confirmed, 13 not derivable, 0 absent, in about seven seconds. It
+        // this asset it answers 28 confirmed, 31 not derivable, 0 absent, in about seven seconds. It
         // also looks for the RETIRED patches, which is what nothing did before #2190. THAT is the step
         // to run at a repin, before trusting any sentence in this block.
         //
@@ -256,7 +278,7 @@ let occtTarget: Target =
         //     They are the only two patches in the tree with no CI coverage of any kind, which is
         //     worth knowing before trusting "the fix is in the kernel" about either.
         //
-        // Pinned to the v4.0.0-kernel.7 pre-release asset: upstream V8_0_1 plus the fifty patches listed above,
+        // Pinned to the v4.0.0-kernel.8 pre-release asset: upstream V8_0_1 plus the fifty-nine patches listed above,
         // and nothing else. That was NOT true of v4.0.0-kernel.1, which carried two patches that are
         // not in Scripts/patches/ at all, so read the next paragraph before treating any older asset's
         // enumeration as its contents.
@@ -285,22 +307,21 @@ let occtTarget: Target =
         // probe. Nothing a consumer can call behaves differently.
         //
         // THAT DIVERGENCE IS CLOSED. The two strays above belonged to the v4.0.0-kernel.1 asset. The
-        // pin below is now v4.0.0-kernel.7, built from a tree whose only modifications are the carried
+        // pin below is now v4.0.0-kernel.8, built from a tree whose only modifications are the carried
         // patches, so neither is present: step 1 of "Shipping a rebuild" computes zero modified files
-        // that no carried patch explains, over 102 as of 2026-10-16 (v4.0.0-kernel.6 computed the same
-        // over 93, v4.0.0-kernel.5 over 96, v4.0.0-kernel.4 over 92, v4.0.0-kernel.3 over 79 and v4.0.0-kernel.2 over 78, before 0043 added its one).
+        // that no carried patch explains, over 139 as of 2026-11-01 (v4.0.0-kernel.7 computed the same
+        // over 102, v4.0.0-kernel.6 over 93, v4.0.0-kernel.5 over 96, v4.0.0-kernel.4 over 92, v4.0.0-kernel.3 over 79 and v4.0.0-kernel.2 over 78, before 0043 added its one).
         // The two ACKNOWLEDGED rows in
         // check-pinned-asset-patches.py stay keyed on v4.0.0-kernel.1 and so expire on their own here,
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The pinned asset lacks nine of them, 0070, 0071, 0072, 0073, 0074, 0075, 0076, 0077 and
-        // 0078: it holds fifty and Scripts/patches/ holds fifty-nine, so those nine are exercised by
-        // no CI job until the next repin.
-        // 0064 (#3335), 0065 (#3350), 0066 (#3464), 0068 (#3449) and
-        // 0069 (#3330) were carried after v4.0.0-kernel.6 and are pinned by v4.0.0-kernel.7; the
-        // rows for 0053 through 0069 below are history in the way the rows for 0044 through 0052
-        // became at v4.0.0-kernel.4. kernel.7 retired nothing: 0031 left at kernel.6.
+        // The pinned asset lacks none of them: it holds fifty-nine and Scripts/patches/ holds
+        // fifty-nine, so there is no untested patch. 0070 through 0072 and 0078 (#3489), 0073,
+        // 0074 and 0077 (#3490), 0075 (#3496) and 0076 (#3495) were carried after
+        // v4.0.0-kernel.7 and are pinned by v4.0.0-kernel.8; the rows for 0053 through 0078 below
+        // are history in the way the rows for 0044 through 0052 became at v4.0.0-kernel.4.
+        // kernel.8 retired nothing: 0031 left at kernel.6.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
         // investigate rather than an expected one, which is the opposite of what this paragraph said
         // while kernel.1 was pinned.
@@ -344,16 +365,15 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds fifty-nine patches and the pinned asset holds fifty of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 59 against a list of 50,
-        // and the nine that the list lacks are 0070, 0071, 0072, 0073, 0074, 0075, 0076, 0077 and
-        // 0078, written up below. The
-        // v4.0.0-kernel.4 rebuild closed the divergence that 0044 had
+        // Scripts/patches/ holds fifty-nine patches and the pinned asset holds the same fifty-nine,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 59 against a list of 59,
+        // and there is no divergence. The v4.0.0-kernel.4 rebuild closed the divergence that 0044 had
         // opened and that 0045 through 0052 widened, the v4.0.0-kernel.5 rebuild closed the one that
         // 0053 through 0057 opened, the v4.0.0-kernel.6 rebuild closed the one that 0058 and 0059
-        // opened, and the v4.0.0-kernel.7 rebuild closed the one that 0064 through 0069 opened. The
-        // rows that follow are kept as the record of what each patch does and which bridge
-        // mitigation it does or does not retire:
+        // opened, the v4.0.0-kernel.7 rebuild closed the one that 0064 through 0069 opened, and the
+        // v4.0.0-kernel.8 rebuild closed the one that 0070 through 0078 opened. The rows that
+        // follow are kept as the record of what each patch does and which bridge mitigation it
+        // does or does not retire:
         //
         //   0044  Extrema_ExtSS::Points / Extrema_ExtCS::Points bound against the point       #2840
         //         sequence rather than against NbExt(), which counts mySqDist and so counts
@@ -567,17 +587,17 @@ let occtTarget: Target =
         //         reference indices those sections hold, bounded against the table sizes the file
         //         itself declares. The document data after `edata` is still not walked: array
         //         attribute spans, label-tag counts, label nesting depth and shape-section
-        //         tokens are measured and were reachable; #3489 carries 0070 through 0072 for
-        //         all but the nesting depth (known-occt-bugs.md).
+        //         tokens are measured and were reachable; #3489 carries 0070 through 0072 and
+        //         0078 (known-occt-bugs.md).
         //
         //   0070  BinObjMgt_Persistent::noMoreData(theSize) tested Position() + theSize > mySize
         //         and GetLabel and the four Get...Array methods formed count * item size first,
         //         both in int, so a tag count of 2^29 or more passed the room check and the loop
         //         that follows ran past the data without returning. The comparison is now
         //         theSize > mySize - Position(), and the multiplied callers ask the new
-        //         HasItems(count, itemSize), which divides. NOT in v4.0.0-kernel.7;
-        //         OCAFBinaryDocumentDataKernelReadTests is gated on OCCTSWIFT_LOCAL=1 until the
-        //         next repin (#3489).
+        //         HasItems(count, itemSize), which divides. Built into v4.0.0-kernel.8;
+        //         OCAFBinaryDocumentDataKernelReadTests was gated on OCCTSWIFT_LOCAL=1 until the
+        //         repin that pinned this, and is ungated by the same change (#3489).
         //
         //   0071  Fifteen binary attribute drivers (IntegerArray, RealArray, ByteArray,
         //         BooleanArray, ExtStringArray, ReferenceArray, the Integer, Real and Boolean
@@ -586,13 +606,13 @@ let occtTarget: Target =
         //         the record holds them: 1 to 17 GiB from a ~400 byte file, and on a 32-bit
         //         wasm module the allocator failure #3477 describes. Each now compares the span
         //         with the bytes left in the record through HasItems, by division, so nothing
-        //         multiplies. NOT in v4.0.0-kernel.7; same gate (#3489).
+        //         multiplies. Built into v4.0.0-kernel.8; same suite, ungated by the same change (#3489).
         //
         //   0072  Five BinTools set readers extracted the name of their table into a
         //         char[255] with an unbounded >>: a 4 KB token killed the process and a 1 MiB
         //         token did not return, reached through a TOC entry named SHAPE_SECTION_POS at
-        //         any offset. The read now carries the buffer size. NOT in v4.0.0-kernel.7;
-        //         same gate (#3489).
+        //         any offset. The read now carries the buffer size. Built into v4.0.0-kernel.8;
+        //         same suite, ungated by the same change (#3489).
         //
         //   0073  The text shape readers (BRepTools_ShapeSet, TopTools_ShapeSet,
         //         TopTools_LocationSet, GeomTools_{Surface,Curve,Curve2d}Set, Poly, and the
@@ -603,9 +623,9 @@ let occtTarget: Target =
         //         characters or more and read its tail as the next number (OCCT#1560). The reads
         //         carry the buffer size, a failed stream throws or stops each loop, a shape or
         //         location index outside its table is refused, and a trimmed or offset curve or
-        //         surface whose basis did not read is not built. NOT in v4.0.0-kernel.7;
-        //         BREPKernelDamagedReadTests is gated on OCCTSWIFT_LOCAL=1 until the next repin
-        //         (#3490).
+        //         surface whose basis did not read is left null. Built into v4.0.0-kernel.8;
+        //         BREPKernelDamagedReadTests was gated on OCCTSWIFT_LOCAL=1 until the repin that
+        //         pinned this, and is ungated by the same change (#3490).
         //
         //   0074  The text and binary shape readers sized an array from a count the file
         //         declared before reading the first element: a negative pole, knot or node count
@@ -613,9 +633,9 @@ let occtTarget: Target =
         //         65536 by 65536 overflowed its product, and a triangle or a polygon named nodes
         //         its triangulation lacks. Standard_IStreamHasItems refuses a count the rest of
         //         the stream cannot hold; a polygon, triangulation, curve, surface, location or
-        //         sub-shape reference outside its table is skipped or refused. NOT in
-        //         v4.0.0-kernel.7; BREPKernelRecordCountTests is gated on OCCTSWIFT_LOCAL=1 until
-        //         the next repin (#3490).
+        //         sub-shape reference outside its table is skipped or refused. Built into
+        //         v4.0.0-kernel.8; BREPKernelRecordCountTests was gated on OCCTSWIFT_LOCAL=1 until
+        //         the repin that pinned this, and is ungated by the same change (#3490).
         //
         //   0075  A trimmed curve or surface took its parameters on trust: a nan or an infinity
         //         failed every comparison against the range, or looped ElCLib::AdjustPeriodic on
@@ -623,30 +643,32 @@ let occtTarget: Target =
         //         Geom_RectangularTrimmedSurface never returned, recursed to the end of the stack,
         //         or built an object with nan bounds. SetTrim refuses a parameter that is not
         //         finite with Standard_ConstructionError, which the BREP readers turn into a
-        //         refused record. NOT in v4.0.0-kernel.7; BREPKernelTrimParameterTests is gated
-        //         on OCCTSWIFT_LOCAL=1 until the next repin (#3496).
+        //         refused record. Built into v4.0.0-kernel.8; BREPKernelTrimParameterTests was
+        //         gated on OCCTSWIFT_LOCAL=1 until the repin that pinned this, and is ungated by
+        //         the same change (#3496).
         //
         //   0076  BinTools_ShapeReader trusted the position a reference names and the byte
         //         after it: a delta past the start of the stream wrapped to a position near 2^64,
         //         a reference to a shape or location still being read recursed until the stack
         //         ended, an orientation byte of 4 or more reached TopExp_Explorer, and a record
-        //         of the wrong kind in a slot was read as an empty one. NOT in v4.0.0-kernel.7;
-        //         BinToolsPositionReferenceTests is gated on OCCTSWIFT_LOCAL=1 until the next
-        //         repin (#3495).
+        //         of the wrong kind in a slot was read as an empty one. Built into v4.0.0-kernel.8;
+        //         BinToolsPositionReferenceTests was gated on OCCTSWIFT_LOCAL=1 until the repin
+        //         that pinned this, and is ungated by the same change (#3495).
         //
         //   0077  BRepCheck_Edge::InContext used the surface of a face that had none, and
         //         projected "the 3D curve" of an edge that had only a curve on a surface onto a
         //         planar face, through a null handle. Both fault BRepCheck_Analyzer; both now
-        //         report NoCurveOnSurface. NOT in v4.0.0-kernel.7;
-        //         BREPKernelInconsistentShapeTests is gated on OCCTSWIFT_LOCAL=1 until the next
-        //         repin (#3490).
+        //         report NoCurveOnSurface. Built into v4.0.0-kernel.8;
+        //         BREPKernelInconsistentShapeTests was gated on OCCTSWIFT_LOCAL=1 until the repin
+        //         that pinned this, and is ungated by the same change (#3490).
         //
         //   0078  BinLDrivers_DocumentRetrievalDriver::ReadSubTree recursed once per nested
         //         label and a file chose its own depth: 20000 levels, a 320 KB file, overflowed
         //         the 8 MB stack of the thread that opened it, where 1000 load. A label nested
         //         past 512 levels is now a Message_Fail with PCDM_RS_UnrecognizedFileFormat.
-        //         NOT in v4.0.0-kernel.7; OCAFBinaryDocumentDataKernelReadTests is gated on
-        //         OCCTSWIFT_LOCAL=1 until the next repin (#3489).
+        //         Built into v4.0.0-kernel.8; OCAFBinaryDocumentDataKernelReadTests was gated on
+        //         OCCTSWIFT_LOCAL=1 until the repin that pinned this, and is ungated by the same
+        //         change (#3489).
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
@@ -752,8 +774,8 @@ let occtTarget: Target =
         : .binaryTarget(
             name: "OCCT",
             url:
-                "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.7/OCCT.xcframework.zip",
-            checksum: "1a85252a5b9480d730aa40222259f6ad5e676128605671213e748ae94bb76bc9"
+                "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.8/OCCT.xcframework.zip",
+            checksum: "8d737fb2b4d4eaf2079ca1c648076b6ad0f00f4d28239f96241ecb47d15880e7"
         )
 
 // OCCTBridge is 16 Objective-C++ files / ~62K lines wrapping the OCCT header tree; SwiftPM recompiles

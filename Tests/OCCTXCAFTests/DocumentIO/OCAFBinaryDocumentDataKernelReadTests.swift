@@ -7,6 +7,19 @@ import Testing
     import Darwin
 #endif
 
+// `.timeLimit` is not applied on WASI. The runner's single-threaded timer reports "Time limit was
+// exceeded" for a body that finished in milliseconds, on every test that carries the trait and on
+// none that does not (measured here: each load takes under 10 ms and the test still fails after
+// exactly its limit). A hang on wasm is caught by the suite's wall-clock cap in
+// `Scripts/run-wasm-tests.sh`. `Issue3100BuilderHangTests` records the same finding.
+#if os(WASI)
+    private let hangLimit: ConditionTrait = .enabled(if: true)
+    private let longHangLimit: ConditionTrait = .enabled(if: true)
+#else
+    private let hangLimit: TimeLimitTrait = .timeLimit(.minutes(1))
+    private let longHangLimit: TimeLimitTrait = .timeLimit(.minutes(2))
+#endif
+
 // #3489 (follow-up to #3486): four hazards in the document data of a binary OCAF file, past the
 // storage sections the bridge walks, that only a kernel change can bound. Carried patches
 // `0070` to `0072` fix three of them, and `0078` the fourth: label nesting.
@@ -33,10 +46,8 @@ import Testing
 // wrote are read back with their values, so a builder that made files nothing reads could not pass
 // for a fix.
 //
-// Gated on `OCCTSWIFT_LOCAL=1` while the pinned asset lacks the patches: all four classes
-// below hang or kill the test process on an unpatched kernel, which is what a test of this fix is
-// for, and not something `main` should run. `kernel-integration.yml` runs it. The gate comes off
-// at the repin that pins `0070` to `0072` and `0078`.
+// `v4.0.0-kernel.8` is the first asset to hold `0070` to `0072` and `0078`. All four classes below
+// hang or kill the test process on a kernel without them.
 //
 // The nesting bound is a constant, 512 levels, and stack depth is a property of the thread: a
 // thread with a stack under about 400 KB can still overflow below it. OCCT has no depth guard to
@@ -48,8 +59,6 @@ import Testing
 // allocation itself, under the #3477 interposer, and shows each of those at 0 bytes with the patch.
 @Suite("Binary OCAF document data is bounded by the file", .serialized)
 struct OCAFBinaryDocumentDataKernelReadTests {
-
-    private static let isLocalKernel = ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"
 
     // MARK: - The file builder
 
@@ -233,8 +242,7 @@ struct OCAFBinaryDocumentDataKernelReadTests {
 
     @Test(
         "A declared array or list span the record cannot hold is refused before it is allocated",
-        .enabled(if: OCAFBinaryDocumentDataKernelReadTests.isLocalKernel),
-        .timeLimit(.minutes(2)))
+        longHangLimit)
     func declaredSpanIsBoundedByTheRecord() throws {
         for c in Self.spanCases {
             let bytes = Self.document(kind: c.kind, payload: Blob.ints(1, c.span))
@@ -267,8 +275,7 @@ struct OCAFBinaryDocumentDataKernelReadTests {
     }
 
     @Test(
-        "A span the record does hold loads, so the bound is not a refusal of every array",
-        .enabled(if: OCAFBinaryDocumentDataKernelReadTests.isLocalKernel))
+        "A span the record does hold loads, so the bound is not a refusal of every array")
     func recordedSpanLoads() throws {
         // The list and the byte array are read back through the document; the rest load. Tag 0 is
         // the document's Main label (`getLabelForTag`), 0:1, which is the child with tag 1 of the
@@ -299,8 +306,7 @@ struct OCAFBinaryDocumentDataKernelReadTests {
 
     #if arch(wasm32)
         @Test(
-            "A span no 32-bit address space can hold does not poison the allocator",
-            .enabled(if: OCAFBinaryDocumentDataKernelReadTests.isLocalKernel))
+            "A span no 32-bit address space can hold does not poison the allocator")
         func spanPastTheAddressSpace() throws {
             for kind in [
                 "TDataStd_IntegerArray", "TDataStd_RealArray", "TDataStd_ByteArray",
@@ -319,8 +325,7 @@ struct OCAFBinaryDocumentDataKernelReadTests {
 
     @Test(
         "A label with a tag count the record cannot hold returns",
-        .enabled(if: OCAFBinaryDocumentDataKernelReadTests.isLocalKernel),
-        .timeLimit(.minutes(1)))
+        hangLimit)
     func tagCountIsBoundedByTheRecord() throws {
         // `count * 4` wraps from 2^29: to Int32.min, to 0 at 2^30, and to -4 at Int32.max. Each
         // passed the old test for room, and the loop then ran `count` times past the data.
@@ -377,8 +382,7 @@ struct OCAFBinaryDocumentDataKernelReadTests {
 
     @Test(
         "A document nested far past any real one is refused, not read until the stack is gone",
-        .enabled(if: OCAFBinaryDocumentDataKernelReadTests.isLocalKernel),
-        .timeLimit(.minutes(1)))
+        hangLimit)
     func labelNestingIsBounded() throws {
         // 20000 levels is a 320 KB file and overflowed the 8 MB stack of the thread that read it.
         for depth in [600, 5000, 20000] {
@@ -407,8 +411,7 @@ struct OCAFBinaryDocumentDataKernelReadTests {
 
     @Test(
         "A table name longer than the reader's buffer is refused, not written past it",
-        .enabled(if: OCAFBinaryDocumentDataKernelReadTests.isLocalKernel),
-        .timeLimit(.minutes(1)))
+        hangLimit)
     func tableNameTokenIsBoundedByTheBuffer() throws {
         // Five of the eight tables read their own name into a 255 byte buffer: the ones named here.
         for name in ["Locations", "Curve2ds", "Curves", "Surfaces", "TShapes"] {
@@ -424,8 +427,7 @@ struct OCAFBinaryDocumentDataKernelReadTests {
 
     @Test(
         "A megabyte table name returns",
-        .enabled(if: OCAFBinaryDocumentDataKernelReadTests.isLocalKernel),
-        .timeLimit(.minutes(1)))
+        hangLimit)
     func megabyteTableName() throws {
         let section = Self.shapeHeader + [UInt8](repeating: 0x41, count: 1 << 20)
         let (doc, status) = try load(Self.document(shapeSection: section))
