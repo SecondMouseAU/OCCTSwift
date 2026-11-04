@@ -20,17 +20,14 @@ import Testing
 // `fromBREPString` reads through a stream that throws where the text ends (the bridge guard),
 // which already refuses a cut file and an overlong word before the reader sees them. These tests
 // therefore only fail on an unpatched kernel for what the guard does not cover: a reference the
-// file made up, a number of 32 characters or more, and the loops that spin on a flag. They are
-// gated on `OCCTSWIFT_LOCAL=1` while the pinned asset lacks `0073`; `kernel-integration.yml` runs
-// them. The gate comes off at the repin that pins it.
+// file made up, a number of 32 characters or more, and the loops that spin on a flag.
+// `v4.0.0-kernel.8` is the first asset to hold `0073`.
 //
 // Every damaged file is made from a box this test writes, with an edit that is checked to have
 // changed the text, so a stale pattern cannot turn a case into a test of the undamaged file. The
 // undamaged round trip is the control: a reader that refused everything would pass the rest.
 @Suite("BREP text reader keeps to the stream", .serialized)
 struct BREPKernelDamagedReadTests {
-
-    private static let isLocalKernel = ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"
 
     private static func boxText() -> String? {
         Shape.box(width: 10, height: 20, depth: 30)?.toBREPString()
@@ -46,7 +43,7 @@ struct BREPKernelDamagedReadTests {
         Shape.fromBREPString(text)?.volume
     }
 
-    @Test(.enabled(if: BREPKernelDamagedReadTests.isLocalKernel))
+    @Test
     func undamagedTextReadsBack() throws {
         let text = try #require(Self.boxText())
         let volume = try #require(Self.volume(of: text))
@@ -57,7 +54,7 @@ struct BREPKernelDamagedReadTests {
     ///
     /// Almost all are refused; the few that drop only the white space after the root reference are
     /// the whole file.
-    @Test(.enabled(if: BREPKernelDamagedReadTests.isLocalKernel))
+    @Test
     func textCutAnywhereIsRefusedOrIsTheWholeShape() throws {
         let text = try #require(Self.boxText())
         let bytes = Array(text.utf8)
@@ -76,7 +73,7 @@ struct BREPKernelDamagedReadTests {
     }
 
     /// OCCT#1608: a record that ends after its flags. `val` kept its last value and the loop never ended.
-    @Test(.enabled(if: BREPKernelDamagedReadTests.isLocalKernel))
+    @Test
     func textEndingInsideAnEdgeOrAVertexIsRefused() {
         let head =
             "DBRep_DrawableShape\n\nCASCADE Topology V1, (c) Matra-Datavision\nLocations 0\n"
@@ -86,7 +83,7 @@ struct BREPKernelDamagedReadTests {
         #expect(Shape.fromBREPString(head + "Ve\n1e-07\n0 0 0\n") == nil)
     }
 
-    @Test(.enabled(if: BREPKernelDamagedReadTests.isLocalKernel))
+    @Test
     func wordsLongerThanTheReadersBufferAreRefused() throws {
         let text = try #require(Self.boxText())
         for length in [255, 400, 70_000] {
@@ -98,7 +95,7 @@ struct BREPKernelDamagedReadTests {
         }
     }
 
-    @Test(.enabled(if: BREPKernelDamagedReadTests.isLocalKernel))
+    @Test
     func referencesOutsideTheTablesAreRefused() throws {
         let text = try #require(Self.boxText())
         // A sub-shape reference past the table, then roots past it, before it and far past it.
@@ -116,7 +113,7 @@ struct BREPKernelDamagedReadTests {
     ///
     /// When that read gives nothing the constructor dereferenced a null basis. Type 9 is an offset
     /// curve, 8 a trimmed one, 99 a type nothing reads.
-    @Test(.enabled(if: BREPKernelDamagedReadTests.isLocalKernel))
+    @Test
     func curvesWithoutABasisAreRefused() throws {
         let text = try #require(Self.boxText())
         let curve3d = "1 -5 -10 -15 0 0 1 "
@@ -136,7 +133,7 @@ struct BREPKernelDamagedReadTests {
     /// A table of two locations whose second is built from a first that is there reads; built from
     /// an index that is not, it is refused. The box has no location of its own, so the table is
     /// written in: one translation, then a location composed of it (`2 1 1 0`: entry 1, power 1).
-    @Test(.enabled(if: BREPKernelDamagedReadTests.isLocalKernel))
+    @Test
     func aComposedLocationOutsideTheTableIsRefused() throws {
         let text = try #require(Self.boxText())
         let translation = "1\n1 0 0 5 \n0 1 0 0 \n0 0 1 0 \n"
@@ -154,7 +151,7 @@ struct BREPKernelDamagedReadTests {
     ///
     /// The vertex at z = 15 is written with 43 characters as a decimal and 44 as an exponent; the box
     /// is the same box.
-    @Test(.enabled(if: BREPKernelDamagedReadTests.isLocalKernel))
+    @Test
     func aNumberLongerThanTheBufferIsReadWhole() throws {
         let text = try #require(Self.boxText())
         for number in [
@@ -174,7 +171,7 @@ struct BREPKernelDamagedReadTests {
     /// extracts, but the bridge's end-of-stream check refuses it: a written BREP ends in a space,
     /// and a number ended by the end of the file is the mark of a cut. Relaxing the bridge is a
     /// separate decision, so this records the refusal.
-    @Test(.enabled(if: BREPKernelDamagedReadTests.isLocalKernel))
+    @Test
     func textWithoutTrailingWhiteSpaceIsRefusedByTheBridge() throws {
         let text = try #require(Self.boxText())
         let stripped = String(text.reversed().drop(while: { $0.isWhitespace }).reversed())
