@@ -1,0 +1,111 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Data - A trimmed curve or surface refuses a parameter that is not a
+ finite number
+
+Geom_TrimmedCurve::SetTrim, Geom2d_TrimmedCurve::SetTrim and the eight argument overload of
+Geom_RectangularTrimmedSurface::SetTrim take their two (four) parameters on trust. A nan or an
+infinity fails every comparison the constructors make against the range, or loops on it:
+ - a basis that is periodic: the surface always hands the parameters to ElCLib::AdjustPeriodic, and
+   the curves do when theAdjustPeriodic is set, which shifts a parameter by whole periods until it
+   is in range; a nan or an infinity never is. Geom_RectangularTrimmedSurface then recurses
+   (UReverse and VReverse call SetTrim again) until the stack ends. Without the adjustment the
+   curves are built with the parameter as it is.
+ - a basis that is not periodic: every comparison with a nan is false, so neither the order of the
+   two parameters nor the range check fires, and an object is built whose bounds are nan; it faults
+   or never returns on its first use. An infinity is refused only by a basis whose own bound is
+   finite.
+The range checks that follow (U1 == U2, parameters out of range) already throw
+Standard_ConstructionError, and GeomTools_CurveSet, Curve2dSet and SurfaceSet turn that into a null
+record, but they cannot see a nan. Reached from the BREP text and binary readers (a damaged
+parameter such as '10 nan nan 0 4' in a Surfaces table), and from any caller of the constructors.
+
+One rule: a parameter that is not finite is refused with Standard_ConstructionError before anything
+is compared or adjusted. The check is a throw statement, which the build's No_Exception does not
+remove. Precision::Infinite() (2e100), which the unbounded curves and surfaces report for their
+bounds, is finite and is accepted as before. A parameter that is only unused (UTrim or VTrim false)
+is not looked at.
+---
+diff --git a/src/ModelingData/TKG2d/Geom2d/Geom2d_TrimmedCurve.cxx b/src/ModelingData/TKG2d/Geom2d/Geom2d_TrimmedCurve.cxx
+--- a/src/ModelingData/TKG2d/Geom2d/Geom2d_TrimmedCurve.cxx
++++ b/src/ModelingData/TKG2d/Geom2d/Geom2d_TrimmedCurve.cxx
+@@ -31,6 +31,8 @@
+ #include <Standard_RangeError.hxx>
+ #include <Standard_Type.hxx>
+ 
++#include <cmath>
++
+ IMPLEMENT_STANDARD_RTTIEXT(Geom2d_TrimmedCurve, Geom2d_BoundedCurve)
+ 
+ typedef Geom2d_TrimmedCurve TrimmedCurve;
+@@ -101,6 +103,10 @@ void Geom2d_TrimmedCurve::SetTrim(const double U1,
+                                   const bool   theAdjustPeriodic)
+ {
+   bool sameSense = true;
++  if (!std::isfinite(U1) || !std::isfinite(U2))
++  {
++    throw Standard_ConstructionError("Geom2d_TrimmedCurve::parameter is not a finite number");
++  }
+   if (U1 == U2)
+   {
+     throw Standard_ConstructionError("Geom2d_TrimmedCurve::U1 == U2");
+diff --git a/src/ModelingData/TKG3d/Geom/Geom_RectangularTrimmedSurface.cxx b/src/ModelingData/TKG3d/Geom/Geom_RectangularTrimmedSurface.cxx
+--- a/src/ModelingData/TKG3d/Geom/Geom_RectangularTrimmedSurface.cxx
++++ b/src/ModelingData/TKG3d/Geom/Geom_RectangularTrimmedSurface.cxx
+@@ -36,6 +36,8 @@
+ #include <Standard_RangeError.hxx>
+ #include <Standard_Type.hxx>
+ 
++#include <cmath>
++
+ IMPLEMENT_STANDARD_RTTIEXT(Geom_RectangularTrimmedSurface, Geom_BoundedSurface)
+ 
+ typedef Geom_RectangularTrimmedSurface RectangularTrimmedSurface;
+@@ -232,6 +234,12 @@ void Geom_RectangularTrimmedSurface::SetTrim(const double U1,
+   }
+   else
+   {
++    if (!std::isfinite(U1) || !std::isfinite(U2))
++    {
++      throw Standard_ConstructionError(
++        "Geom_RectangularTrimmedSurface::U parameter is not a finite number");
++    }
++
+     if (U1 == U2)
+     {
+       throw Standard_ConstructionError("Geom_RectangularTrimmedSurface::U1==U2");
+@@ -283,6 +291,12 @@ void Geom_RectangularTrimmedSurface::SetTrim(const double U1,
+   }
+   else
+   {
++    if (!std::isfinite(V1) || !std::isfinite(V2))
++    {
++      throw Standard_ConstructionError(
++        "Geom_RectangularTrimmedSurface::V parameter is not a finite number");
++    }
++
+     if (V1 == V2)
+     {
+       throw Standard_ConstructionError("Geom_RectangularTrimmedSurface::V1==V2");
+diff --git a/src/ModelingData/TKG3d/Geom/Geom_TrimmedCurve.cxx b/src/ModelingData/TKG3d/Geom/Geom_TrimmedCurve.cxx
+--- a/src/ModelingData/TKG3d/Geom/Geom_TrimmedCurve.cxx
++++ b/src/ModelingData/TKG3d/Geom/Geom_TrimmedCurve.cxx
+@@ -31,6 +31,8 @@
+ #include <Standard_RangeError.hxx>
+ #include <Standard_Type.hxx>
+ 
++#include <cmath>
++
+ IMPLEMENT_STANDARD_RTTIEXT(Geom_TrimmedCurve, Geom_BoundedCurve)
+ 
+ typedef Geom_TrimmedCurve TrimmedCurve;
+@@ -98,6 +100,10 @@ void Geom_TrimmedCurve::SetTrim(const double U1,
+                                 const bool   theAdjustPeriodic)
+ {
+   bool sameSense = true;
++  if (!std::isfinite(U1) || !std::isfinite(U2))
++  {
++    throw Standard_ConstructionError("Geom_TrimmedCurve::parameter is not a finite number");
++  }
+   if (U1 == U2)
+   {
+     throw Standard_ConstructionError("Geom_TrimmedCurve::U1 == U2");

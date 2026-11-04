@@ -21,7 +21,7 @@ retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), a
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry), and
 `0031` retired 2026-10-10 at the `v4.0.0-kernel.6` repin (#3065: the supported pattern is one
 adaptor per worker, so the lock it added is not needed).
-The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0066, 0068–0074, 0076–0078.
+The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0066, 0068–0078.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -3734,6 +3734,25 @@ The classes of `Scripts/repro/3487` that `0073` was measured on, unthinned on `0
 
 **Retire** once the bundled OCCT includes this fix.
 
+## 0075-Trimmed-curve-and-surface-refuse-a-parameter-that-is-not-a-number-3496.patch
+
+**A trimmed curve or surface refuses a parameter that is not a finite number** ([#3496](https://github.com/SecondMouseAU/OCCTSwift/issues/3496), follow-up to [#3490](https://github.com/SecondMouseAU/OCCTSwift/issues/3490) and `0074`; not filed upstream).
+
+`Geom_TrimmedCurve::SetTrim`, `Geom2d_TrimmedCurve::SetTrim` and the eight argument `Geom_RectangularTrimmedSurface::SetTrim` take their parameters on trust. Their range checks (`U1 == U2`, parameters out of range) compare them, and a `nan` fails every comparison; an infinity is refused only by a basis whose own bound is finite. The consequences, by basis:
+
+1. **Periodic.** `Geom_RectangularTrimmedSurface::SetTrim` always hands the parameters to `ElCLib::AdjustPeriodic`, and the curves do when `theAdjustPeriodic` is set; a `nan` or an infinity is never in range. The surface recurses through `UReverse` and `VReverse` (each calls `SetTrim` again) to the end of the stack: `10 nan nan 0 4` in the `Surfaces` table of a complete BREP faults `BRepTools::Read`. Without the adjustment the curves are built with the parameter as it is.
+2. **Not periodic.** Neither the order of the two parameters nor the range check fires for a `nan`, so an object with `nan` bounds is built and faults or never returns on use (`10 inf 5 0 4` returns a shape that faults on use).
+
+Reached from the text and binary BREP readers (`GeomTools_{Curve,Curve2d,Surface}Set`, `BinTools_{Curve,Curve2d,Surface}Set`: 34 of 185,040 cases of the `BinTools::Read` count matrix of `Scripts/repro/3494/counts.py` and 60 of 156,474 of `BinTools_ShapeReader` were the four bytes of a trim parameter) and from any caller of the constructors.
+
+**The rule**, one for every site: a parameter that is not finite (`std::isfinite`) is refused with `Standard_ConstructionError` before anything is compared or adjusted. It is a `throw` statement, which the build's `No_Exception` does not remove ([`okf/policies/occt-validation-is-compiled-out.md`](../../okf/policies/occt-validation-is-compiled-out.md)), and the neighbouring checks throw the same. The readers already turn it into a null record, so the file is refused. `Precision::Infinite()` (2e100), which unbounded curves and surfaces report for their bounds, is finite and is accepted as before. The surface checks a direction only when that direction is trimmed.
+
+**Measured** on the `v4.0.0-kernel.7` slice with the three translation units recompiled with its flags (`-O2 -DNDEBUG -DNo_Exception`) from the unpatched and from the patched source and swapped into a copy with `ar r`; `BREPKernelTrimParameterTests` (a box plus one trimmed record in a table nothing refers to). Without the patch: the control (finite parameters) passes, the periodic test ends the test process (exit -4) and the non-periodic test does not return within 90 s. With the patch: all three pass, the damaged record is dropped (the reader catches `Standard_ConstructionError` and the record is null) and the box reads as before.
+
+**Upstream checked 2026-10-20:** `Geom_TrimmedCurve.cxx`, `Geom2d_TrimmedCurve.cxx` and `Geom_RectangularTrimmedSurface.cxx` carry no finiteness check on `upstream/IR`. **Not yet filed upstream.**
+
+**Retire** once the bundled OCCT includes this fix.
+
 ## 0076-BinTools_ShapeReader-refuses-a-position-reference-that-leaves-the-stream-3495.patch
 
 **`BinTools_ShapeReader` refuses a position reference that leaves the stream, loops, or names the wrong kind of record** ([#3495](https://github.com/SecondMouseAU/OCCTSwift/issues/3495), follow-up to [#3490](https://github.com/SecondMouseAU/OCCTSwift/issues/3490) and `0074`; not filed upstream).
@@ -3816,17 +3835,6 @@ The spins that remain are a tolerance or coordinate of the wrong size (a value, 
 
 **Retire** once the bundled OCCT includes this fix.
 
-# Retired patches
-
-The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so
-re-applying it would fail (the change is already in the source tree) and `build-occt.sh` would abort.
-The writeups are kept because for several of these they are the only record of the root cause at
-this depth; read them as history, not as a description of anything the build still does.
-
-Before each file was deleted its hunks were checked against the as-merged upstream form in the
-pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
-Each section opens with that verdict.
-
 ## 0078-BinLDrivers-ReadSubTree-refuses-a-label-nested-too-deeply-3489.patch
 
 **A binary OCAF file whose labels nest past 512 levels is refused, not read until the stack is gone** ([#3489](https://github.com/SecondMouseAU/OCCTSwift/issues/3489), follow-up to [#3486](https://github.com/SecondMouseAU/OCCTSwift/issues/3486)).
@@ -3840,6 +3848,17 @@ Measured after, same harness: 100 and 400 levels load with status ok; 600, 4000 
 **Upstream checked 2026-10-20:** `BinLDrivers_DocumentRetrievalDriver.cxx` on `IR` has no depth bound; its last change is the deep-XBF-references fix of 2026-09-04 (#1528). **Not yet filed upstream.**
 
 **Retire** once the bundled OCCT includes this fix.
+
+# Retired patches
+
+The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so
+re-applying it would fail (the change is already in the source tree) and `build-occt.sh` would abort.
+The writeups are kept because for several of these they are the only record of the root cause at
+this depth; read them as history, not as a description of anything the build still does.
+
+Before each file was deleted its hunks were checked against the as-merged upstream form in the
+pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
+Each section opens with that verdict.
 
 ## 0031-bspline-adaptor-cache-thread-safety-1153.patch
 
