@@ -1,9 +1,9 @@
 ---
 type: policy
 title: Upstream PR volume, and the three-step process
-description: Our upstream OCCT PRs must earn a maintainer's time. Measured 2026-10-20: 9 merged (April to 10 August, small single-defect PRs, about nine days each), 40 open, 31 of them opened since 10 August with none merged. Work goes through occt-intake, occt-fix-pr and occt-review; open PRs without a maintainer response are capped.
+description: Our upstream OCCT PRs must earn a maintainer's time. Measured 2026-10-20: 9 merged (April to 10 August, small single-defect PRs, about nine days each), 40 open, 31 of them opened since 10 August with none merged then (four were merged on 2026-11-08, see below). Work goes through occt-intake, occt-fix-pr and occt-review; open PRs without a maintainer response are capped.
 tags: [policy, occt, upstream, process, volume, agents]
-timestamp: 2026-10-20
+timestamp: 2026-11-09
 ---
 
 # Upstream PR volume, and the three-step process
@@ -12,9 +12,13 @@ timestamp: 2026-10-20
 
 - 9 of our PRs merged, between April and 10 August 2026. Each was one defect with a GTest, and the
   median time to merge was about nine days.
-- 40 are open. 31 were opened after 10 August. None of our PRs has merged since, while 63 PRs from other
-  authors have. The maintainers said on 2026-10-19 that community PRs resume after they finish porting
+- 40 were open. 31 were opened after 10 August. None of our PRs had merged since, while 63 PRs from other
+  authors had. The maintainers said on 2026-10-19 that community PRs resume after they finish porting
   their own patches ([discussion 1645](https://github.com/Open-Cascade-SAS/OCCT/discussions/1645)).
+- Update 2026-11-09: `dpasukhi` merged four of ours on 2026-11-08, #1483, #1550, #1601 and #1602, all
+  opened after 10 August. `dpasukhi` had approved #1483 and #1550 on 2026-10-20, and `AtheneNoctuaPt` had
+  approved #1601 and #1602 on 2026-10-19, so each waited 19 to 20 days from the first approval to the
+  merge. That makes 13 merged in total and 36 open, #1718 included.
 - 13 of the 40 have had any human response. A maintainer (`dpasukhi`, a MEMBER) asked for changes on
   five of them on 2026-08-07 and 2026-08-10: a GTest on #1447, #1445, #1435, #1432 and #1410, and
   fewer or shorter comments on #1447, #1445 and #1410. A contributor (`gkv311`, author association
