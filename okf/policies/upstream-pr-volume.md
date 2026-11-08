@@ -17,8 +17,9 @@ timestamp: 2026-10-20
   their own patches ([discussion 1645](https://github.com/Open-Cascade-SAS/OCCT/discussions/1645)).
 - 13 of the 40 have had any human response. A maintainer (`dpasukhi`, a MEMBER) asked for changes on
   five of them on 2026-08-07 and 2026-08-10: a GTest on #1447, #1445, #1435, #1432 and #1410, and
-  fewer or shorter comments on #1447, #1445 and #1410. A contributor (`gkv311`) suggested changes on
-  #1445 and #1399. The GTest asks, the #1447 comment ask and the #1399 suggestion were answered by
+  fewer or shorter comments on #1447, #1445 and #1410. A contributor (`gkv311`, author association
+  CONTRIBUTOR) suggested changes on #1399 on 2026-07-29 and on #1445 on 2026-08-07, both as issue
+  comments on the PR. The GTest asks, the #1447 comment ask and the #1399 suggestion were answered by
   2026-08-11. The other comment asks took longer: #1410's landed on 2026-10-17 and #1445's two inline
   ones on 2026-10-30, found by an audit and not by a reminder. None of the five has merged. The
   commenters on #1600, `trevin-lee` and `eliasaronson`, are outside users (author association NONE),
