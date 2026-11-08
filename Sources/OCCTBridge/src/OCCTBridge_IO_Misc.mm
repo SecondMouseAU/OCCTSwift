@@ -293,8 +293,6 @@ bool OCCTShapeIsValidSolid(OCCTShapeRef shape)
   // fault and answers false, without one the process exits 139, and nothing the caller controls
   // decides which. A solid carrying such a face is not a valid closed solid, which is this
   // predicate's own answer. See occtShapeHasSurfacelessFace.
-  if (occtShapeHasPCurveOnlyEdge(shape->shape) || occtShapeHasSurfacelessFace(shape->shape))
-    return false;
   occtEnsureSignals();
   try
   {

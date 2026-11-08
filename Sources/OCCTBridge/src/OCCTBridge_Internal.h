@@ -2352,8 +2352,6 @@ inline bool occtBlendResultIsValid(const TopoDS_Shape& result)
 {
   if (result.IsNull())
     return false;
-  if (occtShapeHasPCurveOnlyEdge(result) || occtShapeHasSurfacelessFace(result))
-    return false;
   try
   {
     BRepCheck_Analyzer analyzer(result);
@@ -4154,7 +4152,11 @@ inline OCCTShapeRef occtPipeShellFinish(BRepOffsetAPI_MakePipeShell& pipeShell, 
 // Returns: -1 on error, 0 for NoError, >0 for first status enum value.
 inline int32_t occtBRepCheckSubShapeStatus(const TopoDS_Shape& shape, const TopoDS_Shape& subShape)
 {
-  // #2750: the analyzer faults on this shape (#2746). -1 is the answer rather than
+  // Since v4.0.0-kernel.8 the analyzer survives both shapes; -1 stays as the contract of the three
+  // call sites (the sub-shape status entry points answer "could not determine" for a parent the
+  // analyzer cannot vouch for, #2755), not as a safeguard (#3503).
+  //
+  // #2750: the analyzer faulted on this shape (#2746). -1 is the answer rather than
   // a status, because this entry point reports on ONE named sub-shape and the guard's predicate
   // is a property of the whole shape: it says nothing about whether `subShape` is the offending
   // edge or an unrelated vertex. -1 is this function's existing "could not determine", already
