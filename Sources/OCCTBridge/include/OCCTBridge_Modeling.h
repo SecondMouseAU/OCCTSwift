@@ -3919,7 +3919,12 @@ bool OCCTBlendResultIsSane(OCCTShapeRef _Nullable input, OCCTShapeRef _Nullable 
 /// Number of contours.
 int32_t OCCTFilletBuilderNbContours(OCCTFilletBuilderRef _Nonnull builder);
 
-/// Number of edges in a contour (1-based index).
+// Contour indices below are 1..OCCTFilletBuilderNbContours(). Every function that takes one answers
+// its refusal for an index outside that range, 0 and the negatives included (#3518): OCCT checks
+// neither end reliably, so an index past the end faulted the process and 0 or a negative read, or
+// wrote, contour 1. The edge index inside a contour (Edge, SetTwoRadii) is 1..NbEdges(contour).
+
+/// Number of edges in a contour (1-based index). 0 outside 1..NbContours().
 int32_t OCCTFilletBuilderNbEdges(OCCTFilletBuilderRef _Nonnull builder, int32_t contourIndex);
 
 /// Whether the builder has a result (may be partial).
@@ -3934,13 +3939,13 @@ int32_t OCCTFilletBuilderNbFaultyContours(OCCTFilletBuilderRef _Nonnull builder)
 /// Number of faulty vertices.
 int32_t OCCTFilletBuilderNbFaultyVertices(OCCTFilletBuilderRef _Nonnull builder);
 
-/// Get radius of a contour (1-based index).
+/// Get radius of a contour (1-based index). -1 outside 1..NbContours().
 double OCCTFilletBuilderGetRadius(OCCTFilletBuilderRef _Nonnull builder, int32_t contourIndex);
 
-/// Get length of a contour (1-based index).
+/// Get length of a contour (1-based index). -1 outside 1..NbContours().
 double OCCTFilletBuilderGetLength(OCCTFilletBuilderRef _Nonnull builder, int32_t contourIndex);
 
-/// Whether a contour has constant radius (1-based index).
+/// Whether a contour has constant radius (1-based index). False outside 1..NbContours().
 bool OCCTFilletBuilderIsConstant(OCCTFilletBuilderRef _Nonnull builder, int32_t contourIndex);
 
 /// Remove an edge from its contour.
@@ -4077,19 +4082,20 @@ double OCCTChamferBuilderRelativeAbscissa(OCCTChamferBuilderRef _Nonnull builder
 
 // --- FilletBuilder completions (v0.124.0) ---
 
-/// Set radius on a specific edge in a contour (1-based indices).
+/// Set radius on a specific edge in a contour (1-based indices). False outside 1..NbContours().
 bool OCCTFilletBuilderSetRadiusOnEdge(OCCTFilletBuilderRef _Nonnull builder,
                                       double  radius,
                                       int32_t contourIndex,
                                       OCCTEdgeRef _Nonnull edge);
 
-/// Set radius at a specific vertex in a contour (1-based index).
+/// Set radius at a specific vertex in a contour (1-based index). False outside 1..NbContours().
 bool OCCTFilletBuilderSetRadiusAtVertex(OCCTFilletBuilderRef _Nonnull builder,
                                         double  radius,
                                         int32_t contourIndex,
                                         OCCTShapeRef _Nonnull vertex);
 
-/// Set two radii (evolving) on a contour edge (1-based indices).
+/// Set two radii (evolving) on a contour edge (1-based indices). False outside 1..NbContours() or
+/// 1..NbEdges(contour).
 bool OCCTFilletBuilderSetTwoRadii(OCCTFilletBuilderRef _Nonnull builder,
                                   double  r1,
                                   double  r2,
@@ -4099,33 +4105,33 @@ bool OCCTFilletBuilderSetTwoRadii(OCCTFilletBuilderRef _Nonnull builder,
 /// Get contour index for an edge (0 if not found, 1-based otherwise).
 int32_t OCCTFilletBuilderContour(OCCTFilletBuilderRef _Nonnull builder, OCCTEdgeRef _Nonnull edge);
 
-/// Get edge J in contour I (both 1-based).
+/// Get edge J in contour I (both 1-based). Null outside 1..NbContours() or 1..NbEdges(I).
 OCCTShapeRef _Nullable OCCTFilletBuilderEdge(OCCTFilletBuilderRef _Nonnull builder,
                                              int32_t contourIndex,
                                              int32_t edgeIndex);
 
-/// First vertex of contour IC (1-based).
+/// First vertex of contour IC (1-based). Null outside 1..NbContours().
 OCCTShapeRef _Nullable OCCTFilletBuilderFirstVertex(OCCTFilletBuilderRef _Nonnull builder,
                                                     int32_t contourIndex);
 
-/// Last vertex of contour IC (1-based).
+/// Last vertex of contour IC (1-based). Null outside 1..NbContours().
 OCCTShapeRef _Nullable OCCTFilletBuilderLastVertex(OCCTFilletBuilderRef _Nonnull builder,
                                                    int32_t contourIndex);
 
-/// Curvilinear abscissa of vertex on contour IC (1-based).
+/// Curvilinear abscissa of vertex on contour IC (1-based). -1 outside 1..NbContours().
 double OCCTFilletBuilderAbscissa(OCCTFilletBuilderRef _Nonnull builder,
                                  int32_t contourIndex,
                                  OCCTShapeRef _Nonnull vertex);
 
-/// Relative abscissa (0..1) of vertex on contour IC (1-based).
+/// Relative abscissa (0..1) of vertex on contour IC (1-based). -1 outside 1..NbContours().
 double OCCTFilletBuilderRelativeAbscissa(OCCTFilletBuilderRef _Nonnull builder,
                                          int32_t contourIndex,
                                          OCCTShapeRef _Nonnull vertex);
 
-/// Whether contour IC (1-based) is closed and tangent.
+/// Whether contour IC (1-based) is closed and tangent. False outside 1..NbContours().
 bool OCCTFilletBuilderClosedAndTangent(OCCTFilletBuilderRef _Nonnull builder, int32_t contourIndex);
 
-/// Whether contour IC (1-based) is closed.
+/// Whether contour IC (1-based) is closed. False outside 1..NbContours().
 bool OCCTFilletBuilderClosed(OCCTFilletBuilderRef _Nonnull builder, int32_t contourIndex);
 
 /// Number of surfaces after build. 0 unless the last Build() completed (#3516): never built,
@@ -4136,7 +4142,8 @@ int32_t OCCTFilletBuilderNbSurfaces(OCCTFilletBuilderRef _Nonnull builder);
 int32_t OCCTFilletBuilderNbComputedSurfaces(OCCTFilletBuilderRef _Nonnull builder,
                                             int32_t contourIndex);
 
-/// Error status for contour IC (1-based). Returns ChFiDS_ErrorStatus as int.
+/// Error status for contour IC (1-based). Returns ChFiDS_ErrorStatus as int, or -1 outside
+/// 1..NbContours().
 int32_t OCCTFilletBuilderStripeStatus(OCCTFilletBuilderRef _Nonnull builder, int32_t contourIndex);
 
 /// Get the faulty contour index for the I-th fault (1-based).
@@ -4378,7 +4385,7 @@ void OCCTFilletBuilderSetFilletShape(OCCTFilletBuilderRef _Nonnull builder, int3
 /// Get fillet shape type: 0=Rational, 1=QuasiAngular, 2=Polynomial.
 int32_t OCCTFilletBuilderGetFilletShape(OCCTFilletBuilderRef _Nonnull builder);
 
-/// Reset a specific contour's radius info.
+/// Reset a specific contour's radius info. Does nothing outside 1..NbContours().
 void OCCTFilletBuilderResetContour(OCCTFilletBuilderRef _Nonnull builder, int32_t contourIndex);
 
 /// Simulate filleting on contour IC (computes sections without building).

@@ -1,0 +1,884 @@
+=== BRepFilletAPI_MakeFillet: one forked child per (state, accessor, index) ===
+index columns: -1 0 1 2 3 1e5 MAX MIN 
+
+## NbEdges(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:1 0:1 1:1 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:1
+  two contours, never built    [nc=2 done=0]
+    -1:1 0:1 1:1 2:1 3:SEGV 1e5:SEGV MAX:SEGV MIN:1
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:1 0:1 1:1 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:1
+  built ok, 1 contour          [nc=1 done=1]
+    -1:1 0:1 1:1 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:1
+  built ok, 2 contours         [nc=2 done=1]
+    -1:1 0:1 1:1 2:1 3:SEGV 1e5:SEGV MAX:SEGV MIN:1
+  built ok, then Reset()       [nc=1 done=0]
+    -1:1 0:1 1:1 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:1
+  declined, then Reset()       [nc=1 done=0]
+    -1:1 0:1 1:1 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:1
+
+## StripeStatus(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:SEGV 0:SEGV 1:0 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  two contours, never built    [nc=2 done=0]
+    -1:SEGV 0:SEGV 1:0 2:0 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:SEGV 0:SEGV 1:3 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  built ok, 1 contour          [nc=1 done=1]
+    -1:SEGV 0:SEGV 1:0 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  built ok, 2 contours         [nc=2 done=1]
+    -1:SEGV 0:SEGV 1:0 2:0 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  built ok, then Reset()       [nc=1 done=0]
+    -1:SEGV 0:SEGV 1:0 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  declined, then Reset()       [nc=1 done=0]
+    -1:SEGV 0:SEGV 1:3 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+
+## NbComputedSurfaces(IC)
+  fresh                        [nc=0 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  added, never built           [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  two contours, never built    [nc=2 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  declined (R 20)              [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, 1 contour          [nc=1 done=1]
+    -1:0 0:0 1:1 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, 2 contours         [nc=2 done=1]
+    -1:0 0:0 1:1 2:1 3:0 1e5:0 MAX:0 MIN:0
+  built ok, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  declined, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+
+## Length(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:-1 2:-1 3:-1 1e5:-1 MAX:-1 MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:10 0:10 1:10 2:-1 3:-1 1e5:-1 MAX:-1 MIN:10
+  two contours, never built    [nc=2 done=0]
+    -1:10 0:10 1:10 2:10 3:-1 1e5:-1 MAX:-1 MIN:10
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:-1 2:-1 3:-1 1e5:-1 MAX:-1 MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:10 0:10 1:10 2:-1 3:-1 1e5:-1 MAX:-1 MIN:10
+  built ok, 1 contour          [nc=1 done=1]
+    -1:10 0:10 1:10 2:-1 3:-1 1e5:-1 MAX:-1 MIN:10
+  built ok, 2 contours         [nc=2 done=1]
+    -1:10 0:10 1:10 2:10 3:-1 1e5:-1 MAX:-1 MIN:10
+  built ok, then Reset()       [nc=1 done=0]
+    -1:10 0:10 1:10 2:-1 3:-1 1e5:-1 MAX:-1 MIN:10
+  declined, then Reset()       [nc=1 done=0]
+    -1:10 0:10 1:10 2:-1 3:-1 1e5:-1 MAX:-1 MIN:10
+
+## Radius(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:-1 2:-1 3:-1 1e5:-1 MAX:-1 MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:1 0:1 1:1 2:-1 3:-1 1e5:-1 MAX:-1 MIN:1
+  two contours, never built    [nc=2 done=0]
+    -1:1 0:1 1:1 2:1 3:-1 1e5:-1 MAX:-1 MIN:1
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:-1 2:-1 3:-1 1e5:-1 MAX:-1 MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:20 0:20 1:20 2:-1 3:-1 1e5:-1 MAX:-1 MIN:20
+  built ok, 1 contour          [nc=1 done=1]
+    -1:1 0:1 1:1 2:-1 3:-1 1e5:-1 MAX:-1 MIN:1
+  built ok, 2 contours         [nc=2 done=1]
+    -1:1 0:1 1:1 2:1 3:-1 1e5:-1 MAX:-1 MIN:1
+  built ok, then Reset()       [nc=1 done=0]
+    -1:1 0:1 1:1 2:-1 3:-1 1e5:-1 MAX:-1 MIN:1
+  declined, then Reset()       [nc=1 done=0]
+    -1:20 0:20 1:20 2:-1 3:-1 1e5:-1 MAX:-1 MIN:20
+
+## IsConstant(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:0 2:0 3:0 1e5:0 MAX:0 MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:1 0:1 1:1 2:0 3:0 1e5:0 MAX:0 MIN:1
+  two contours, never built    [nc=2 done=0]
+    -1:1 0:1 1:1 2:1 3:0 1e5:0 MAX:0 MIN:1
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:0 2:0 3:0 1e5:0 MAX:0 MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:1 0:1 1:1 2:0 3:0 1e5:0 MAX:0 MIN:1
+  built ok, 1 contour          [nc=1 done=1]
+    -1:1 0:1 1:1 2:0 3:0 1e5:0 MAX:0 MIN:1
+  built ok, 2 contours         [nc=2 done=1]
+    -1:1 0:1 1:1 2:1 3:0 1e5:0 MAX:0 MIN:1
+  built ok, then Reset()       [nc=1 done=0]
+    -1:1 0:1 1:1 2:0 3:0 1e5:0 MAX:0 MIN:1
+  declined, then Reset()       [nc=1 done=0]
+    -1:1 0:1 1:1 2:0 3:0 1e5:0 MAX:0 MIN:1
+
+## Closed(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:0 2:0 3:0 1e5:0 MAX:0 MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  two contours, never built    [nc=2 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:0 2:0 3:0 1e5:0 MAX:0 MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, 1 contour          [nc=1 done=1]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, 2 contours         [nc=2 done=1]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  declined, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+
+## ClosedAndTangent(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:0 2:0 3:0 1e5:0 MAX:0 MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  two contours, never built    [nc=2 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:0 2:0 3:0 1e5:0 MAX:0 MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, 1 contour          [nc=1 done=1]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, 2 contours         [nc=2 done=1]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  declined, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+
+## FirstVertex(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:null 2:null 3:null 1e5:null MAX:null MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+  two contours, never built    [nc=2 done=0]
+    -1:vtx 0:vtx 1:vtx 2:vtx 3:null 1e5:null MAX:null MIN:vtx
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:null 2:null 3:null 1e5:null MAX:null MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+  built ok, 1 contour          [nc=1 done=1]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+  built ok, 2 contours         [nc=2 done=1]
+    -1:vtx 0:vtx 1:vtx 2:vtx 3:null 1e5:null MAX:null MIN:vtx
+  built ok, then Reset()       [nc=1 done=0]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+  declined, then Reset()       [nc=1 done=0]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+
+## LastVertex(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:null 2:null 3:null 1e5:null MAX:null MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+  two contours, never built    [nc=2 done=0]
+    -1:vtx 0:vtx 1:vtx 2:vtx 3:null 1e5:null MAX:null MIN:vtx
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:null 2:null 3:null 1e5:null MAX:null MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+  built ok, 1 contour          [nc=1 done=1]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+  built ok, 2 contours         [nc=2 done=1]
+    -1:vtx 0:vtx 1:vtx 2:vtx 3:null 1e5:null MAX:null MIN:vtx
+  built ok, then Reset()       [nc=1 done=0]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+  declined, then Reset()       [nc=1 done=0]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+
+## Abscissa(IC, v)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:-1 2:-1 3:-1 1e5:-1 MAX:-1 MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  two contours, never built    [nc=2 done=0]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:-1 2:-1 3:-1 1e5:-1 MAX:-1 MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  built ok, 1 contour          [nc=1 done=1]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  built ok, 2 contours         [nc=2 done=1]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  built ok, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  declined, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+
+## RelativeAbscissa(IC, v)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:-1 2:-1 3:-1 1e5:-1 MAX:-1 MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  two contours, never built    [nc=2 done=0]
+    -1:0 0:0 1:0 2:-0.1 3:-1 1e5:-1 MAX:-1 MIN:0
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:-1 2:-1 3:-1 1e5:-1 MAX:-1 MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  built ok, 1 contour          [nc=1 done=1]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  built ok, 2 contours         [nc=2 done=1]
+    -1:0 0:0 1:0 2:-0.1 3:-1 1e5:-1 MAX:-1 MIN:0
+  built ok, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  declined, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+
+## NbSurf(IC) [sibling #3519]
+  fresh                        [nc=0 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  added, never built           [nc=1 done=0]
+    -1:0 0:0 1:SEGV 2:0 3:0 1e5:0 MAX:0 MIN:0
+  two contours, never built    [nc=2 done=0]
+    -1:0 0:0 1:SEGV 2:SEGV 3:0 1e5:0 MAX:0 MIN:0
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  declined (R 20)              [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, 1 contour          [nc=1 done=1]
+    -1:0 0:0 1:1 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, 2 contours         [nc=2 done=1]
+    -1:0 0:0 1:1 2:1 3:0 1e5:0 MAX:0 MIN:0
+  built ok, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:SEGV 2:0 3:0 1e5:0 MAX:0 MIN:0
+  declined, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:SEGV 2:0 3:0 1e5:0 MAX:0 MIN:0
+
+## GetBounds(IC, e1)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:0(-7,-7) 2:0(-7,-7) 3:0(-7,-7) 1e5:0(-7,-7) MAX:0(-7,-7) MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:threw:ChFiDS_FilSpine::ChangeL 0:threw:ChFiDS_FilSpine::ChangeL 1:threw:ChFiDS_FilSpine::ChangeL 2:0(-7,-7) 3:0(-7,-7) 1e5:0(-7,-7) MAX:0(-7,-7) MIN:threw:ChFiDS_FilSpine::ChangeL
+  two contours, never built    [nc=2 done=0]
+    -1:threw:ChFiDS_FilSpine::ChangeL 0:threw:ChFiDS_FilSpine::ChangeL 1:threw:ChFiDS_FilSpine::ChangeL 2:threw:ChFiDS_FilSpine::ChangeL 3:0(-7,-7) 1e5:0(-7,-7) MAX:0(-7,-7) MIN:threw:ChFiDS_FilSpine::ChangeL
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:0(-7,-7) 2:0(-7,-7) 3:0(-7,-7) 1e5:0(-7,-7) MAX:0(-7,-7) MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:threw:ChFiDS_FilSpine::ChangeL 0:threw:ChFiDS_FilSpine::ChangeL 1:threw:ChFiDS_FilSpine::ChangeL 2:0(-7,-7) 3:0(-7,-7) 1e5:0(-7,-7) MAX:0(-7,-7) MIN:threw:ChFiDS_FilSpine::ChangeL
+  built ok, 1 contour          [nc=1 done=1]
+    -1:threw:ChFiDS_FilSpine::ChangeL 0:threw:ChFiDS_FilSpine::ChangeL 1:threw:ChFiDS_FilSpine::ChangeL 2:0(-7,-7) 3:0(-7,-7) 1e5:0(-7,-7) MAX:0(-7,-7) MIN:threw:ChFiDS_FilSpine::ChangeL
+  built ok, 2 contours         [nc=2 done=1]
+    -1:threw:ChFiDS_FilSpine::ChangeL 0:threw:ChFiDS_FilSpine::ChangeL 1:threw:ChFiDS_FilSpine::ChangeL 2:threw:ChFiDS_FilSpine::ChangeL 3:0(-7,-7) 1e5:0(-7,-7) MAX:0(-7,-7) MIN:threw:ChFiDS_FilSpine::ChangeL
+  built ok, then Reset()       [nc=1 done=0]
+    -1:threw:ChFiDS_FilSpine::ChangeL 0:threw:ChFiDS_FilSpine::ChangeL 1:threw:ChFiDS_FilSpine::ChangeL 2:0(-7,-7) 3:0(-7,-7) 1e5:0(-7,-7) MAX:0(-7,-7) MIN:threw:ChFiDS_FilSpine::ChangeL
+  declined, then Reset()       [nc=1 done=0]
+    -1:threw:ChFiDS_FilSpine::ChangeL 0:threw:ChFiDS_FilSpine::ChangeL 1:threw:ChFiDS_FilSpine::ChangeL 2:0(-7,-7) 3:0(-7,-7) 1e5:0(-7,-7) MAX:0(-7,-7) MIN:threw:ChFiDS_FilSpine::ChangeL
+
+## GetLaw(IC, e1)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:null 2:null 3:null 1e5:null MAX:null MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:threw:ChFiDS_FilSpine::ChangeL 0:threw:ChFiDS_FilSpine::ChangeL 1:threw:ChFiDS_FilSpine::ChangeL 2:null 3:null 1e5:null MAX:null MIN:threw:ChFiDS_FilSpine::ChangeL
+  two contours, never built    [nc=2 done=0]
+    -1:threw:ChFiDS_FilSpine::ChangeL 0:threw:ChFiDS_FilSpine::ChangeL 1:threw:ChFiDS_FilSpine::ChangeL 2:threw:ChFiDS_FilSpine::ChangeL 3:null 1e5:null MAX:null MIN:threw:ChFiDS_FilSpine::ChangeL
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:null 2:null 3:null 1e5:null MAX:null MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:threw:ChFiDS_FilSpine::ChangeL 0:threw:ChFiDS_FilSpine::ChangeL 1:threw:ChFiDS_FilSpine::ChangeL 2:null 3:null 1e5:null MAX:null MIN:threw:ChFiDS_FilSpine::ChangeL
+  built ok, 1 contour          [nc=1 done=1]
+    -1:threw:ChFiDS_FilSpine::ChangeL 0:threw:ChFiDS_FilSpine::ChangeL 1:threw:ChFiDS_FilSpine::ChangeL 2:null 3:null 1e5:null MAX:null MIN:threw:ChFiDS_FilSpine::ChangeL
+  built ok, 2 contours         [nc=2 done=1]
+    -1:threw:ChFiDS_FilSpine::ChangeL 0:threw:ChFiDS_FilSpine::ChangeL 1:threw:ChFiDS_FilSpine::ChangeL 2:threw:ChFiDS_FilSpine::ChangeL 3:null 1e5:null MAX:null MIN:threw:ChFiDS_FilSpine::ChangeL
+  built ok, then Reset()       [nc=1 done=0]
+    -1:threw:ChFiDS_FilSpine::ChangeL 0:threw:ChFiDS_FilSpine::ChangeL 1:threw:ChFiDS_FilSpine::ChangeL 2:null 3:null 1e5:null MAX:null MIN:threw:ChFiDS_FilSpine::ChangeL
+  declined, then Reset()       [nc=1 done=0]
+    -1:threw:ChFiDS_FilSpine::ChangeL 0:threw:ChFiDS_FilSpine::ChangeL 1:threw:ChFiDS_FilSpine::ChangeL 2:null 3:null 1e5:null MAX:null MIN:threw:ChFiDS_FilSpine::ChangeL
+
+## Edge(IC, 1)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:edge 0:edge 1:edge 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:edge
+  two contours, never built    [nc=2 done=0]
+    -1:edge 0:edge 1:edge 2:edge 3:SEGV 1e5:SEGV MAX:SEGV MIN:edge
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:edge 0:edge 1:edge 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:edge
+  built ok, 1 contour          [nc=1 done=1]
+    -1:edge 0:edge 1:edge 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:edge
+  built ok, 2 contours         [nc=2 done=1]
+    -1:edge 0:edge 1:edge 2:edge 3:SEGV 1e5:SEGV MAX:SEGV MIN:edge
+  built ok, then Reset()       [nc=1 done=0]
+    -1:edge 0:edge 1:edge 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:edge
+  declined, then Reset()       [nc=1 done=0]
+    -1:edge 0:edge 1:edge 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:edge
+
+## Edge(1, J)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:edge 0:SEGV 1:edge 2:edge 3:edge 1e5:edge MAX:edge MIN:edge
+  two contours, never built    [nc=2 done=0]
+    -1:edge 0:SEGV 1:edge 2:edge 3:edge 1e5:edge MAX:edge MIN:edge
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:edge 0:SEGV 1:edge 2:edge 3:edge 1e5:edge MAX:edge MIN:edge
+  built ok, 1 contour          [nc=1 done=1]
+    -1:edge 0:SEGV 1:edge 2:edge 3:edge 1e5:edge MAX:edge MIN:edge
+  built ok, 2 contours         [nc=2 done=1]
+    -1:edge 0:SEGV 1:edge 2:edge 3:edge 1e5:edge MAX:edge MIN:edge
+  built ok, then Reset()       [nc=1 done=0]
+    -1:edge 0:SEGV 1:edge 2:edge 3:edge 1e5:edge MAX:edge MIN:edge
+  declined, then Reset()       [nc=1 done=0]
+    -1:edge 0:SEGV 1:edge 2:edge 3:edge 1e5:edge MAX:edge MIN:edge
+
+## Edge(1, J).IsSame(Edge(1, 1))
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:got;same-as-edge1 0:SEGV[got;] 1:got;same-as-edge1 2:SEGV[got;] 3:SEGV[got;] 1e5:got;same-as-edge1 MAX:got;same-as-edge1 MIN:got;same-as-edge1
+  two contours, never built    [nc=2 done=0]
+    -1:got;same-as-edge1 0:SEGV[got;] 1:got;same-as-edge1 2:SEGV[got;] 3:SEGV[got;] 1e5:got;same-as-edge1 MAX:got;same-as-edge1 MIN:got;same-as-edge1
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:got;same-as-edge1 0:SEGV[got;] 1:got;same-as-edge1 2:SEGV[got;] 3:SEGV[got;] 1e5:got;same-as-edge1 MAX:got;same-as-edge1 MIN:got;same-as-edge1
+  built ok, 1 contour          [nc=1 done=1]
+    -1:got;same-as-edge1 0:SEGV[got;] 1:got;same-as-edge1 2:SEGV[got;] 3:SEGV[got;] 1e5:got;same-as-edge1 MAX:got;same-as-edge1 MIN:got;same-as-edge1
+  built ok, 2 contours         [nc=2 done=1]
+    -1:got;same-as-edge1 0:SEGV[got;] 1:got;same-as-edge1 2:SEGV[got;] 3:SEGV[got;] 1e5:got;same-as-edge1 MAX:got;same-as-edge1 MIN:got;same-as-edge1
+  built ok, then Reset()       [nc=1 done=0]
+    -1:got;same-as-edge1 0:SEGV[got;] 1:got;same-as-edge1 2:SEGV[got;] 3:SEGV[got;] 1e5:got;same-as-edge1 MAX:got;same-as-edge1 MIN:got;same-as-edge1
+  declined, then Reset()       [nc=1 done=0]
+    -1:got;same-as-edge1 0:SEGV[got;] 1:got;same-as-edge1 2:SEGV[got;] 3:SEGV[got;] 1e5:got;same-as-edge1 MAX:got;same-as-edge1 MIN:got;same-as-edge1
+
+## FaultyContour(I)
+  fresh                        [nc=0 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  added, never built           [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  two contours, never built    [nc=2 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  declined (R 20)              [nc=1 done=0]
+    -1:0 0:0 1:1 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, 1 contour          [nc=1 done=1]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, 2 contours         [nc=2 done=1]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  declined, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+
+## FaultyVertex(I)
+  fresh                        [nc=0 done=0]
+    -1:null 0:null 1:null 2:null 3:null 1e5:null MAX:null MIN:null
+  added, never built           [nc=1 done=0]
+    -1:null 0:null 1:null 2:null 3:null 1e5:null MAX:null MIN:null
+  two contours, never built    [nc=2 done=0]
+    -1:null 0:null 1:null 2:null 3:null 1e5:null MAX:null MIN:null
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:null 0:null 1:null 2:null 3:null 1e5:null MAX:null MIN:null
+  declined (R 20)              [nc=1 done=0]
+    -1:null 0:null 1:null 2:null 3:null 1e5:null MAX:null MIN:null
+  built ok, 1 contour          [nc=1 done=1]
+    -1:null 0:null 1:null 2:null 3:null 1e5:null MAX:null MIN:null
+  built ok, 2 contours         [nc=2 done=1]
+    -1:null 0:null 1:null 2:null 3:null 1e5:null MAX:null MIN:null
+  built ok, then Reset()       [nc=1 done=0]
+    -1:null 0:null 1:null 2:null 3:null 1e5:null MAX:null MIN:null
+  declined, then Reset()       [nc=1 done=0]
+    -1:null 0:null 1:null 2:null 3:null 1e5:null MAX:null MIN:null
+
+## SetRadius(7, IC, edge1); Radius(1)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:set;Radius(1)=-1 2:set;Radius(1)=-1 3:set;Radius(1)=-1 1e5:set;Radius(1)=-1 MAX:set;Radius(1)=-1 MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:set;Radius(1)=7 0:set;Radius(1)=7 1:set;Radius(1)=7 2:set;Radius(1)=1 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:set;Radius(1)=7
+  two contours, never built    [nc=2 done=0]
+    -1:set;Radius(1)=7 0:set;Radius(1)=7 1:set;Radius(1)=7 2:set;Radius(1)=1 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:set;Radius(1)=7
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:set;Radius(1)=-1 2:set;Radius(1)=-1 3:set;Radius(1)=-1 1e5:set;Radius(1)=-1 MAX:set;Radius(1)=-1 MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=20 3:set;Radius(1)=20 1e5:set;Radius(1)=20 MAX:set;Radius(1)=20 MIN:set;threw:Spine is not constant
+  built ok, 1 contour          [nc=1 done=1]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=1 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:set;threw:Spine is not constant
+  built ok, 2 contours         [nc=2 done=1]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=1 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:set;threw:Spine is not constant
+  built ok, then Reset()       [nc=1 done=0]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=1 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:set;threw:Spine is not constant
+  declined, then Reset()       [nc=1 done=0]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=20 3:set;Radius(1)=20 1e5:set;Radius(1)=20 MAX:set;Radius(1)=20 MIN:set;threw:Spine is not constant
+
+## SetRadius(7, IC, vertex1); Radius(1)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:set;Radius(1)=-1 2:set;Radius(1)=-1 3:set;Radius(1)=-1 1e5:set;Radius(1)=-1 MAX:set;Radius(1)=-1 MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=1 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:set;threw:Spine is not constant
+  two contours, never built    [nc=2 done=0]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=1 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:set;threw:Spine is not constant
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:set;Radius(1)=-1 2:set;Radius(1)=-1 3:set;Radius(1)=-1 1e5:set;Radius(1)=-1 MAX:set;Radius(1)=-1 MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=20 3:set;Radius(1)=20 1e5:set;Radius(1)=20 MAX:set;Radius(1)=20 MIN:set;threw:Spine is not constant
+  built ok, 1 contour          [nc=1 done=1]
+    -1:SEGV 0:SEGV 1:SEGV 2:set;Radius(1)=1 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:SEGV
+  built ok, 2 contours         [nc=2 done=1]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:SEGV
+  built ok, then Reset()       [nc=1 done=0]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=1 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:set;threw:Spine is not constant
+  declined, then Reset()       [nc=1 done=0]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=20 3:set;Radius(1)=20 1e5:set;Radius(1)=20 MAX:set;Radius(1)=20 MIN:set;threw:Spine is not constant
+
+## SetRadius(7, 9, 1, J); IsConstant(1)
+  fresh                        [nc=0 done=0]
+    -1:set;IsConstant(1)=0 0:set;IsConstant(1)=0 1:set;IsConstant(1)=0 2:set;IsConstant(1)=0 3:set;IsConstant(1)=0 1e5:set;IsConstant(1)=0 MAX:set;IsConstant(1)=0 MIN:set;IsConstant(1)=0
+  added, never built           [nc=1 done=0]
+    -1:set;IsConstant(1)=0 0:set;IsConstant(1)=0 1:set;IsConstant(1)=0 2:set;IsConstant(1)=0 3:set;IsConstant(1)=0 1e5:set;IsConstant(1)=0 MAX:SEGV MIN:SEGV
+  two contours, never built    [nc=2 done=0]
+    -1:set;IsConstant(1)=0 0:set;IsConstant(1)=0 1:set;IsConstant(1)=0 2:set;IsConstant(1)=0 3:set;IsConstant(1)=0 1e5:set;IsConstant(1)=0 MAX:SEGV MIN:SEGV
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:set;IsConstant(1)=0 0:set;IsConstant(1)=0 1:set;IsConstant(1)=0 2:set;IsConstant(1)=0 3:set;IsConstant(1)=0 1e5:set;IsConstant(1)=0 MAX:set;IsConstant(1)=0 MIN:set;IsConstant(1)=0
+  declined (R 20)              [nc=1 done=0]
+    -1:set;IsConstant(1)=0 0:set;IsConstant(1)=0 1:set;IsConstant(1)=0 2:set;IsConstant(1)=0 3:set;IsConstant(1)=0 1e5:set;IsConstant(1)=0 MAX:SEGV MIN:SEGV
+  built ok, 1 contour          [nc=1 done=1]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  built ok, 2 contours         [nc=2 done=1]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  built ok, then Reset()       [nc=1 done=0]
+    -1:set;IsConstant(1)=0 0:set;IsConstant(1)=0 1:set;IsConstant(1)=0 2:set;IsConstant(1)=0 3:set;IsConstant(1)=0 1e5:set;IsConstant(1)=0 MAX:SEGV MIN:SEGV
+  declined, then Reset()       [nc=1 done=0]
+    -1:set;IsConstant(1)=0 0:set;IsConstant(1)=0 1:set;IsConstant(1)=0 2:set;IsConstant(1)=0 3:set;IsConstant(1)=0 1e5:set;IsConstant(1)=0 MAX:SEGV MIN:SEGV
+
+## SetRadius(7, 9, IC, 1); Radius(1)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:set;Radius(1)=-1 2:set;Radius(1)=-1 3:set;Radius(1)=-1 1e5:set;Radius(1)=-1 MAX:set;Radius(1)=-1 MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=1 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:set;threw:Spine is not constant
+  two contours, never built    [nc=2 done=0]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=1 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:set;threw:Spine is not constant
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:set;Radius(1)=-1 2:set;Radius(1)=-1 3:set;Radius(1)=-1 1e5:set;Radius(1)=-1 MAX:set;Radius(1)=-1 MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=20 3:set;Radius(1)=20 1e5:set;Radius(1)=20 MAX:set;Radius(1)=20 MIN:set;threw:Spine is not constant
+  built ok, 1 contour          [nc=1 done=1]
+    -1:SEGV 0:SEGV 1:SEGV 2:set;Radius(1)=1 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:SEGV
+  built ok, 2 contours         [nc=2 done=1]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:SEGV
+  built ok, then Reset()       [nc=1 done=0]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=1 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:set;threw:Spine is not constant
+  declined, then Reset()       [nc=1 done=0]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=20 3:set;Radius(1)=20 1e5:set;Radius(1)=20 MAX:set;Radius(1)=20 MIN:set;threw:Spine is not constant
+
+## ResetContour(IC); Radius(1)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:set;Radius(1)=-1 2:set;Radius(1)=-1 3:set;Radius(1)=-1 1e5:set;Radius(1)=-1 MAX:set;Radius(1)=-1 MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=1 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:set;threw:Spine is not constant
+  two contours, never built    [nc=2 done=0]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=1 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:set;threw:Spine is not constant
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:set;Radius(1)=-1 2:set;Radius(1)=-1 3:set;Radius(1)=-1 1e5:set;Radius(1)=-1 MAX:set;Radius(1)=-1 MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=20 3:set;Radius(1)=20 1e5:set;Radius(1)=20 MAX:set;Radius(1)=20 MIN:set;threw:Spine is not constant
+  built ok, 1 contour          [nc=1 done=1]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=1 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:set;threw:Spine is not constant
+  built ok, 2 contours         [nc=2 done=1]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=1 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:set;threw:Spine is not constant
+  built ok, then Reset()       [nc=1 done=0]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=1 3:set;Radius(1)=1 1e5:set;Radius(1)=1 MAX:set;Radius(1)=1 MIN:set;threw:Spine is not constant
+  declined, then Reset()       [nc=1 done=0]
+    -1:set;threw:Spine is not constant 0:set;threw:Spine is not constant 1:set;threw:Spine is not constant 2:set;Radius(1)=20 3:set;Radius(1)=20 1e5:set;Radius(1)=20 MAX:set;Radius(1)=20 MIN:set;threw:Spine is not constant
+
+## Simulate(IC); NbComputedSurfaces(1)
+  fresh                        [nc=0 done=0]
+    -1:sim;ncs(1)=0 0:sim;ncs(1)=0 1:sim;ncs(1)=0 2:sim;ncs(1)=0 3:sim;ncs(1)=0 1e5:sim;ncs(1)=0 MAX:sim;ncs(1)=0 MIN:sim;ncs(1)=0
+  added, never built           [nc=1 done=0]
+    -1:sim;ncs(1)=0 0:sim;ncs(1)=0 1:sim;ncs(1)=1 2:sim;ncs(1)=0 3:sim;ncs(1)=0 1e5:sim;ncs(1)=0 MAX:sim;ncs(1)=0 MIN:sim;ncs(1)=0
+  two contours, never built    [nc=2 done=0]
+    -1:sim;ncs(1)=0 0:sim;ncs(1)=0 1:sim;ncs(1)=1 2:sim;ncs(1)=0 3:sim;ncs(1)=0 1e5:sim;ncs(1)=0 MAX:sim;ncs(1)=0 MIN:sim;ncs(1)=0
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:sim;ncs(1)=0 0:sim;ncs(1)=0 1:sim;ncs(1)=0 2:sim;ncs(1)=0 3:sim;ncs(1)=0 1e5:sim;ncs(1)=0 MAX:sim;ncs(1)=0 MIN:sim;ncs(1)=0
+  declined (R 20)              [nc=1 done=0]
+    -1:sim;ncs(1)=0 0:sim;ncs(1)=0 1:threw:StartSol echec 2:sim;ncs(1)=0 3:sim;ncs(1)=0 1e5:sim;ncs(1)=0 MAX:sim;ncs(1)=0 MIN:sim;ncs(1)=0
+  built ok, 1 contour          [nc=1 done=1]
+    -1:sim;ncs(1)=1 0:sim;ncs(1)=1 1:sim;ncs(1)=1 2:sim;ncs(1)=1 3:sim;ncs(1)=1 1e5:sim;ncs(1)=1 MAX:sim;ncs(1)=1 MIN:sim;ncs(1)=1
+  built ok, 2 contours         [nc=2 done=1]
+    -1:sim;ncs(1)=1 0:sim;ncs(1)=1 1:sim;ncs(1)=1 2:sim;ncs(1)=1 3:sim;ncs(1)=1 1e5:sim;ncs(1)=1 MAX:sim;ncs(1)=1 MIN:sim;ncs(1)=1
+  built ok, then Reset()       [nc=1 done=0]
+    -1:sim;ncs(1)=0 0:sim;ncs(1)=0 1:sim;ncs(1)=1 2:sim;ncs(1)=0 3:sim;ncs(1)=0 1e5:sim;ncs(1)=0 MAX:sim;ncs(1)=0 MIN:sim;ncs(1)=0
+  declined, then Reset()       [nc=1 done=0]
+    -1:sim;ncs(1)=0 0:sim;ncs(1)=0 1:threw:StartSol echec 2:sim;ncs(1)=0 3:sim;ncs(1)=0 1e5:sim;ncs(1)=0 MAX:sim;ncs(1)=0 MIN:sim;ncs(1)=0
+=== BRepFilletAPI_MakeChamfer: one forked child per (state, accessor, index) ===
+index columns: -1 0 1 2 3 1e5 MAX MIN 
+
+## NbEdges(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:1 0:1 1:1 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:1
+  two contours, never built    [nc=2 done=0]
+    -1:1 0:1 1:1 2:1 3:SEGV 1e5:SEGV MAX:SEGV MIN:1
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:1 0:1 1:1 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:1
+  built ok, 1 contour          [nc=1 done=1]
+    -1:1 0:1 1:1 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:1
+  built ok, 2 contours         [nc=2 done=1]
+    -1:1 0:1 1:1 2:1 3:SEGV 1e5:SEGV MAX:SEGV MIN:1
+  built ok, then Reset()       [nc=1 done=0]
+    -1:1 0:1 1:1 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:1
+  declined, then Reset()       [nc=1 done=0]
+    -1:1 0:1 1:1 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:1
+
+## Length(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:-1 2:-1 3:-1 1e5:-1 MAX:-1 MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:10 0:10 1:10 2:-1 3:-1 1e5:-1 MAX:-1 MIN:10
+  two contours, never built    [nc=2 done=0]
+    -1:10 0:10 1:10 2:10 3:-1 1e5:-1 MAX:-1 MIN:10
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:-1 2:-1 3:-1 1e5:-1 MAX:-1 MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:10 0:10 1:10 2:-1 3:-1 1e5:-1 MAX:-1 MIN:10
+  built ok, 1 contour          [nc=1 done=1]
+    -1:10 0:10 1:10 2:-1 3:-1 1e5:-1 MAX:-1 MIN:10
+  built ok, 2 contours         [nc=2 done=1]
+    -1:10 0:10 1:10 2:10 3:-1 1e5:-1 MAX:-1 MIN:10
+  built ok, then Reset()       [nc=1 done=0]
+    -1:10 0:10 1:10 2:-1 3:-1 1e5:-1 MAX:-1 MIN:10
+  declined, then Reset()       [nc=1 done=0]
+    -1:10 0:10 1:10 2:-1 3:-1 1e5:-1 MAX:-1 MIN:10
+
+## Closed(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:0 2:0 3:0 1e5:0 MAX:0 MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  two contours, never built    [nc=2 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:0 2:0 3:0 1e5:0 MAX:0 MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, 1 contour          [nc=1 done=1]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, 2 contours         [nc=2 done=1]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  declined, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+
+## ClosedAndTangent(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:0 2:0 3:0 1e5:0 MAX:0 MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  two contours, never built    [nc=2 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:0 2:0 3:0 1e5:0 MAX:0 MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, 1 contour          [nc=1 done=1]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, 2 contours         [nc=2 done=1]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  declined, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+
+## FirstVertex(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:null 2:null 3:null 1e5:null MAX:null MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+  two contours, never built    [nc=2 done=0]
+    -1:vtx 0:vtx 1:vtx 2:vtx 3:null 1e5:null MAX:null MIN:vtx
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:null 2:null 3:null 1e5:null MAX:null MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+  built ok, 1 contour          [nc=1 done=1]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+  built ok, 2 contours         [nc=2 done=1]
+    -1:vtx 0:vtx 1:vtx 2:vtx 3:null 1e5:null MAX:null MIN:vtx
+  built ok, then Reset()       [nc=1 done=0]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+  declined, then Reset()       [nc=1 done=0]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+
+## LastVertex(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:null 2:null 3:null 1e5:null MAX:null MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+  two contours, never built    [nc=2 done=0]
+    -1:vtx 0:vtx 1:vtx 2:vtx 3:null 1e5:null MAX:null MIN:vtx
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:null 2:null 3:null 1e5:null MAX:null MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+  built ok, 1 contour          [nc=1 done=1]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+  built ok, 2 contours         [nc=2 done=1]
+    -1:vtx 0:vtx 1:vtx 2:vtx 3:null 1e5:null MAX:null MIN:vtx
+  built ok, then Reset()       [nc=1 done=0]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+  declined, then Reset()       [nc=1 done=0]
+    -1:vtx 0:vtx 1:vtx 2:null 3:null 1e5:null MAX:null MIN:vtx
+
+## Abscissa(IC, v)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:-1 2:-1 3:-1 1e5:-1 MAX:-1 MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  two contours, never built    [nc=2 done=0]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:-1 2:-1 3:-1 1e5:-1 MAX:-1 MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  built ok, 1 contour          [nc=1 done=1]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  built ok, 2 contours         [nc=2 done=1]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  built ok, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  declined, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+
+## RelativeAbscissa(IC, v)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:-1 2:-1 3:-1 1e5:-1 MAX:-1 MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  two contours, never built    [nc=2 done=0]
+    -1:0 0:0 1:0 2:-0.1 3:-1 1e5:-1 MAX:-1 MIN:0
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:-1 2:-1 3:-1 1e5:-1 MAX:-1 MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  built ok, 1 contour          [nc=1 done=1]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  built ok, 2 contours         [nc=2 done=1]
+    -1:0 0:0 1:0 2:-0.1 3:-1 1e5:-1 MAX:-1 MIN:0
+  built ok, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+  declined, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:-1 3:-1 1e5:-1 MAX:-1 MIN:0
+
+## Edge(IC, 1)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:edge 0:edge 1:edge 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:edge
+  two contours, never built    [nc=2 done=0]
+    -1:edge 0:edge 1:edge 2:edge 3:SEGV 1e5:SEGV MAX:SEGV MIN:edge
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:edge 0:edge 1:edge 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:edge
+  built ok, 1 contour          [nc=1 done=1]
+    -1:edge 0:edge 1:edge 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:edge
+  built ok, 2 contours         [nc=2 done=1]
+    -1:edge 0:edge 1:edge 2:edge 3:SEGV 1e5:SEGV MAX:SEGV MIN:edge
+  built ok, then Reset()       [nc=1 done=0]
+    -1:edge 0:edge 1:edge 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:edge
+  declined, then Reset()       [nc=1 done=0]
+    -1:edge 0:edge 1:edge 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:edge
+
+## Edge(1, J)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:edge 0:SEGV 1:edge 2:edge 3:edge 1e5:edge MAX:edge MIN:edge
+  two contours, never built    [nc=2 done=0]
+    -1:edge 0:SEGV 1:edge 2:edge 3:edge 1e5:edge MAX:edge MIN:edge
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:edge 0:SEGV 1:edge 2:edge 3:edge 1e5:edge MAX:edge MIN:edge
+  built ok, 1 contour          [nc=1 done=1]
+    -1:edge 0:SEGV 1:edge 2:edge 3:edge 1e5:edge MAX:edge MIN:edge
+  built ok, 2 contours         [nc=2 done=1]
+    -1:edge 0:SEGV 1:edge 2:edge 3:edge 1e5:edge MAX:edge MIN:edge
+  built ok, then Reset()       [nc=1 done=0]
+    -1:edge 0:SEGV 1:edge 2:edge 3:edge 1e5:edge MAX:edge MIN:edge
+  declined, then Reset()       [nc=1 done=0]
+    -1:edge 0:SEGV 1:edge 2:edge 3:edge 1e5:edge MAX:edge MIN:edge
+
+## IsTwoDistances(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:0 0:0 1:0 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:0
+  two contours, never built    [nc=2 done=0]
+    -1:0 0:0 1:0 2:0 3:SEGV 1e5:SEGV MAX:SEGV MIN:0
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:0 0:0 1:0 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:0
+  built ok, 1 contour          [nc=1 done=1]
+    -1:0 0:0 1:0 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:0
+  built ok, 2 contours         [nc=2 done=1]
+    -1:0 0:0 1:0 2:0 3:SEGV 1e5:SEGV MAX:SEGV MIN:0
+  built ok, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:0
+  declined, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:0
+
+## IsDistanceAngle(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:0 0:0 1:0 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:0
+  two contours, never built    [nc=2 done=0]
+    -1:0 0:0 1:0 2:0 3:SEGV 1e5:SEGV MAX:SEGV MIN:0
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:0 0:0 1:0 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:0
+  built ok, 1 contour          [nc=1 done=1]
+    -1:0 0:0 1:0 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:0
+  built ok, 2 contours         [nc=2 done=1]
+    -1:0 0:0 1:0 2:0 3:SEGV 1e5:SEGV MAX:SEGV MIN:0
+  built ok, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:0
+  declined, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:0 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:0
+
+## GetDist(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:1 0:1 1:1 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:1
+  two contours, never built    [nc=2 done=0]
+    -1:1 0:1 1:1 2:1 3:SEGV 1e5:SEGV MAX:SEGV MIN:1
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:20 0:20 1:20 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:20
+  built ok, 1 contour          [nc=1 done=1]
+    -1:1 0:1 1:1 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:1
+  built ok, 2 contours         [nc=2 done=1]
+    -1:1 0:1 1:1 2:1 3:SEGV 1e5:SEGV MAX:SEGV MIN:1
+  built ok, then Reset()       [nc=1 done=0]
+    -1:1 0:1 1:1 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:1
+  declined, then Reset()       [nc=1 done=0]
+    -1:20 0:20 1:20 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:20
+
+## Dists(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:threw:Chamfer is not a Two Dis 0:threw:Chamfer is not a Two Dis 1:threw:Chamfer is not a Two Dis 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:threw:Chamfer is not a Two Dis
+  two contours, never built    [nc=2 done=0]
+    -1:threw:Chamfer is not a Two Dis 0:threw:Chamfer is not a Two Dis 1:threw:Chamfer is not a Two Dis 2:threw:Chamfer is not a Two Dis 3:SEGV 1e5:SEGV MAX:SEGV MIN:threw:Chamfer is not a Two Dis
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:threw:Chamfer is not a Two Dis 0:threw:Chamfer is not a Two Dis 1:threw:Chamfer is not a Two Dis 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:threw:Chamfer is not a Two Dis
+  built ok, 1 contour          [nc=1 done=1]
+    -1:threw:Chamfer is not a Two Dis 0:threw:Chamfer is not a Two Dis 1:threw:Chamfer is not a Two Dis 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:threw:Chamfer is not a Two Dis
+  built ok, 2 contours         [nc=2 done=1]
+    -1:threw:Chamfer is not a Two Dis 0:threw:Chamfer is not a Two Dis 1:threw:Chamfer is not a Two Dis 2:threw:Chamfer is not a Two Dis 3:SEGV 1e5:SEGV MAX:SEGV MIN:threw:Chamfer is not a Two Dis
+  built ok, then Reset()       [nc=1 done=0]
+    -1:threw:Chamfer is not a Two Dis 0:threw:Chamfer is not a Two Dis 1:threw:Chamfer is not a Two Dis 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:threw:Chamfer is not a Two Dis
+  declined, then Reset()       [nc=1 done=0]
+    -1:threw:Chamfer is not a Two Dis 0:threw:Chamfer is not a Two Dis 1:threw:Chamfer is not a Two Dis 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:threw:Chamfer is not a Two Dis
+
+## GetDistAngle(IC)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:threw:Chamfer is not a Two Dis 0:threw:Chamfer is not a Two Dis 1:threw:Chamfer is not a Two Dis 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:threw:Chamfer is not a Two Dis
+  two contours, never built    [nc=2 done=0]
+    -1:threw:Chamfer is not a Two Dis 0:threw:Chamfer is not a Two Dis 1:threw:Chamfer is not a Two Dis 2:threw:Chamfer is not a Two Dis 3:SEGV 1e5:SEGV MAX:SEGV MIN:threw:Chamfer is not a Two Dis
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:SEGV 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:threw:Chamfer is not a Two Dis 0:threw:Chamfer is not a Two Dis 1:threw:Chamfer is not a Two Dis 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:threw:Chamfer is not a Two Dis
+  built ok, 1 contour          [nc=1 done=1]
+    -1:threw:Chamfer is not a Two Dis 0:threw:Chamfer is not a Two Dis 1:threw:Chamfer is not a Two Dis 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:threw:Chamfer is not a Two Dis
+  built ok, 2 contours         [nc=2 done=1]
+    -1:threw:Chamfer is not a Two Dis 0:threw:Chamfer is not a Two Dis 1:threw:Chamfer is not a Two Dis 2:threw:Chamfer is not a Two Dis 3:SEGV 1e5:SEGV MAX:SEGV MIN:threw:Chamfer is not a Two Dis
+  built ok, then Reset()       [nc=1 done=0]
+    -1:threw:Chamfer is not a Two Dis 0:threw:Chamfer is not a Two Dis 1:threw:Chamfer is not a Two Dis 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:threw:Chamfer is not a Two Dis
+  declined, then Reset()       [nc=1 done=0]
+    -1:threw:Chamfer is not a Two Dis 0:threw:Chamfer is not a Two Dis 1:threw:Chamfer is not a Two Dis 2:SEGV 3:SEGV 1e5:SEGV MAX:SEGV MIN:threw:Chamfer is not a Two Dis
+
+## NbSurf(IC) [sibling #3519 class]
+  fresh                        [nc=0 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  added, never built           [nc=1 done=0]
+    -1:0 0:0 1:SEGV 2:0 3:0 1e5:0 MAX:0 MIN:0
+  two contours, never built    [nc=2 done=0]
+    -1:0 0:0 1:SEGV 2:SEGV 3:0 1e5:0 MAX:0 MIN:0
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  declined (R 20)              [nc=1 done=0]
+    -1:0 0:0 1:0 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, 1 contour          [nc=1 done=1]
+    -1:0 0:0 1:1 2:0 3:0 1e5:0 MAX:0 MIN:0
+  built ok, 2 contours         [nc=2 done=1]
+    -1:0 0:0 1:1 2:1 3:0 1e5:0 MAX:0 MIN:0
+  built ok, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:SEGV 2:0 3:0 1e5:0 MAX:0 MIN:0
+  declined, then Reset()       [nc=1 done=0]
+    -1:0 0:0 1:SEGV 2:0 3:0 1e5:0 MAX:0 MIN:0
+
+## Simulate(IC); NbSurf(1)
+  fresh                        [nc=0 done=0]
+    -1:sim;nbsurf(1)=0 0:sim;nbsurf(1)=0 1:sim;nbsurf(1)=0 2:sim;nbsurf(1)=0 3:sim;nbsurf(1)=0 1e5:sim;nbsurf(1)=0 MAX:sim;nbsurf(1)=0 MIN:sim;nbsurf(1)=0
+  added, never built           [nc=1 done=0]
+    -1:SEGV[sim;] 0:SEGV[sim;] 1:sim;nbsurf(1)=1 2:SEGV[sim;] 3:SEGV[sim;] 1e5:SEGV[sim;] MAX:SEGV[sim;] MIN:SEGV[sim;]
+  two contours, never built    [nc=2 done=0]
+    -1:SEGV[sim;] 0:SEGV[sim;] 1:sim;nbsurf(1)=1 2:SEGV[sim;] 3:SEGV[sim;] 1e5:SEGV[sim;] MAX:SEGV[sim;] MIN:SEGV[sim;]
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:sim;nbsurf(1)=0 0:sim;nbsurf(1)=0 1:sim;nbsurf(1)=0 2:sim;nbsurf(1)=0 3:sim;nbsurf(1)=0 1e5:sim;nbsurf(1)=0 MAX:sim;nbsurf(1)=0 MIN:sim;nbsurf(1)=0
+  declined (R 20)              [nc=1 done=0]
+    -1:sim;nbsurf(1)=0 0:sim;nbsurf(1)=0 1:threw:StartSol echec 2:sim;nbsurf(1)=0 3:sim;nbsurf(1)=0 1e5:sim;nbsurf(1)=0 MAX:sim;nbsurf(1)=0 MIN:sim;nbsurf(1)=0
+  built ok, 1 contour          [nc=1 done=1]
+    -1:sim;nbsurf(1)=1 0:sim;nbsurf(1)=1 1:sim;nbsurf(1)=1 2:sim;nbsurf(1)=1 3:sim;nbsurf(1)=1 1e5:sim;nbsurf(1)=1 MAX:sim;nbsurf(1)=1 MIN:sim;nbsurf(1)=1
+  built ok, 2 contours         [nc=2 done=1]
+    -1:sim;nbsurf(1)=1 0:sim;nbsurf(1)=1 1:sim;nbsurf(1)=1 2:sim;nbsurf(1)=1 3:sim;nbsurf(1)=1 1e5:sim;nbsurf(1)=1 MAX:sim;nbsurf(1)=1 MIN:sim;nbsurf(1)=1
+  built ok, then Reset()       [nc=1 done=0]
+    -1:SEGV[sim;] 0:SEGV[sim;] 1:sim;nbsurf(1)=1 2:SEGV[sim;] 3:SEGV[sim;] 1e5:SEGV[sim;] MAX:SEGV[sim;] MIN:SEGV[sim;]
+  declined, then Reset()       [nc=1 done=0]
+    -1:SEGV[sim;] 0:SEGV[sim;] 1:threw:StartSol echec 2:SEGV[sim;] 3:SEGV[sim;] 1e5:SEGV[sim;] MAX:SEGV[sim;] MIN:SEGV[sim;]
+
+## ResetContour(IC); GetDist(1)
+  fresh                        [nc=0 done=0]
+    -1:SEGV 0:SEGV 1:SEGV[set;] 2:SEGV[set;] 3:SEGV[set;] 1e5:SEGV[set;] MAX:SEGV[set;] MIN:SEGV
+  added, never built           [nc=1 done=0]
+    -1:set;GetDist(1)=1 0:set;GetDist(1)=1 1:set;GetDist(1)=1 2:set;GetDist(1)=1 3:set;GetDist(1)=1 1e5:set;GetDist(1)=1 MAX:set;GetDist(1)=1 MIN:set;GetDist(1)=1
+  two contours, never built    [nc=2 done=0]
+    -1:set;GetDist(1)=1 0:set;GetDist(1)=1 1:set;GetDist(1)=1 2:set;GetDist(1)=1 3:set;GetDist(1)=1 1e5:set;GetDist(1)=1 MAX:set;GetDist(1)=1 MIN:set;GetDist(1)=1
+  Build() with no contour      [nc=0 done=0[setup threw: There are no suitable edges for chamfer or fillet]]
+    -1:SEGV 0:SEGV 1:SEGV[set;] 2:SEGV[set;] 3:SEGV[set;] 1e5:SEGV[set;] MAX:SEGV[set;] MIN:SEGV
+  declined (R 20)              [nc=1 done=0]
+    -1:set;GetDist(1)=20 0:set;GetDist(1)=20 1:set;GetDist(1)=20 2:set;GetDist(1)=20 3:set;GetDist(1)=20 1e5:set;GetDist(1)=20 MAX:set;GetDist(1)=20 MIN:set;GetDist(1)=20
+  built ok, 1 contour          [nc=1 done=1]
+    -1:set;GetDist(1)=1 0:set;GetDist(1)=1 1:set;GetDist(1)=1 2:set;GetDist(1)=1 3:set;GetDist(1)=1 1e5:set;GetDist(1)=1 MAX:set;GetDist(1)=1 MIN:set;GetDist(1)=1
+  built ok, 2 contours         [nc=2 done=1]
+    -1:set;GetDist(1)=1 0:set;GetDist(1)=1 1:set;GetDist(1)=1 2:set;GetDist(1)=1 3:set;GetDist(1)=1 1e5:set;GetDist(1)=1 MAX:set;GetDist(1)=1 MIN:set;GetDist(1)=1
+  built ok, then Reset()       [nc=1 done=0]
+    -1:set;GetDist(1)=1 0:set;GetDist(1)=1 1:set;GetDist(1)=1 2:set;GetDist(1)=1 3:set;GetDist(1)=1 1e5:set;GetDist(1)=1 MAX:set;GetDist(1)=1 MIN:set;GetDist(1)=1
+  declined, then Reset()       [nc=1 done=0]
+    -1:set;GetDist(1)=20 0:set;GetDist(1)=20 1:set;GetDist(1)=20 2:set;GetDist(1)=20 3:set;GetDist(1)=20 1e5:set;GetDist(1)=20 MAX:set;GetDist(1)=20 MIN:set;GetDist(1)=20
