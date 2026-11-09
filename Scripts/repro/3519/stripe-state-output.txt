@@ -1,0 +1,31 @@
+# occt_3519_stripe_state, run 2026-11-10 against the v4.0.0-kernel.8 macos-arm64 slice (the asset Package.swift pins)
+=== ChFiDS_Stripe::SetOfSurfData() per stripe, per state (BRepFilletAPI_MakeFillet) ===
+
+--- fresh (no contour)
+  (no stripe)
+
+--- edge added, never built, never simulated
+  stripe 1: SetOfSurfData() = NULL
+
+--- edge added, Simulate(1)
+  stripe 1: SetOfSurfData() set, Length() = 1, first SurfData Simul() set (simulated)
+
+--- edge added, Simulate(1), Reset()
+  stripe 1: SetOfSurfData() = NULL
+
+--- edge added, Build(), then Reset()
+  stripe 1: SetOfSurfData() = NULL
+
+--- edge added, Build() ok
+  stripe 1: SetOfSurfData() set, Length() = 1, first SurfData Simul() = null (built, not simulated)
+
+--- declined build (radius 20)
+  stripe 1: SetOfSurfData() set, Length() = 0 (empty)
+
+--- Simulate(1) declined (radius 20)
+  [threw: StartSol echec]
+  stripe 1: SetOfSurfData() set, Length() = 0 (empty)
+
+--- two contours, only contour 1 Simulate(1)'d
+  stripe 1: SetOfSurfData() set, Length() = 1, first SurfData Simul() set (simulated)
+  stripe 2: SetOfSurfData() = NULL
