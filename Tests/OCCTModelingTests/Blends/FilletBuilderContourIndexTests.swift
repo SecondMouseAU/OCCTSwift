@@ -292,8 +292,15 @@ struct FilletBuilderContourIndexTests {
         let law = try #require(
             LawFunction.linear(from: 1, to: 1, parameterRange: 0...1))
 
+        // `Int` is 32 bits on wasm32, where `Int(Int32.max) + 1` itself overflows and traps. The two
+        // values just past `Int32` are built by clamping: the real ones on a 64-bit `Int`, and
+        // `Int.max` and `Int.min` again on a 32-bit one.
+        let pastInt32 = [
+            Int(clamping: Int64(Int32.max) + 1), Int(clamping: Int64(Int32.min) - 1),
+        ]
+
         for (name, fb) in try states() {
-            for i in [Int.max, Int.min, Int(Int32.max) + 1, Int(Int32.min) - 1] {
+            for i in [Int.max, Int.min] + pastInt32 {
                 #expect(fb.edgeCount(contour: i) == 0, "\(name), contour \(i)")
                 #expect(fb.radius(contour: i) == -1)
                 #expect(fb.length(contour: i) == -1)
@@ -339,7 +346,7 @@ struct FilletBuilderContourIndexTests {
 
         for c in 1...2 {
             #expect(fb.edgeCount(contour: c) == 1)
-            #expect(fb.length(contour: c) == 10)
+            #expect(abs(fb.length(contour: c) - 10) < 1e-9)
             #expect(fb.isConstant(contour: c))
             #expect(!fb.isClosed(contour: c))
             #expect(!fb.isClosedAndTangent(contour: c))
