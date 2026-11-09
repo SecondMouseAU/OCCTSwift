@@ -1744,6 +1744,20 @@ int32_t OCCTFilletBuilderNbSimulatedSurf(OCCTFilletBuilderRef builder, int32_t c
     return 0;
   try
   {
+    // #3519: NbSurf(IC) is `stripe->SetOfSurfData()->Length()` (ChFi3d_FilBuilder.cxx:439-451)
+    // with no null test. A stripe's surface-data sequence is null until Build or Simulate reaches
+    // it (ChFi3d_Builder::PerformSetOfKPart assigns it) and null again after Reset()
+    // (ChFiDS_Stripe::Reset, which ChFi3d_Builder::Reset runs on every stripe), so the read is an
+    // uncatchable SIGSEGV on a builder never built or simulated, on one reset since, and on a
+    // contour a Simulate of another contour never reached. NbComputedSurfaces(IC) reads the same
+    // length behind `if (hd.IsNull()) return 0;` (ChFi3d_Builder_1.cxx:460-465), the null test
+    // OCCT ships for that sequence. Nothing in OCCT calls MakeFillet::NbSurf; its nearest reader
+    // of simulated data, FilletSurf_Builder::NbSection, throws StdFail_NotDone unless a
+    // Simulate() completed (FilletSurf_Builder.cxx:326-352), and 0 is this builder's refusal.
+    // Measured, Scripts/repro/3519: NbComputedSurfaces equals NbSurf in every state where NbSurf
+    // answers, and is 0 in every state where it faults.
+    if (builder->fillet.NbComputedSurfaces(contourIndex) <= 0)
+      return 0;
     return (int32_t)builder->fillet.NbSurf(contourIndex);
   }
   catch (...)

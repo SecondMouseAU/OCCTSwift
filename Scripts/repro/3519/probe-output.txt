@@ -1,0 +1,445 @@
+# occt_3519_simulated_surf_matrix, run 2026-11-10 against the v4.0.0-kernel.8 macos-arm64 slice (the asset Package.swift pins)
+# one forked child per (state, accessor); CRASH is the child dying on the signal, read from waitpid
+=== BRepFilletAPI_MakeFillet: one forked child per (state, accessor) ===
+
+--- state: fresh (no contour)
+    IsDone=0 NbContours=0 
+    NbSurf(1)                          0
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    NbComputedSurfaces(1)              0
+    NbComputedSurfaces(2)              0
+    NbComputedSurfaces(0)              0
+    NbComputedSurfaces(99)             0
+    Sect(1,1) [raw]                    null
+    Sect(2,1) [raw]                    null
+    Sect(1,1) if NbComputedSurfaces(1)>=1 (gated off)
+    ComputedSurface(1,1) [raw]         CRASH signal 11 (SIGSEGV)
+    Simulate(1) [as an operation]      returned
+    Simulate(2) [as an operation]      returned
+    Simulate(1); NbSurf(1)             0
+    StripeStatus(1)                    CRASH signal 11 (SIGSEGV)
+
+--- state: edge added, never built, never simulated
+    IsDone=0 NbContours=1 
+    NbSurf(1)                          CRASH signal 11 (SIGSEGV)
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    NbComputedSurfaces(1)              0
+    NbComputedSurfaces(2)              0
+    NbComputedSurfaces(0)              0
+    NbComputedSurfaces(99)             0
+    Sect(1,1) [raw]                    CRASH signal 11 (SIGSEGV)
+    Sect(2,1) [raw]                    null
+    Sect(1,1) if NbComputedSurfaces(1)>=1 (gated off)
+    ComputedSurface(1,1) [raw]         CRASH signal 11 (SIGSEGV)
+    Simulate(1) [as an operation]      returned
+    Simulate(2) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+    StripeStatus(1)                    0
+
+--- state: CONTROL: edge added, Simulate(1)
+    IsDone=0 NbContours=1 
+    NbSurf(1)                          1
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    NbComputedSurfaces(1)              1
+    NbComputedSurfaces(2)              0
+    NbComputedSurfaces(0)              0
+    NbComputedSurfaces(99)             0
+    Sect(1,1) [raw]                    sections=2
+    Sect(2,1) [raw]                    null
+    Sect(1,1) if NbComputedSurfaces(1)>=1 sections=2
+    ComputedSurface(1,1) [raw]         1
+    Simulate(1) [as an operation]      returned
+    Simulate(2) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+    StripeStatus(1)                    0
+
+--- state: Simulate(1), then Reset()
+    IsDone=0 NbContours=1 
+    NbSurf(1)                          CRASH signal 11 (SIGSEGV)
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    NbComputedSurfaces(1)              0
+    NbComputedSurfaces(2)              0
+    NbComputedSurfaces(0)              0
+    NbComputedSurfaces(99)             0
+    Sect(1,1) [raw]                    CRASH signal 11 (SIGSEGV)
+    Sect(2,1) [raw]                    null
+    Sect(1,1) if NbComputedSurfaces(1)>=1 (gated off)
+    ComputedSurface(1,1) [raw]         CRASH signal 11 (SIGSEGV)
+    Simulate(1) [as an operation]      returned
+    Simulate(2) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+    StripeStatus(1)                    0
+
+--- state: Simulate(1), Reset(), Simulate(1)
+    IsDone=0 NbContours=1 
+    NbSurf(1)                          1
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    NbComputedSurfaces(1)              1
+    NbComputedSurfaces(2)              0
+    NbComputedSurfaces(0)              0
+    NbComputedSurfaces(99)             0
+    Sect(1,1) [raw]                    sections=2
+    Sect(2,1) [raw]                    null
+    Sect(1,1) if NbComputedSurfaces(1)>=1 sections=2
+    ComputedSurface(1,1) [raw]         1
+    Simulate(1) [as an operation]      returned
+    Simulate(2) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+    StripeStatus(1)                    0
+
+--- state: built ok (radius 1)
+    IsDone=1 NbContours=1 
+    NbSurf(1)                          1
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    NbComputedSurfaces(1)              1
+    NbComputedSurfaces(2)              0
+    NbComputedSurfaces(0)              0
+    NbComputedSurfaces(99)             0
+    Sect(1,1) [raw]                    null
+    Sect(2,1) [raw]                    null
+    Sect(1,1) if NbComputedSurfaces(1)>=1 null
+    ComputedSurface(1,1) [raw]         1
+    Simulate(1) [as an operation]      returned
+    Simulate(2) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+    StripeStatus(1)                    0
+
+--- state: built ok, then Reset()
+    IsDone=0 NbContours=1 
+    NbSurf(1)                          CRASH signal 11 (SIGSEGV)
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    NbComputedSurfaces(1)              0
+    NbComputedSurfaces(2)              0
+    NbComputedSurfaces(0)              0
+    NbComputedSurfaces(99)             0
+    Sect(1,1) [raw]                    CRASH signal 11 (SIGSEGV)
+    Sect(2,1) [raw]                    null
+    Sect(1,1) if NbComputedSurfaces(1)>=1 (gated off)
+    ComputedSurface(1,1) [raw]         CRASH signal 11 (SIGSEGV)
+    Simulate(1) [as an operation]      returned
+    Simulate(2) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+    StripeStatus(1)                    0
+
+--- state: Simulate(1), then Build()
+    IsDone=1 NbContours=1 
+    NbSurf(1)                          1
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    NbComputedSurfaces(1)              1
+    NbComputedSurfaces(2)              0
+    NbComputedSurfaces(0)              0
+    NbComputedSurfaces(99)             0
+    Sect(1,1) [raw]                    null
+    Sect(2,1) [raw]                    null
+    Sect(1,1) if NbComputedSurfaces(1)>=1 null
+    ComputedSurface(1,1) [raw]         1
+    Simulate(1) [as an operation]      returned
+    Simulate(2) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+    StripeStatus(1)                    0
+
+--- state: Build(), then Simulate(1)
+    IsDone=1 NbContours=1 
+    NbSurf(1)                          1
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    NbComputedSurfaces(1)              1
+    NbComputedSurfaces(2)              0
+    NbComputedSurfaces(0)              0
+    NbComputedSurfaces(99)             0
+    Sect(1,1) [raw]                    null
+    Sect(2,1) [raw]                    null
+    Sect(1,1) if NbComputedSurfaces(1)>=1 null
+    ComputedSurface(1,1) [raw]         1
+    Simulate(1) [as an operation]      returned
+    Simulate(2) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+    StripeStatus(1)                    0
+
+--- state: declined build (radius 20)
+    IsDone=0 NbContours=1 
+    NbSurf(1)                          0
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    NbComputedSurfaces(1)              0
+    NbComputedSurfaces(2)              0
+    NbComputedSurfaces(0)              0
+    NbComputedSurfaces(99)             0
+    Sect(1,1) [raw]                    CRASH signal 11 (SIGSEGV)
+    Sect(2,1) [raw]                    null
+    Sect(1,1) if NbComputedSurfaces(1)>=1 (gated off)
+    ComputedSurface(1,1) [raw]         CRASH signal 11 (SIGSEGV)
+    Simulate(1) [as an operation]      threw Standard_Failure: StartSol echec
+    Simulate(2) [as an operation]      returned
+    Simulate(1); NbSurf(1)             threw Standard_Failure: StartSol echec
+    StripeStatus(1)                    3
+
+--- state: Simulate(1) declined (radius 20, threw)
+    IsDone=0 NbContours=1 [threw: StartSol echec] 
+    NbSurf(1)                          0
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    NbComputedSurfaces(1)              0
+    NbComputedSurfaces(2)              0
+    NbComputedSurfaces(0)              0
+    NbComputedSurfaces(99)             0
+    Sect(1,1) [raw]                    CRASH signal 11 (SIGSEGV)
+    Sect(2,1) [raw]                    null
+    Sect(1,1) if NbComputedSurfaces(1)>=1 (gated off)
+    ComputedSurface(1,1) [raw]         CRASH signal 11 (SIGSEGV)
+    Simulate(1) [as an operation]      threw Standard_Failure: StartSol echec
+    Simulate(2) [as an operation]      returned
+    Simulate(1); NbSurf(1)             threw Standard_Failure: StartSol echec
+    StripeStatus(1)                    3
+
+--- state: Build() with no contour (threw)
+    IsDone=0 NbContours=0 [threw: There are no suitable edges for chamfer or fillet] 
+    NbSurf(1)                          0
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    NbComputedSurfaces(1)              0
+    NbComputedSurfaces(2)              0
+    NbComputedSurfaces(0)              0
+    NbComputedSurfaces(99)             0
+    Sect(1,1) [raw]                    null
+    Sect(2,1) [raw]                    null
+    Sect(1,1) if NbComputedSurfaces(1)>=1 (gated off)
+    ComputedSurface(1,1) [raw]         CRASH signal 11 (SIGSEGV)
+    Simulate(1) [as an operation]      returned
+    Simulate(2) [as an operation]      returned
+    Simulate(1); NbSurf(1)             0
+    StripeStatus(1)                    CRASH signal 11 (SIGSEGV)
+
+--- state: two contours, only contour 1 Simulate(1)'d
+    IsDone=0 NbContours=2 
+    NbSurf(1)                          1
+    NbSurf(2)                          CRASH signal 11 (SIGSEGV)
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    NbComputedSurfaces(1)              1
+    NbComputedSurfaces(2)              0
+    NbComputedSurfaces(0)              0
+    NbComputedSurfaces(99)             0
+    Sect(1,1) [raw]                    sections=2
+    Sect(2,1) [raw]                    CRASH signal 11 (SIGSEGV)
+    Sect(1,1) if NbComputedSurfaces(1)>=1 sections=2
+    ComputedSurface(1,1) [raw]         1
+    Simulate(1) [as an operation]      returned
+    Simulate(2) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+    StripeStatus(1)                    0
+
+--- state: two contours, nothing run
+    IsDone=0 NbContours=2 
+    NbSurf(1)                          CRASH signal 11 (SIGSEGV)
+    NbSurf(2)                          CRASH signal 11 (SIGSEGV)
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    NbComputedSurfaces(1)              0
+    NbComputedSurfaces(2)              0
+    NbComputedSurfaces(0)              0
+    NbComputedSurfaces(99)             0
+    Sect(1,1) [raw]                    CRASH signal 11 (SIGSEGV)
+    Sect(2,1) [raw]                    CRASH signal 11 (SIGSEGV)
+    Sect(1,1) if NbComputedSurfaces(1)>=1 (gated off)
+    ComputedSurface(1,1) [raw]         CRASH signal 11 (SIGSEGV)
+    Simulate(1) [as an operation]      returned
+    Simulate(2) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+    StripeStatus(1)                    0
+
+
+=== BRepFilletAPI_MakeChamfer: one forked child per (state, accessor) ===
+
+--- state: fresh (no contour)
+    IsDone=0 NbContours=0 
+    NbSurf(1)                          0
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    Sect(1,1) [raw]                    null
+    Simulate(1) [as an operation]      returned
+    Simulate(1); NbSurf(1)             0
+
+--- state: edge added, never built, never simulated
+    IsDone=0 NbContours=1 
+    NbSurf(1)                          CRASH signal 11 (SIGSEGV)
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    Sect(1,1) [raw]                    CRASH signal 11 (SIGSEGV)
+    Simulate(1) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+
+--- state: CONTROL: edge added, Simulate(1)
+    IsDone=0 NbContours=1 
+    NbSurf(1)                          1
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    Sect(1,1) [raw]                    sections=2
+    Simulate(1) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+
+--- state: Simulate(1), then Reset()
+    IsDone=0 NbContours=1 
+    NbSurf(1)                          CRASH signal 11 (SIGSEGV)
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    Sect(1,1) [raw]                    CRASH signal 11 (SIGSEGV)
+    Simulate(1) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+
+--- state: Simulate(1), Reset(), Simulate(1)
+    IsDone=0 NbContours=1 
+    NbSurf(1)                          1
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    Sect(1,1) [raw]                    sections=2
+    Simulate(1) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+
+--- state: built ok (radius 1)
+    IsDone=1 NbContours=1 
+    NbSurf(1)                          1
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    Sect(1,1) [raw]                    null
+    Simulate(1) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+
+--- state: built ok, then Reset()
+    IsDone=0 NbContours=1 
+    NbSurf(1)                          CRASH signal 11 (SIGSEGV)
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    Sect(1,1) [raw]                    CRASH signal 11 (SIGSEGV)
+    Simulate(1) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+
+--- state: Simulate(1), then Build()
+    IsDone=1 NbContours=1 
+    NbSurf(1)                          1
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    Sect(1,1) [raw]                    null
+    Simulate(1) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+
+--- state: Build(), then Simulate(1)
+    IsDone=1 NbContours=1 
+    NbSurf(1)                          1
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    Sect(1,1) [raw]                    null
+    Simulate(1) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+
+--- state: declined build (radius 20)
+    IsDone=0 NbContours=1 
+    NbSurf(1)                          0
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    Sect(1,1) [raw]                    CRASH signal 11 (SIGSEGV)
+    Simulate(1) [as an operation]      threw Standard_Failure: StartSol echec
+    Simulate(1); NbSurf(1)             threw Standard_Failure: StartSol echec
+
+--- state: Simulate(1) declined (radius 20, threw)
+    IsDone=0 NbContours=1 [threw: StartSol echec] 
+    NbSurf(1)                          0
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    Sect(1,1) [raw]                    CRASH signal 11 (SIGSEGV)
+    Simulate(1) [as an operation]      threw Standard_Failure: StartSol echec
+    Simulate(1); NbSurf(1)             threw Standard_Failure: StartSol echec
+
+--- state: Build() with no contour (threw)
+    IsDone=0 NbContours=0 [threw: There are no suitable edges for chamfer or fillet] 
+    NbSurf(1)                          0
+    NbSurf(2)                          0
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    Sect(1,1) [raw]                    null
+    Simulate(1) [as an operation]      returned
+    Simulate(1); NbSurf(1)             0
+
+--- state: two contours, only contour 1 Simulate(1)'d
+    IsDone=0 NbContours=2 
+    NbSurf(1)                          1
+    NbSurf(2)                          CRASH signal 11 (SIGSEGV)
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    Sect(1,1) [raw]                    sections=2
+    Simulate(1) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+
+--- state: two contours, nothing run
+    IsDone=0 NbContours=2 
+    NbSurf(1)                          CRASH signal 11 (SIGSEGV)
+    NbSurf(2)                          CRASH signal 11 (SIGSEGV)
+    NbSurf(0)                          0
+    NbSurf(99)                         0
+    Sect(1,1) [raw]                    CRASH signal 11 (SIGSEGV)
+    Simulate(1) [as an operation]      returned
+    Simulate(1); NbSurf(1)             1
+
+
+=== predicate check: NbSurf(IC) vs NbComputedSurfaces(IC), fillet ===
+  1    fresh (no contour)                             NbSurf=0                      NbComputedSurfaces=0      agree
+  1    edge added, never built, never simulated       NbSurf=CRASH signal 11 (SIGSEGV) NbComputedSurfaces=0      agree
+  1    CONTROL: edge added, Simulate(1)               NbSurf=1                      NbComputedSurfaces=1      agree
+  1    Simulate(1), then Reset()                      NbSurf=CRASH signal 11 (SIGSEGV) NbComputedSurfaces=0      agree
+  1    Simulate(1), Reset(), Simulate(1)              NbSurf=1                      NbComputedSurfaces=1      agree
+  1    built ok (radius 1)                            NbSurf=1                      NbComputedSurfaces=1      agree
+  1    built ok, then Reset()                         NbSurf=CRASH signal 11 (SIGSEGV) NbComputedSurfaces=0      agree
+  1    Simulate(1), then Build()                      NbSurf=1                      NbComputedSurfaces=1      agree
+  1    Build(), then Simulate(1)                      NbSurf=1                      NbComputedSurfaces=1      agree
+  1    declined build (radius 20)                     NbSurf=0                      NbComputedSurfaces=0      agree
+  1    Simulate(1) declined (radius 20, threw)        NbSurf=0                      NbComputedSurfaces=0      agree
+  1    Build() with no contour (threw)                NbSurf=0                      NbComputedSurfaces=0      agree
+  1    two contours, only contour 1 Simulate(1)'d     NbSurf=1                      NbComputedSurfaces=1      agree
+  1    two contours, nothing run                      NbSurf=CRASH signal 11 (SIGSEGV) NbComputedSurfaces=0      agree
+  2    fresh (no contour)                             NbSurf=0                      NbComputedSurfaces=0      agree
+  2    edge added, never built, never simulated       NbSurf=0                      NbComputedSurfaces=0      agree
+  2    CONTROL: edge added, Simulate(1)               NbSurf=0                      NbComputedSurfaces=0      agree
+  2    Simulate(1), then Reset()                      NbSurf=0                      NbComputedSurfaces=0      agree
+  2    Simulate(1), Reset(), Simulate(1)              NbSurf=0                      NbComputedSurfaces=0      agree
+  2    built ok (radius 1)                            NbSurf=0                      NbComputedSurfaces=0      agree
+  2    built ok, then Reset()                         NbSurf=0                      NbComputedSurfaces=0      agree
+  2    Simulate(1), then Build()                      NbSurf=0                      NbComputedSurfaces=0      agree
+  2    Build(), then Simulate(1)                      NbSurf=0                      NbComputedSurfaces=0      agree
+  2    declined build (radius 20)                     NbSurf=0                      NbComputedSurfaces=0      agree
+  2    Simulate(1) declined (radius 20, threw)        NbSurf=0                      NbComputedSurfaces=0      agree
+  2    Build() with no contour (threw)                NbSurf=0                      NbComputedSurfaces=0      agree
+  2    two contours, only contour 1 Simulate(1)'d     NbSurf=CRASH signal 11 (SIGSEGV) NbComputedSurfaces=0      agree
+  2    two contours, nothing run                      NbSurf=CRASH signal 11 (SIGSEGV) NbComputedSurfaces=0      agree
+
+predicate check: PASS (0 disagreements)

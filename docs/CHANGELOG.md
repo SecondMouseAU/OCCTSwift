@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `FilletBuilder.simulatedSurfaceCount` answers 0 instead of crashing when the contour holds no surface data (#3519)
+
+`FilletBuilder.simulatedSurfaceCount(contour:)` crashed the process, uncatchably, when the contour had never been built or simulated, when the builder had been `reset()` since, and when a `simulate(contour:)` of another contour had not reached it. It now answers `0` in those cases and still answers the real count after `simulate(contour:)` or `build()`. `ChamferBuilder.simulatedSurfaceCount(contour:)` has the same fault and is not changed: `BRepFilletAPI_MakeChamfer` exposes no way to tell, so it still crashes if called before `simulate(contour:)` or after `reset()`.
+
 ### `FilletBuilder.surfaceCount` answers 0 instead of crashing when no build completed (#3516)
 
 `FilletBuilder.surfaceCount` crashed the process, uncatchably, when the builder had never been built, had no contour, or its build was declined (upstream OCCT#1716). It now answers `0` unless the last `build()` completed, and `0` again after `reset()`, where it used to answer the previous build's count.
