@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `FilletBuilder.surfaceCount` answers 0 instead of crashing when no build completed (#3516)
+
+`FilletBuilder.surfaceCount` crashed the process, uncatchably, when the builder had never been built, had no contour, or its build was declined (upstream OCCT#1716). It now answers `0` unless the last `build()` completed, and `0` again after `reset()`, where it used to answer the previous build's count.
+
 ### The BREP readers' caveat is retired: a complete-but-wrong file no longer faults the reader on `v4.0.0-kernel.8` (#3490)
 
 The `v4.0.0-kernel.8` kernel carries `0073`, `0074` and `0077` for the text readers, and the `Scripts/repro/3487/` matrix re-run against it finds no fault and no hang in the reader: 109,801 damaged files through the bridge (8,521 faults on `v4.0.0-kernel.7`), 3,741 bare-reader prefixes (2,006 faults and 414 spins before) and 1,415 structural and byte cases. The `Shape.loadBREP` and `Shape.fromBREPString` documentation no longer says to avoid a BREP from an untrusted source. What the reader returns is still not validated, and `Shape.isValid` does not return on a shape whose pcurve is a circle of radius 0, which a complete BREP can carry (#3506).

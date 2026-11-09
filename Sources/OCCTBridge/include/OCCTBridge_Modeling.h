@@ -4128,7 +4128,8 @@ bool OCCTFilletBuilderClosedAndTangent(OCCTFilletBuilderRef _Nonnull builder, in
 /// Whether contour IC (1-based) is closed.
 bool OCCTFilletBuilderClosed(OCCTFilletBuilderRef _Nonnull builder, int32_t contourIndex);
 
-/// Number of surfaces after build.
+/// Number of surfaces after build. 0 unless the last Build() completed (#3516): never built,
+/// declined, no contour, or Reset() since.
 int32_t OCCTFilletBuilderNbSurfaces(OCCTFilletBuilderRef _Nonnull builder);
 
 /// Number of computed surfaces for contour IC (1-based).

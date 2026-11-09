@@ -180,6 +180,27 @@ extension FilletBuilder {
     }
 
     /// Number of surfaces after build.
+    ///
+    /// Answers `0` unless the last ``build()`` completed: the builder was never built, the build
+    /// was declined (``faultyContourCount`` says how many contours the kernel refused), there was
+    /// no contour to build, or ``reset()`` has been called since. OCCT reads this count from a
+    /// data structure that exists only once a build got that far, and reading it on any of those
+    /// builders used to fault the process uncatchably (#3516).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let edge = box.edges()[0]
+    ///
+    /// let declined = FilletBuilder(shape: box)!
+    /// declined.addEdge(edge, radius: 20)           // far past half a face width
+    /// _ = declined.build()                         // nil: the builder refused it
+    /// print(declined.surfaceCount)                 // 0, and faultyContourCount is 1
+    ///
+    /// let built = FilletBuilder(shape: box)!
+    /// built.addEdge(edge, radius: 1)
+    /// _ = built.build()                            // the filleted box
+    /// print(built.surfaceCount)                    // 2
+    /// ```
     public var surfaceCount: Int { Int(OCCTFilletBuilderNbSurfaces(handle)) }
 
     /// Number of computed surfaces for contour (1-based).
@@ -223,7 +244,7 @@ extension FilletBuilder {
     ///
     /// `internalContinuity` is a ``ParametricContinuity`` raw value; OCCT's own domain here is
     /// "a continuity Ci (i=0, 1 or 2)", default C1. The bridge used to cast the integer straight
-    /// to `GeomAbs_Shape`, which made `1` mean G1 and `2` mean C1 — one class below what this
+    /// to `GeomAbs_Shape`, which made `1` mean G1 and `2` mean C1, one class below what this
     /// comment promised, from 1 up (#490).
     ///
     /// ```swift
