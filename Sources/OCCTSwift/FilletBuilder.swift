@@ -528,6 +528,25 @@ extension FilletBuilder {
     }
 
     /// Get the number of simulated surfaces for a contour (1-based).
+    ///
+    /// Answers `0` while the contour holds no surface data: the builder was never built or
+    /// simulated, ``reset()`` has been called since, the simulation was declined, or `contour`
+    /// names no contour. OCCT reads this count from a sequence that only ``build()`` or
+    /// ``simulate(contour:)`` creates for a contour, and reading it before either had run, or after
+    /// a reset, used to fault the process uncatchably (#3519). A contour that ``build()`` has run on
+    /// keeps the surface count that build left.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = FilletBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], radius: 1)
+    ///
+    /// print(builder.simulatedSurfaceCount(contour: 1))   // 0: nothing has run on it yet
+    /// builder.simulate(contour: 1)
+    /// print(builder.simulatedSurfaceCount(contour: 1))   // 1: one fillet face on a box edge
+    /// builder.reset()
+    /// print(builder.simulatedSurfaceCount(contour: 1))   // 0: reset discards the surface data
+    /// ```
     public func simulatedSurfaceCount(contour: Int) -> Int {
         Int(OCCTFilletBuilderNbSimulatedSurf(handle, Int32(contour)))
     }

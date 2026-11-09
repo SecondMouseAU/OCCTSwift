@@ -4391,7 +4391,8 @@ void OCCTFilletBuilderResetContour(OCCTFilletBuilderRef _Nonnull builder, int32_
 /// Simulate filleting on contour IC (computes sections without building).
 void OCCTFilletBuilderSimulate(OCCTFilletBuilderRef _Nonnull builder, int32_t contourIndex);
 
-/// Get the number of simulated surfaces for contour IC.
+/// Get the number of simulated surfaces for contour IC. 0 while the contour holds no surface data
+/// (#3519): never built or simulated, Reset() since, or no such contour.
 int32_t OCCTFilletBuilderNbSimulatedSurf(OCCTFilletBuilderRef _Nonnull builder,
                                          int32_t contourIndex);
 
