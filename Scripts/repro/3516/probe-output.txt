@@ -1,0 +1,234 @@
+# occt_3516_nbsurfaces_matrix, run 2026-11-09 against the v4.0.0-kernel.8 macos-arm64 slice (the asset Package.swift pins)
+# one forked child per (state, accessor); CRASH is the child dying on the signal, read from waitpid
+=== BRepFilletAPI_MakeFillet: one forked child per (state, accessor) ===
+
+--- state: fresh (never built, no contour)
+    IsDone=0 NbContours=0 
+    NbSurfaces()               CRASH signal 11 (SIGSEGV)
+    NbComputedSurfaces(1)      0
+    StripeStatus(1)            CRASH signal 11 (SIGSEGV)
+    NbSurf(1) [simulated]      0
+    Simulate(1); NbSurf(1)     0
+    HasResult()                0
+    BadShape()                 0
+    NbFaultyContours()         0
+    NbFaultyVertices()         0
+    FaultyContour(1)           0
+    FaultyVertex(1)            0
+    Generated(edge)            0
+    Modified(face)             0
+    IsDeleted(face)            1
+    NewFaces(1)                CRASH signal 11 (SIGSEGV)
+    ComputedSurface(1,1)       CRASH signal 11 (SIGSEGV)
+    Sect(1,1)                  0
+    NbContours()               0
+    NbEdges(1)                 CRASH signal 11 (SIGSEGV)
+    Length(1)                  -1
+    Radius(1)                  -1
+    Closed(1)                  0
+
+--- state: added, Build() never called
+    IsDone=0 NbContours=1 
+    NbSurfaces()               CRASH signal 11 (SIGSEGV)
+    NbComputedSurfaces(1)      0
+    StripeStatus(1)            0
+    NbSurf(1) [simulated]      CRASH signal 11 (SIGSEGV)
+    Simulate(1); NbSurf(1)     1
+    HasResult()                0
+    BadShape()                 0
+    NbFaultyContours()         0
+    NbFaultyVertices()         0
+    FaultyContour(1)           0
+    FaultyVertex(1)            0
+    Generated(edge)            0
+    Modified(face)             0
+    IsDeleted(face)            1
+    NewFaces(1)                CRASH signal 11 (SIGSEGV)
+    ComputedSurface(1,1)       CRASH signal 11 (SIGSEGV)
+    Sect(1,1)                  CRASH signal 11 (SIGSEGV)
+    NbContours()               1
+    NbEdges(1)                 1
+    Length(1)                  10
+    Radius(1)                  1
+    Closed(1)                  0
+
+--- state: Build() with no contour (threw)
+    IsDone=0 NbContours=0 [setup threw: There are no suitable edges for chamfer or fillet]
+    NbSurfaces()               CRASH signal 11 (SIGSEGV)
+    NbComputedSurfaces(1)      0
+    StripeStatus(1)            CRASH signal 11 (SIGSEGV)
+    NbSurf(1) [simulated]      0
+    Simulate(1); NbSurf(1)     0
+    HasResult()                0
+    BadShape()                 0
+    NbFaultyContours()         0
+    NbFaultyVertices()         0
+    FaultyContour(1)           0
+    FaultyVertex(1)            0
+    Generated(edge)            0
+    Modified(face)             0
+    IsDeleted(face)            1
+    NewFaces(1)                CRASH signal 11 (SIGSEGV)
+    ComputedSurface(1,1)       CRASH signal 11 (SIGSEGV)
+    Sect(1,1)                  0
+    NbContours()               0
+    NbEdges(1)                 CRASH signal 11 (SIGSEGV)
+    Length(1)                  -1
+    Radius(1)                  -1
+    Closed(1)                  0
+
+--- state: declined: box edge, radius 20
+    IsDone=0 NbContours=1 
+    NbSurfaces()               CRASH signal 11 (SIGSEGV)
+    NbComputedSurfaces(1)      0
+    StripeStatus(1)            3
+    NbSurf(1) [simulated]      0
+    Simulate(1); NbSurf(1)     threw Standard_Failure: StartSol echec
+    HasResult()                0
+    BadShape()                 0
+    NbFaultyContours()         1
+    NbFaultyVertices()         0
+    FaultyContour(1)           1
+    FaultyVertex(1)            0
+    Generated(edge)            0
+    Modified(face)             0
+    IsDeleted(face)            1
+    NewFaces(1)                CRASH signal 11 (SIGSEGV)
+    ComputedSurface(1,1)       CRASH signal 11 (SIGSEGV)
+    Sect(1,1)                  CRASH signal 11 (SIGSEGV)
+    NbContours()               1
+    NbEdges(1)                 1
+    Length(1)                  10
+    Radius(1)                  20
+    Closed(1)                  0
+
+--- state: declined: three-cylinder model, R 17
+    IsDone=0 NbContours=6 
+    NbSurfaces()               CRASH signal 11 (SIGSEGV)
+    NbComputedSurfaces(1)      1
+    StripeStatus(1)            0
+    NbSurf(1) [simulated]      1
+    Simulate(1); NbSurf(1)     1
+    HasResult()                0
+    BadShape()                 0
+    NbFaultyContours()         1
+    NbFaultyVertices()         0
+    FaultyContour(1)           1
+    FaultyVertex(1)            0
+    Generated(edge)            0
+    Modified(face)             0
+    IsDeleted(face)            1
+    NewFaces(1)                CRASH signal 11 (SIGSEGV)
+    ComputedSurface(1,1)       1
+    Sect(1,1)                  0
+    NbContours()               6
+    NbEdges(1)                 1
+    Length(1)                  186.172
+    Radius(1)                  17
+    Closed(1)                  0
+
+--- state: CONTROL: built ok
+    IsDone=1 NbContours=1 
+    NbSurfaces()               2
+    NbComputedSurfaces(1)      1
+    StripeStatus(1)            0
+    NbSurf(1) [simulated]      1
+    Simulate(1); NbSurf(1)     1
+    HasResult()                0
+    BadShape()                 0
+    NbFaultyContours()         0
+    NbFaultyVertices()         0
+    FaultyContour(1)           0
+    FaultyVertex(1)            0
+    Generated(edge)            1
+    Modified(face)             1
+    IsDeleted(face)            0
+    NewFaces(1)                1
+    ComputedSurface(1,1)       1
+    Sect(1,1)                  0
+    NbContours()               1
+    NbEdges(1)                 1
+    Length(1)                  10
+    Radius(1)                  1
+    Closed(1)                  0
+
+--- state: built ok, then Reset()
+    IsDone=0 NbContours=1 
+    NbSurfaces()               2
+    NbComputedSurfaces(1)      0
+    StripeStatus(1)            0
+    NbSurf(1) [simulated]      CRASH signal 11 (SIGSEGV)
+    Simulate(1); NbSurf(1)     1
+    HasResult()                0
+    BadShape()                 0
+    NbFaultyContours()         0
+    NbFaultyVertices()         0
+    FaultyContour(1)           0
+    FaultyVertex(1)            0
+    Generated(edge)            0
+    Modified(face)             1
+    IsDeleted(face)            0
+    NewFaces(1)                1
+    ComputedSurface(1,1)       CRASH signal 11 (SIGSEGV)
+    Sect(1,1)                  CRASH signal 11 (SIGSEGV)
+    NbContours()               1
+    NbEdges(1)                 1
+    Length(1)                  10
+    Radius(1)                  1
+    Closed(1)                  0
+
+=== BRepFilletAPI_MakeChamfer ===
+
+--- state: fresh (never built, no contour)
+    IsDone=0 NbContours=0
+    NbSurf(1) [simulated]      0
+    Simulate(1); NbSurf(1)     0
+    Generated(edge)            0
+    Modified(face)             0
+    IsDeleted(face)            1
+    Builder() non-null         1
+
+--- state: added, Build() never called
+    IsDone=0 NbContours=1
+    NbSurf(1) [simulated]      CRASH signal 11 (SIGSEGV)
+    Simulate(1); NbSurf(1)     1
+    Generated(edge)            0
+    Modified(face)             0
+    IsDeleted(face)            1
+    Builder() non-null         1
+
+--- state: Build() with no contour (threw)
+    IsDone=0 NbContours=0
+    NbSurf(1) [simulated]      0
+    Simulate(1); NbSurf(1)     0
+    Generated(edge)            0
+    Modified(face)             0
+    IsDeleted(face)            1
+    Builder() non-null         1
+
+--- state: declined: box edge, radius 20
+    IsDone=0 NbContours=1
+    NbSurf(1) [simulated]      0
+    Simulate(1); NbSurf(1)     threw Standard_Failure: StartSol echec
+    Generated(edge)            0
+    Modified(face)             0
+    IsDeleted(face)            1
+    Builder() non-null         1
+
+--- state: CONTROL: built ok
+    IsDone=1 NbContours=1
+    NbSurf(1) [simulated]      1
+    Simulate(1); NbSurf(1)     1
+    Generated(edge)            1
+    Modified(face)             1
+    IsDeleted(face)            0
+    Builder() non-null         1
+
+--- state: built ok, then Reset()
+    IsDone=0 NbContours=1
+    NbSurf(1) [simulated]      CRASH signal 11 (SIGSEGV)
+    Simulate(1); NbSurf(1)     1
+    Generated(edge)            0
+    Modified(face)             1
+    IsDeleted(face)            0
+    Builder() non-null         1

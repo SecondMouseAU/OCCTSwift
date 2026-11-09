@@ -1581,7 +1581,29 @@ Number of fillet surfaces computed after build.
 public var surfaceCount: Int { get }
 ```
 
-- **OCCT:** `BRepFilletAPI_MakeFillet::NbSurfaces` (via `OCCTFilletBuilderNbSurfaces`).
+Answers `0` unless the last `build()` completed: the builder was never built, the build was
+declined (`faultyContourCount` says how many contours the kernel refused), there was no contour to
+build, or `reset()` has been called since. OCCT reads this count from a data structure that exists
+only once a build got that far, and reading it on any of those builders used to fault the process
+uncatchably (#3516, upstream `Open-Cascade-SAS/OCCT#1716`).
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let edge = box.edges()[0]
+
+let declined = FilletBuilder(shape: box)!
+declined.addEdge(edge, radius: 20)           // far past half a face width
+_ = declined.build()                         // nil: the builder refused it
+print(declined.surfaceCount)                 // 0, and faultyContourCount is 1
+
+let built = FilletBuilder(shape: box)!
+built.addEdge(edge, radius: 1)
+_ = built.build()                            // the filleted box
+print(built.surfaceCount)                    // 2
+```
+
+- **OCCT:** `BRepFilletAPI_MakeFillet::NbSurfaces` (via `OCCTFilletBuilderNbSurfaces`), read only
+  while `IsDone()` is true.
 
 ---
 

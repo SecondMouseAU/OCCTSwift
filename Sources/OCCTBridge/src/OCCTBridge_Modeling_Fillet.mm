@@ -1546,6 +1546,16 @@ int32_t OCCTFilletBuilderNbSurfaces(OCCTFilletBuilderRef builder)
     return 0;
   try
   {
+    // #3516 (OCCT#1716): NbSurfaces() is Builder()->DataStructure()->NbSurfaces(), and that
+    // data structure is assigned only once Compute() reaches TopOpeBRepBuild_HBuilder::Perform
+    // (ChFi3d_Builder.cxx), so it is null for a builder never built, one whose build was
+    // declined and one with no contour: an uncatchable SIGSEGV. OCCT's own read of the same
+    // count, the SameParameter pass at the end of ChFi3d_Builder::Compute, sits under
+    // `if (IsDone())`, and nothing else in the OCCT tree calls NbSurfaces(). The refusal is 0,
+    // as for every other accessor on this builder; OCCTBiTgteBlendInfo_ gates its own
+    // BiTgte_Blend::NbSurfaces() on IsDone() the same way.
+    if (!builder->fillet.IsDone())
+      return 0;
     return builder->fillet.NbSurfaces();
   }
   catch (...)
