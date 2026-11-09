@@ -1200,6 +1200,10 @@ int32_t OCCTFilletBuilderNbEdges(OCCTFilletBuilderRef builder, int32_t contourIn
     return 0;
   try
   {
+    // #3518: NbEdges(I) walks the stripe list with no range test; a contour that does not exist
+    // is 0 edges. See occtFilletContourInRange for what OCCT does with it.
+    if (!occtFilletContourInRange(builder->fillet, contourIndex))
+      return 0;
     return builder->fillet.NbEdges(contourIndex);
   }
   catch (...)
@@ -1278,6 +1282,10 @@ double OCCTFilletBuilderGetRadius(OCCTFilletBuilderRef builder, int32_t contourI
     return 0;
   try
   {
+    // #3518: -1 is the sentinel OCCT documents for an IC past the table; 0 and the negatives used
+    // to answer contour 1's radius, and any IC faulted on a builder with no contour.
+    if (!occtFilletContourInRange(builder->fillet, contourIndex))
+      return -1.0;
     return builder->fillet.Radius(contourIndex);
   }
   catch (...)
@@ -1293,6 +1301,9 @@ double OCCTFilletBuilderGetLength(OCCTFilletBuilderRef builder, int32_t contourI
     return 0;
   try
   {
+    // #3518: -1, as OCCT documents for an IC outside the table (see GetRadius above).
+    if (!occtFilletContourInRange(builder->fillet, contourIndex))
+      return -1.0;
     return builder->fillet.Length(contourIndex);
   }
   catch (...)
@@ -1308,6 +1319,9 @@ bool OCCTFilletBuilderIsConstant(OCCTFilletBuilderRef builder, int32_t contourIn
     return false;
   try
   {
+    // #3518: false, as OCCT documents for an IC outside the table.
+    if (!occtFilletContourInRange(builder->fillet, contourIndex))
+      return false;
     return builder->fillet.IsConstant(contourIndex);
   }
   catch (...)
@@ -1356,6 +1370,10 @@ bool OCCTFilletBuilderSetRadiusOnEdge(OCCTFilletBuilderRef builder,
     return false;
   try
   {
+    // #3518: SetRadius tests only IC <= NbElements(), so 0 and the negatives re-radiused contour
+    // 1, and an IC past the end reported success for a write that never happened.
+    if (!occtFilletContourInRange(builder->fillet, contourIndex))
+      return false;
     builder->fillet.SetRadius(radius, contourIndex, edge->edge);
     return true;
   }
@@ -1375,6 +1393,9 @@ bool OCCTFilletBuilderSetRadiusAtVertex(OCCTFilletBuilderRef builder,
     return false;
   try
   {
+    // #3518: as SetRadiusOnEdge.
+    if (!occtFilletContourInRange(builder->fillet, contourIndex))
+      return false;
     builder->fillet.SetRadius(radius, contourIndex, TopoDS::Vertex(vertex->shape));
     return true;
   }
@@ -1395,6 +1416,11 @@ bool OCCTFilletBuilderSetTwoRadii(OCCTFilletBuilderRef builder,
     return false;
   try
   {
+    // #3518: both indices. IC is as SetRadiusOnEdge; edgeInContour then indexes the spine's
+    // abscissa table unchecked (0 is OCCT's absolute-abscissa spelling, not an edge, and a bus
+    // error for the extremes).
+    if (!occtFilletEdgeInContourInRange(builder->fillet, contourIndex, edgeInContour))
+      return false;
     builder->fillet.SetRadius(r1, r2, contourIndex, edgeInContour);
     return true;
   }
@@ -1428,6 +1454,11 @@ OCCTShapeRef OCCTFilletBuilderEdge(OCCTFilletBuilderRef builder,
     return nullptr;
   try
   {
+    // #3518: Edge(I, J) checks neither index. I walks the stripe list unchecked, and J indexes the
+    // spine's edge sequence unchecked: 0 faults, and past the end it answers a stale node or
+    // memory that is not an edge, which new OCCTShape(e) below would copy.
+    if (!occtFilletEdgeInContourInRange(builder->fillet, contourIndex, edgeIndex))
+      return nullptr;
     const TopoDS_Edge& e = builder->fillet.Edge(contourIndex, edgeIndex);
     if (e.IsNull())
       return nullptr;
@@ -1446,6 +1477,9 @@ OCCTShapeRef OCCTFilletBuilderFirstVertex(OCCTFilletBuilderRef builder, int32_t 
     return nullptr;
   try
   {
+    // #3518: nullptr, as OCCT documents for an IC outside the table.
+    if (!occtFilletContourInRange(builder->fillet, contourIndex))
+      return nullptr;
     TopoDS_Vertex v = builder->fillet.FirstVertex(contourIndex);
     if (v.IsNull())
       return nullptr;
@@ -1464,6 +1498,9 @@ OCCTShapeRef OCCTFilletBuilderLastVertex(OCCTFilletBuilderRef builder, int32_t c
     return nullptr;
   try
   {
+    // #3518: as FirstVertex.
+    if (!occtFilletContourInRange(builder->fillet, contourIndex))
+      return nullptr;
     TopoDS_Vertex v = builder->fillet.LastVertex(contourIndex);
     if (v.IsNull())
       return nullptr;
@@ -1484,6 +1521,9 @@ double OCCTFilletBuilderAbscissa(OCCTFilletBuilderRef builder,
     return -1.0;
   try
   {
+    // #3518: -1, as OCCT documents for an IC outside the table.
+    if (!occtFilletContourInRange(builder->fillet, contourIndex))
+      return -1.0;
     return builder->fillet.Abscissa(contourIndex, TopoDS::Vertex(vertex->shape));
   }
   catch (...)
@@ -1501,6 +1541,9 @@ double OCCTFilletBuilderRelativeAbscissa(OCCTFilletBuilderRef builder,
     return -1.0;
   try
   {
+    // #3518: as Abscissa.
+    if (!occtFilletContourInRange(builder->fillet, contourIndex))
+      return -1.0;
     return builder->fillet.RelativeAbscissa(contourIndex, TopoDS::Vertex(vertex->shape));
   }
   catch (...)
@@ -1516,6 +1559,9 @@ bool OCCTFilletBuilderClosedAndTangent(OCCTFilletBuilderRef builder, int32_t con
     return false;
   try
   {
+    // #3518: false, as OCCT documents for an IC outside the table.
+    if (!occtFilletContourInRange(builder->fillet, contourIndex))
+      return false;
     return builder->fillet.ClosedAndTangent(contourIndex);
   }
   catch (...)
@@ -1531,6 +1577,9 @@ bool OCCTFilletBuilderClosed(OCCTFilletBuilderRef builder, int32_t contourIndex)
     return false;
   try
   {
+    // #3518: as ClosedAndTangent.
+    if (!occtFilletContourInRange(builder->fillet, contourIndex))
+      return false;
     return builder->fillet.Closed(contourIndex);
   }
   catch (...)
@@ -1586,6 +1635,10 @@ int32_t OCCTFilletBuilderStripeStatus(OCCTFilletBuilderRef builder, int32_t cont
     return -1;
   try
   {
+    // #3518: StripeStatus(IC) walks the stripe list and dereferences the stripe whether or not it
+    // found one, so any IC outside the table faulted. -1 is this function's own refusal.
+    if (!occtFilletContourInRange(builder->fillet, contourIndex))
+      return -1;
     return static_cast<int32_t>(builder->fillet.StripeStatus(contourIndex));
   }
   catch (...)
@@ -1716,6 +1769,9 @@ void OCCTFilletBuilderResetContour(OCCTFilletBuilderRef builder, int32_t contour
     return;
   try
   {
+    // #3518: ResetContour tests only IC <= NbElements(), so 0 and the negatives reset contour 1.
+    if (!occtFilletContourInRange(builder->fillet, contourIndex))
+      return;
     builder->fillet.ResetContour(contourIndex);
   }
   catch (...)

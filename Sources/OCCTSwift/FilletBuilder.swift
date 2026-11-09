@@ -22,6 +22,25 @@ import OCCTPlatform
 /// let declined = edges.filter { builder.contour(for: $0) == 0 }
 /// print(declined.map(\.index))   // e.g. [6, 9, 10, 11]
 /// ```
+///
+/// ## Contour and edge indices (#3518)
+///
+/// Every method that takes a contour index takes it 1-based, in `1...contourCount`; the edge index
+/// inside a contour is `1...edgeCount(contour:)`. An index outside its range, `0` and the negatives
+/// included, is refused with the answer each method documents (`0`, `-1`, `false`, `nil` or no
+/// effect) and never reaches the kernel. OCCT range-checks neither end reliably: an index past the
+/// end, or any index on a builder with no contour, faulted the process uncatchably, and `0` or a
+/// negative read, or wrote, contour 1.
+///
+/// ```swift
+/// let box = Shape.box(width: 10, height: 10, depth: 10)!
+/// let builder = FilletBuilder(shape: box)!
+/// print(builder.edgeCount(contour: 1))        // 0: no contour yet, and not a crash
+/// builder.addEdge(box.edges()[0], radius: 1)
+/// print(builder.edgeCount(contour: 1))        // 1
+/// print(builder.edgeCount(contour: 0))        // 0, not contour 1
+/// print(builder.edgeCount(contour: 2))        // 0
+/// ```
 public final class FilletBuilder: @unchecked Sendable {
     private let handle: OCCTFilletBuilderRef
     private let input: Shape
@@ -63,9 +82,21 @@ public final class FilletBuilder: @unchecked Sendable {
     /// Number of contours.
     public var contourCount: Int { Int(OCCTFilletBuilderNbContours(handle)) }
 
-    /// Number of edges in a contour (1-based index).
+    /// Number of edges in a contour.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`. An index outside that
+    ///   range, `0` and the negatives included, answers `0` (#3518).
+    /// - Returns: The number of edges in the contour, or `0` for a contour that does not exist.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = FilletBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], radius: 1)
+    /// print(builder.edgeCount(contour: 1))   // 1
+    /// print(builder.edgeCount(contour: 2))   // 0: past contourCount, not a crash
+    /// ```
     public func edgeCount(contour: Int) -> Int {
-        Int(OCCTFilletBuilderNbEdges(handle, Int32(contour)))
+        Int(OCCTFilletBuilderNbEdges(handle, Int32(clamping: contour)))
     }
 
     /// Whether the builder has a result (may be partial).
@@ -83,19 +114,55 @@ public final class FilletBuilder: @unchecked Sendable {
     /// Number of faulty vertices.
     public var faultyVertexCount: Int { Int(OCCTFilletBuilderNbFaultyVertices(handle)) }
 
-    /// Get radius of a contour (1-based index).
+    /// Get the radius of a contour.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`.
+    /// - Returns: The radius, or `-1` for a contour that does not exist, the value OCCT documents
+    ///   for an index outside its table. `0` and the negatives used to answer contour 1 (#3518).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = FilletBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], radius: 1)
+    /// print(builder.radius(contour: 1))   // 1.0
+    /// print(builder.radius(contour: 0))   // -1.0, not contour 1
+    /// ```
     public func radius(contour: Int) -> Double {
-        OCCTFilletBuilderGetRadius(handle, Int32(contour))
+        OCCTFilletBuilderGetRadius(handle, Int32(clamping: contour))
     }
 
-    /// Get length of a contour (1-based index).
+    /// Get the length of a contour.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`.
+    /// - Returns: The length, or `-1` for a contour that does not exist, the value OCCT documents
+    ///   for an index outside its table. `0` and the negatives used to answer contour 1 (#3518).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = FilletBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], radius: 1)
+    /// print(builder.length(contour: 1))   // 10.0
+    /// print(builder.length(contour: 2))   // -1.0
+    /// ```
     public func length(contour: Int) -> Double {
-        OCCTFilletBuilderGetLength(handle, Int32(contour))
+        OCCTFilletBuilderGetLength(handle, Int32(clamping: contour))
     }
 
-    /// Whether a contour has constant radius (1-based index).
+    /// Whether a contour has a constant radius.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`.
+    /// - Returns: `true` for a constant radius, `false` otherwise, and `false` for a contour that
+    ///   does not exist (#3518).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = FilletBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], radius: 1)
+    /// print(builder.isConstant(contour: 1))   // true
+    /// print(builder.isConstant(contour: 2))   // false: no such contour
+    /// ```
     public func isConstant(contour: Int) -> Bool {
-        OCCTFilletBuilderIsConstant(handle, Int32(contour))
+        OCCTFilletBuilderIsConstant(handle, Int32(clamping: contour))
     }
 
     /// Remove an edge from its contour.
@@ -111,22 +178,70 @@ public final class FilletBuilder: @unchecked Sendable {
 }
 
 extension FilletBuilder {
-    /// Set radius on a specific edge in a contour.
+    /// Set the radius on a specific edge in a contour.
+    ///
+    /// - Parameters:
+    ///   - radius: The new radius.
+    ///   - contour: The 1-based contour index, `1...contourCount`.
+    ///   - edge: An edge the contour holds.
+    /// - Returns: `false`, and changes nothing, for a contour that does not exist. `0` and the
+    ///   negatives used to re-radius contour 1, and an index past the end answered `true` for a
+    ///   write that never happened (#3518).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = FilletBuilder(shape: box)!
+    /// let edge = box.edges()[0]
+    /// builder.addEdge(edge, radius: 1)
+    /// print(builder.setRadius(2, contour: 1, edge: edge))   // true
+    /// print(builder.setRadius(2, contour: 0, edge: edge))   // false: no contour 0
+    /// ```
     @discardableResult
     public func setRadius(_ radius: Double, contour: Int, edge: Edge) -> Bool {
-        OCCTFilletBuilderSetRadiusOnEdge(handle, radius, Int32(contour), edge.handle)
+        OCCTFilletBuilderSetRadiusOnEdge(handle, radius, Int32(clamping: contour), edge.handle)
     }
 
-    /// Set radius at a specific vertex in a contour.
+    /// Set the radius at a specific vertex in a contour.
+    ///
+    /// - Parameters:
+    ///   - radius: The radius at the vertex.
+    ///   - contour: The 1-based contour index, `1...contourCount`.
+    ///   - vertex: A vertex of the contour.
+    /// - Returns: `false`, and changes nothing, for a contour that does not exist (#3518).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = FilletBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], radius: 1)
+    /// let vertex = builder.firstVertex(contour: 1)!
+    /// print(builder.setRadius(2, contour: 5, vertex: vertex))   // false: no contour 5
+    /// ```
     @discardableResult
     public func setRadius(_ radius: Double, contour: Int, vertex: Shape) -> Bool {
-        OCCTFilletBuilderSetRadiusAtVertex(handle, radius, Int32(contour), vertex.handle)
+        OCCTFilletBuilderSetRadiusAtVertex(handle, radius, Int32(clamping: contour), vertex.handle)
     }
 
     /// Set two radii (evolving) on a contour edge.
+    ///
+    /// - Parameters:
+    ///   - r1: The radius at the start of the edge.
+    ///   - r2: The radius at its end.
+    ///   - contour: The 1-based contour index, `1...contourCount`.
+    ///   - edgeInContour: The 1-based position of the edge inside the contour,
+    ///     `1...edgeCount(contour:)`. `0` is not an edge: OCCT reads it as an absolute abscissa.
+    /// - Returns: `false`, and changes nothing, when either index is outside its range (#3518).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = FilletBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], radius: 1)
+    /// print(builder.setTwoRadii(1, 3, contour: 1, edgeInContour: 1))   // true
+    /// print(builder.setTwoRadii(1, 3, contour: 1, edgeInContour: 2))   // false: one edge only
+    /// ```
     @discardableResult
     public func setTwoRadii(_ r1: Double, _ r2: Double, contour: Int, edgeInContour: Int) -> Bool {
-        OCCTFilletBuilderSetTwoRadii(handle, r1, r2, Int32(contour), Int32(edgeInContour))
+        OCCTFilletBuilderSetTwoRadii(
+            handle, r1, r2, Int32(clamping: contour), Int32(clamping: edgeInContour))
     }
 
     /// Get contour index for an edge (0 if not found).
@@ -139,44 +254,138 @@ extension FilletBuilder {
         Int(OCCTFilletBuilderContour(handle, edge.handle))
     }
 
-    /// Get edge J in contour I (both 1-based).
+    /// Get edge `index` in a contour.
+    ///
+    /// - Parameters:
+    ///   - contour: The 1-based contour index, `1...contourCount`.
+    ///   - index: The 1-based position of the edge inside the contour, `1...edgeCount(contour:)`.
+    /// - Returns: The edge, or `nil` when either index is outside its range (#3518).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = FilletBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], radius: 1)
+    /// print(builder.edge(contour: 1, index: 1) != nil)   // true
+    /// print(builder.edge(contour: 1, index: 2) != nil)   // false: the contour holds one edge
+    /// print(builder.edge(contour: 2, index: 1) != nil)   // false: no second contour
+    /// ```
     public func edge(contour: Int, index: Int) -> Shape? {
-        guard let ref = OCCTFilletBuilderEdge(handle, Int32(contour), Int32(index)) else {
+        guard
+            let ref = OCCTFilletBuilderEdge(
+                handle, Int32(clamping: contour), Int32(clamping: index))
+        else {
             return nil
         }
         return Shape(handle: ref)
     }
 
-    /// First vertex of contour (1-based).
+    /// First vertex of a contour.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`.
+    /// - Returns: The vertex, or `nil` for a contour that does not exist (#3518).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = FilletBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], radius: 1)
+    /// print(builder.firstVertex(contour: 1) != nil)   // true
+    /// print(builder.firstVertex(contour: 0) != nil)   // false
+    /// ```
     public func firstVertex(contour: Int) -> Shape? {
-        guard let ref = OCCTFilletBuilderFirstVertex(handle, Int32(contour)) else { return nil }
+        guard let ref = OCCTFilletBuilderFirstVertex(handle, Int32(clamping: contour)) else {
+            return nil
+        }
         return Shape(handle: ref)
     }
 
-    /// Last vertex of contour (1-based).
+    /// Last vertex of a contour.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`.
+    /// - Returns: The vertex, or `nil` for a contour that does not exist (#3518).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = FilletBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], radius: 1)
+    /// print(builder.lastVertex(contour: 1) != nil)   // true
+    /// print(builder.lastVertex(contour: 2) != nil)   // false
+    /// ```
     public func lastVertex(contour: Int) -> Shape? {
-        guard let ref = OCCTFilletBuilderLastVertex(handle, Int32(contour)) else { return nil }
+        guard let ref = OCCTFilletBuilderLastVertex(handle, Int32(clamping: contour)) else {
+            return nil
+        }
         return Shape(handle: ref)
     }
 
-    /// Curvilinear abscissa of vertex on contour (1-based).
+    /// Curvilinear abscissa of a vertex on a contour.
+    ///
+    /// - Parameters:
+    ///   - contour: The 1-based contour index, `1...contourCount`.
+    ///   - vertex: A vertex of the contour.
+    /// - Returns: The abscissa, or `-1` for a contour that does not exist, the value OCCT
+    ///   documents for an index outside its table (#3518).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = FilletBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], radius: 1)
+    /// let end = builder.lastVertex(contour: 1)!
+    /// print(builder.abscissa(contour: 1, vertex: end))   // 10.0
+    /// print(builder.abscissa(contour: 0, vertex: end))   // -1.0
+    /// ```
     public func abscissa(contour: Int, vertex: Shape) -> Double {
-        OCCTFilletBuilderAbscissa(handle, Int32(contour), vertex.handle)
+        OCCTFilletBuilderAbscissa(handle, Int32(clamping: contour), vertex.handle)
     }
 
-    /// Relative abscissa (0..1) of vertex on contour (1-based).
+    /// Relative abscissa (0 to 1) of a vertex on a contour.
+    ///
+    /// - Parameters:
+    ///   - contour: The 1-based contour index, `1...contourCount`.
+    ///   - vertex: A vertex of the contour.
+    /// - Returns: The relative abscissa, or `-1` for a contour that does not exist (#3518).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = FilletBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], radius: 1)
+    /// let end = builder.lastVertex(contour: 1)!
+    /// print(builder.relativeAbscissa(contour: 1, vertex: end))   // 1.0
+    /// print(builder.relativeAbscissa(contour: 2, vertex: end))   // -1.0
+    /// ```
     public func relativeAbscissa(contour: Int, vertex: Shape) -> Double {
-        OCCTFilletBuilderRelativeAbscissa(handle, Int32(contour), vertex.handle)
+        OCCTFilletBuilderRelativeAbscissa(handle, Int32(clamping: contour), vertex.handle)
     }
 
-    /// Whether contour (1-based) is closed and tangent at closure.
+    /// Whether a contour is closed and tangent at closure.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`.
+    /// - Returns: The flag, or `false` for a contour that does not exist (#3518).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = FilletBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], radius: 1)
+    /// print(builder.isClosedAndTangent(contour: 1))   // false: one open edge
+    /// print(builder.isClosedAndTangent(contour: 9))   // false: no such contour
+    /// ```
     public func isClosedAndTangent(contour: Int) -> Bool {
-        OCCTFilletBuilderClosedAndTangent(handle, Int32(contour))
+        OCCTFilletBuilderClosedAndTangent(handle, Int32(clamping: contour))
     }
 
-    /// Whether contour (1-based) is closed.
+    /// Whether a contour is closed.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`.
+    /// - Returns: The flag, or `false` for a contour that does not exist (#3518).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = FilletBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], radius: 1)
+    /// print(builder.isClosed(contour: 1))   // false: one open edge
+    /// print(builder.isClosed(contour: 0))   // false: no such contour
+    /// ```
     public func isClosed(contour: Int) -> Bool {
-        OCCTFilletBuilderClosed(handle, Int32(contour))
+        OCCTFilletBuilderClosed(handle, Int32(clamping: contour))
     }
 
     /// Number of surfaces after build.
@@ -203,26 +412,56 @@ extension FilletBuilder {
     /// ```
     public var surfaceCount: Int { Int(OCCTFilletBuilderNbSurfaces(handle)) }
 
-    /// Number of computed surfaces for contour (1-based).
-    public func computedSurfaceCount(contour: Int) -> Int {
-        Int(OCCTFilletBuilderNbComputedSurfaces(handle, Int32(contour)))
-    }
-
-    /// Error status for contour (1-based).
+    /// Number of computed surfaces for a contour.
     ///
-    /// Returns ChFiDS_ErrorStatus as Int.
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`. OCCT already refused
+    ///   an index outside that range here; only the conversion to a C integer is new (#3518).
+    /// - Returns: The number of computed surfaces, or `0` for a contour that does not exist.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = FilletBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], radius: 1)
+    /// _ = builder.build()
+    /// print(builder.computedSurfaceCount(contour: 1))   // 1
+    /// print(builder.computedSurfaceCount(contour: 2))   // 0
+    /// ```
+    public func computedSurfaceCount(contour: Int) -> Int {
+        Int(OCCTFilletBuilderNbComputedSurfaces(handle, Int32(clamping: contour)))
+    }
+
+    /// Error status for a contour.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`.
+    /// - Returns: The `ChFiDS_ErrorStatus` as an `Int` (`0` is ok), or `-1` for a contour that
+    ///   does not exist. OCCT dereferences the contour it failed to find, so any index outside
+    ///   the range faulted the process before #3518.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = FilletBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], radius: 1)
+    /// print(builder.stripeStatus(contour: 1))   // 0
+    /// print(builder.stripeStatus(contour: 2))   // -1: past contourCount, not a crash
+    /// ```
     public func stripeStatus(contour: Int) -> Int {
-        Int(OCCTFilletBuilderStripeStatus(handle, Int32(contour)))
+        Int(OCCTFilletBuilderStripeStatus(handle, Int32(clamping: contour)))
     }
 
-    /// Get the faulty contour index for the i-th fault (1-based).
+    /// Get the faulty contour index for the i-th fault (1-based, `1...faultyContourCount`).
+    ///
+    /// An index outside that range answers `0`.
     public func faultyContour(index: Int) -> Int {
-        Int(OCCTFilletBuilderFaultyContour(handle, Int32(index)))
+        Int(OCCTFilletBuilderFaultyContour(handle, Int32(clamping: index)))
     }
 
-    /// Get the faulty vertex for the i-th fault (1-based).
+    /// Get the faulty vertex for the i-th fault (1-based, `1...faultyVertexCount`).
+    ///
+    /// An index outside that range answers `nil`.
     public func faultyVertex(index: Int) -> Shape? {
-        guard let ref = OCCTFilletBuilderFaultyVertex(handle, Int32(index)) else { return nil }
+        guard let ref = OCCTFilletBuilderFaultyVertex(handle, Int32(clamping: index)) else {
+            return nil
+        }
         return Shape(handle: ref)
     }
 
@@ -264,14 +503,28 @@ extension FilletBuilder {
         Int(OCCTFilletBuilderGetFilletShape(handle))
     }
 
-    /// Reset radius info on a specific contour (1-based).
+    /// Reset the radius info of one contour.
+    ///
+    /// - Parameter contourIndex: The 1-based contour index, `1...contourCount`. An index outside
+    ///   that range does nothing; `0` and the negatives used to reset contour 1 (#3518).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = FilletBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], radius: 1)
+    /// builder.resetContour(0)             // no contour 0: contour 1 keeps its radius
+    /// print(builder.radius(contour: 1))   // 1.0
+    /// ```
     public func resetContour(_ contourIndex: Int) {
-        OCCTFilletBuilderResetContour(handle, Int32(contourIndex))
+        OCCTFilletBuilderResetContour(handle, Int32(clamping: contourIndex))
     }
 
     /// Simulate filleting on a contour (computes sections without building).
+    ///
+    /// An index outside `1...contourCount` does nothing: OCCT walks its contour list for the
+    /// index and finds none.
     public func simulate(contour: Int) {
-        OCCTFilletBuilderSimulate(handle, Int32(contour))
+        OCCTFilletBuilderSimulate(handle, Int32(clamping: contour))
     }
 
     /// Get the number of simulated surfaces for a contour (1-based).
@@ -311,7 +564,10 @@ extension FilletBuilder {
     public func getBounds(contour: Int, edge: Edge) -> (first: Double, last: Double)? {
         var first = 0.0
         var last = 0.0
-        guard OCCTFilletBuilderGetBounds(handle, Int32(contour), edge.handle, &first, &last) else {
+        guard
+            OCCTFilletBuilderGetBounds(
+                handle, Int32(clamping: contour), edge.handle, &first, &last)
+        else {
             return nil
         }
         return (first, last)
@@ -334,7 +590,8 @@ extension FilletBuilder {
     /// }
     /// ```
     public func getLaw(contour: Int, edge: Edge) -> LawFunction? {
-        guard let ref = OCCTFilletBuilderGetLaw(handle, Int32(contour), edge.handle) else {
+        guard let ref = OCCTFilletBuilderGetLaw(handle, Int32(clamping: contour), edge.handle)
+        else {
             return nil
         }
         return LawFunction(handle: ref)
@@ -366,7 +623,7 @@ extension FilletBuilder {
     /// ```
     @discardableResult
     public func setLaw(contour: Int, edge: Edge, law: LawFunction) -> Bool {
-        OCCTFilletBuilderSetLaw(handle, Int32(contour), edge.handle, law.handle)
+        OCCTFilletBuilderSetLaw(handle, Int32(clamping: contour), edge.handle, law.handle)
     }
 
     /// Get shapes generated from an input shape by the fillet operation.

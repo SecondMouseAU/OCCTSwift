@@ -877,6 +877,26 @@ Builder for applying rounded fillets to selected edges of a solid, wrapping `BRe
 
 ```swift
 ```
+
+**Contour and edge indices.** Every method that takes a contour index takes it 1-based, in
+`1...contourCount`; the edge index inside a contour is `1...edgeCount(contour:)`. An index outside
+its range, `0` and the negatives included, is refused with the answer each method documents (`0`,
+`-1`, `false`, `nil` or no effect) and never reaches the kernel. OCCT range-checks neither end
+reliably: `ChFi3d_Builder::Value(I)` walks its stripe list `I - 1` times, so an index past the end,
+or any index on a builder with no contour, steps onto a null node and faults the process
+uncatchably, while `0` and the negatives run no steps and read, or write, contour 1 (#3518,
+`Scripts/repro/3518/`).
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let builder = FilletBuilder(shape: box)!
+print(builder.edgeCount(contour: 1))        // 0: no contour yet, and not a crash
+builder.addEdge(box.edges()[0], radius: 1)
+print(builder.edgeCount(contour: 1))        // 1
+print(builder.edgeCount(contour: 0))        // 0, not contour 1
+print(builder.edgeCount(contour: 2))        // 0
+```
+
 ### `FilletBuilder.init?(shape:)`
 
 Create a fillet builder on the given shape.
@@ -957,13 +977,26 @@ public var contourCount: Int { get }
 
 ### `FilletBuilder.edgeCount(contour:)`
 
-Number of edges in a contour (1-based index).
+Number of edges in a contour (1-based index, `1...contourCount`).
 
 ```swift
 public func edgeCount(contour: Int) -> Int
 ```
 
-- **OCCT:** `BRepFilletAPI_MakeFillet::NbEdges` (via `OCCTFilletBuilderNbEdges`).
+Answers `0` for a contour that does not exist. OCCT reads its stripe list with no range test here,
+so an index past the end faulted the process, and so did any index on a builder with no contour
+(#3518).
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let builder = FilletBuilder(shape: box)!
+builder.addEdge(box.edges()[0], radius: 1)
+print(builder.edgeCount(contour: 1))   // 1
+print(builder.edgeCount(contour: 2))   // 0: past contourCount, not a crash
+```
+
+- **OCCT:** `BRepFilletAPI_MakeFillet::NbEdges` (via `OCCTFilletBuilderNbEdges`), read only for a
+  contour in `1...NbContours()`.
 
 ---
 
@@ -1018,11 +1051,15 @@ public var faultyVertexCount: Int { get }
 
 ### `FilletBuilder.radius(contour:)`
 
-Get the radius of a contour (1-based index).
+Get the radius of a contour (1-based index, `1...contourCount`).
 
 ```swift
 public func radius(contour: Int) -> Double
 ```
+
+Answers `-1` for a contour that does not exist, the value OCCT documents for an index outside its
+table. `0` and the negatives used to answer contour 1's radius, and any index faulted on a builder
+with no contour (#3518).
 
 - **OCCT:** `BRepFilletAPI_MakeFillet::GetFilletShape` / radius query (via `OCCTFilletBuilderGetRadius`).
 
@@ -1030,11 +1067,13 @@ public func radius(contour: Int) -> Double
 
 ### `FilletBuilder.length(contour:)`
 
-Get the length of a contour (1-based index).
+Get the length of a contour (1-based index, `1...contourCount`).
 
 ```swift
 public func length(contour: Int) -> Double
 ```
+
+Answers `-1` for a contour that does not exist, as `radius(contour:)` does (#3518).
 
 - **OCCT:** `BRepFilletAPI_MakeFillet::Length` (via `OCCTFilletBuilderGetLength`).
 
@@ -1042,11 +1081,13 @@ public func length(contour: Int) -> Double
 
 ### `FilletBuilder.isConstant(contour:)`
 
-Whether a contour has a constant radius (1-based index).
+Whether a contour has a constant radius (1-based index, `1...contourCount`).
 
 ```swift
 public func isConstant(contour: Int) -> Bool
 ```
+
+Answers `false` for a contour that does not exist (#3518).
 
 - **OCCT:** `BRepFilletAPI_MakeFillet::IsConstant` (via `OCCTFilletBuilderIsConstant`).
 
@@ -1440,12 +1481,16 @@ Additional inspection and mutation methods on `FilletBuilder`.
 
 ### `FilletBuilder.setRadius(_:contour:edge:)`
 
-Set a radius on a specific edge in a contour (1-based).
+Set a radius on a specific edge in a contour (1-based, `1...contourCount`).
 
 ```swift
 @discardableResult
 public func setRadius(_ radius: Double, contour: Int, edge: Edge) -> Bool
 ```
+
+Returns `false`, and changes nothing, for a contour that does not exist. `0` and the negatives used
+to re-radius contour 1, and an index past the end answered `true` for a write that never happened
+(#3518).
 
 - **OCCT:** `BRepFilletAPI_MakeFillet::SetRadius` on edge (via `OCCTFilletBuilderSetRadiusOnEdge`).
 
@@ -1453,12 +1498,14 @@ public func setRadius(_ radius: Double, contour: Int, edge: Edge) -> Bool
 
 ### `FilletBuilder.setRadius(_:contour:vertex:)`
 
-Set a radius at a specific vertex in a contour (1-based).
+Set a radius at a specific vertex in a contour (1-based, `1...contourCount`).
 
 ```swift
 @discardableResult
 public func setRadius(_ radius: Double, contour: Int, vertex: Shape) -> Bool
 ```
+
+Returns `false`, and changes nothing, for a contour that does not exist (#3518).
 
 - **OCCT:** `BRepFilletAPI_MakeFillet::SetRadius` at vertex (via `OCCTFilletBuilderSetRadiusAtVertex`).
 
@@ -1466,12 +1513,17 @@ public func setRadius(_ radius: Double, contour: Int, vertex: Shape) -> Bool
 
 ### `FilletBuilder.setTwoRadii(_:_:contour:edgeInContour:)`
 
-Set two evolving radii on a specific edge in a contour (both 1-based).
+Set two evolving radii on a specific edge in a contour (both 1-based: `contour` in
+`1...contourCount`, `edgeInContour` in `1...edgeCount(contour:)`).
 
 ```swift
 @discardableResult
 public func setTwoRadii(_ r1: Double, _ r2: Double, contour: Int, edgeInContour: Int) -> Bool
 ```
+
+Returns `false`, and changes nothing, when either index is outside its range. `0` is not an edge:
+OCCT reads it as an absolute abscissa, and an index past the contour's edges reads the spine's
+abscissa table out of bounds (#3518).
 
 - **OCCT:** `BRepFilletAPI_MakeFillet::SetRadius` two-radius variant (via `OCCTFilletBuilderSetTwoRadii`).
 
@@ -1497,17 +1549,23 @@ Get edge `index` in contour `contour` (both 1-based) as a `Shape`.
 public func edge(contour: Int, index: Int) -> Shape?
 ```
 
+Returns `nil` when `contour` is outside `1...contourCount` or `index` is outside
+`1...edgeCount(contour:)`. OCCT checks neither: `0` faulted and an index past the end answered a
+stale node or memory that is not an edge (#3518).
+
 - **OCCT:** `BRepFilletAPI_MakeFillet::Edge` (via `OCCTFilletBuilderEdge`).
 
 ---
 
 ### `FilletBuilder.firstVertex(contour:)`
 
-Get the first vertex of a contour (1-based) as a `Shape`.
+Get the first vertex of a contour (1-based, `1...contourCount`) as a `Shape`.
 
 ```swift
 public func firstVertex(contour: Int) -> Shape?
 ```
+
+Returns `nil` for a contour that does not exist (#3518).
 
 - **OCCT:** `BRepFilletAPI_MakeFillet::FirstVertex` (via `OCCTFilletBuilderFirstVertex`).
 
@@ -1515,11 +1573,13 @@ public func firstVertex(contour: Int) -> Shape?
 
 ### `FilletBuilder.lastVertex(contour:)`
 
-Get the last vertex of a contour (1-based) as a `Shape`.
+Get the last vertex of a contour (1-based, `1...contourCount`) as a `Shape`.
 
 ```swift
 public func lastVertex(contour: Int) -> Shape?
 ```
+
+Returns `nil` for a contour that does not exist (#3518).
 
 - **OCCT:** `BRepFilletAPI_MakeFillet::LastVertex` (via `OCCTFilletBuilderLastVertex`).
 
@@ -1527,11 +1587,13 @@ public func lastVertex(contour: Int) -> Shape?
 
 ### `FilletBuilder.abscissa(contour:vertex:)`
 
-Curvilinear abscissa of a vertex on a contour (1-based).
+Curvilinear abscissa of a vertex on a contour (1-based, `1...contourCount`).
 
 ```swift
 public func abscissa(contour: Int, vertex: Shape) -> Double
 ```
+
+Answers `-1` for a contour that does not exist (#3518).
 
 - **OCCT:** `BRepFilletAPI_MakeFillet::Abscissa` (via `OCCTFilletBuilderAbscissa`).
 
@@ -1539,11 +1601,13 @@ public func abscissa(contour: Int, vertex: Shape) -> Double
 
 ### `FilletBuilder.relativeAbscissa(contour:vertex:)`
 
-Relative abscissa (0–1) of a vertex on a contour (1-based).
+Relative abscissa (0 to 1) of a vertex on a contour (1-based, `1...contourCount`).
 
 ```swift
 public func relativeAbscissa(contour: Int, vertex: Shape) -> Double
 ```
+
+Answers `-1` for a contour that does not exist (#3518).
 
 - **OCCT:** `BRepFilletAPI_MakeFillet::RelativeAbscissa` (via `OCCTFilletBuilderRelativeAbscissa`).
 
@@ -1551,11 +1615,13 @@ public func relativeAbscissa(contour: Int, vertex: Shape) -> Double
 
 ### `FilletBuilder.isClosedAndTangent(contour:)`
 
-Whether a contour (1-based) is closed and tangent at its closure.
+Whether a contour (1-based, `1...contourCount`) is closed and tangent at its closure.
 
 ```swift
 public func isClosedAndTangent(contour: Int) -> Bool
 ```
+
+Answers `false` for a contour that does not exist (#3518).
 
 - **OCCT:** `BRepFilletAPI_MakeFillet::ClosedAndTangent` (via `OCCTFilletBuilderClosedAndTangent`).
 
@@ -1563,11 +1629,13 @@ public func isClosedAndTangent(contour: Int) -> Bool
 
 ### `FilletBuilder.isClosed(contour:)`
 
-Whether a contour (1-based) is closed.
+Whether a contour (1-based, `1...contourCount`) is closed.
 
 ```swift
 public func isClosed(contour: Int) -> Bool
 ```
+
+Answers `false` for a contour that does not exist (#3518).
 
 - **OCCT:** `BRepFilletAPI_MakeFillet::Closed` (via `OCCTFilletBuilderClosed`).
 
@@ -1609,11 +1677,14 @@ print(built.surfaceCount)                    // 2
 
 ### `FilletBuilder.computedSurfaceCount(contour:)`
 
-Number of computed fillet surfaces for a contour (1-based).
+Number of computed fillet surfaces for a contour (1-based, `1...contourCount`).
 
 ```swift
 public func computedSurfaceCount(contour: Int) -> Int
 ```
+
+Answers `0` for a contour that does not exist. OCCT already refused the index here; only the
+conversion to a C integer is new (#3518).
 
 - **OCCT:** `BRepFilletAPI_MakeFillet::NbComputedSurfaces` (via `OCCTFilletBuilderNbComputedSurfaces`).
 
@@ -1621,24 +1692,42 @@ public func computedSurfaceCount(contour: Int) -> Int
 
 ### `FilletBuilder.stripeStatus(contour:)`
 
-Error status for a contour (1-based), returned as `ChFiDS_ErrorStatus` encoded as `Int`.
+Error status for a contour (1-based, `1...contourCount`), returned as `ChFiDS_ErrorStatus` encoded
+as `Int`.
 
 ```swift
 public func stripeStatus(contour: Int) -> Int
 ```
 
-- **Returns:** `0` = no error; other values correspond to `ChFiDS_ErrorStatus` enumerators.
-- **OCCT:** `BRepFilletAPI_MakeFillet::StripeStatus` (via `OCCTFilletBuilderStripeStatus`).
+- **Returns:** `0` = no error; other values correspond to `ChFiDS_ErrorStatus` enumerators; `-1`
+  for a contour that does not exist.
+
+OCCT walks its stripe list for the index and dereferences the stripe whether or not it found one,
+so any index outside the range faulted the process before #3518.
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let builder = FilletBuilder(shape: box)!
+builder.addEdge(box.edges()[0], radius: 1)
+print(builder.stripeStatus(contour: 1))   // 0
+print(builder.stripeStatus(contour: 2))   // -1: past contourCount, not a crash
+```
+
+- **OCCT:** `BRepFilletAPI_MakeFillet::StripeStatus` (via `OCCTFilletBuilderStripeStatus`), read
+  only for a contour in `1...NbContours()`.
 
 ---
 
 ### `FilletBuilder.faultyContour(index:)`
 
-Get the faulty contour index for the i-th fault (1-based).
+Get the faulty contour index for the i-th fault (1-based, `1...faultyContourCount`).
 
 ```swift
 public func faultyContour(index: Int) -> Int
 ```
+
+An index outside that range answers `0`. OCCT already did; only the conversion to a C integer is
+clamped (#3518).
 
 - **OCCT:** `BRepFilletAPI_MakeFillet::FaultyContour` (via `OCCTFilletBuilderFaultyContour`).
 
@@ -1646,11 +1735,14 @@ public func faultyContour(index: Int) -> Int
 
 ### `FilletBuilder.faultyVertex(index:)`
 
-Get the faulty vertex for the i-th fault (1-based).
+Get the faulty vertex for the i-th fault (1-based, `1...faultyVertexCount`).
 
 ```swift
 public func faultyVertex(index: Int) -> Shape?
 ```
+
+An index outside that range answers `nil`. OCCT already did; only the conversion to a C integer is
+clamped (#3518).
 
 - **OCCT:** `BRepFilletAPI_MakeFillet::FaultyVertex` (via `OCCTFilletBuilderFaultyVertex`).
 
@@ -1936,10 +2028,21 @@ public var filletShape: Int { get }
 
 ### `FilletBuilder.resetContour(_:)`
 
-Reset radius info on a specific contour (1-based).
+Reset radius info on a specific contour (1-based, `1...contourCount`).
 
 ```swift
 public func resetContour(_ contourIndex: Int)
+```
+
+Does nothing for a contour that does not exist. `0` and the negatives used to reset contour 1, and
+any index faulted on a builder with no contour (#3518).
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let builder = FilletBuilder(shape: box)!
+builder.addEdge(box.edges()[0], radius: 1)
+builder.resetContour(0)             // no contour 0: contour 1 keeps its radius
+print(builder.radius(contour: 1))   // 1.0
 ```
 
 - **OCCT:** `BRepFilletAPI_MakeFillet::ResetContour` (via `OCCTFilletBuilderResetContour`).
@@ -1954,7 +2057,8 @@ Simulate filleting on a contour, computes cross-sections without building the fi
 public func simulate(contour: Int)
 ```
 
-- **Parameters:** `contour`, 1-based contour index.
+- **Parameters:** `contour`, 1-based contour index, `1...contourCount`. An index outside that range
+  does nothing: OCCT walks its stripe list for the index and finds none.
 - **OCCT:** `BRepFilletAPI_MakeFillet::Simulate` (via `OCCTFilletBuilderSimulate`).
 
 ---

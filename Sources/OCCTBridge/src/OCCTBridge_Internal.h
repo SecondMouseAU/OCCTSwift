@@ -3238,6 +3238,34 @@ OCCTShapeRef occtShapeFilletEdgeList(OCCTShapeRef   shape,
   }
 }
 
+// === #3518: a contour index is valid in 1..NbContours(), and OCCT checks neither end reliably ===
+//
+// ChFi3d_Builder::Value(I) walks the stripe list I-1 times and dereferences the iterator it ends
+// on, so I <= 1 runs no steps (0 and every negative index read contour 1) and I past the list, or
+// any I on a builder with no contour, steps onto a null node. NbEdges and Edge call it with no test
+// at all, and StripeStatus dereferences the stripe it failed to find; Length, Radius, IsConstant,
+// Closed, ClosedAndTangent, FirstVertex, LastVertex, Abscissa, RelativeAbscissa, SetRadius and
+// ResetContour test only `IC <= NbElements()`, the upper bound. The lower one is the one that
+// matters: 0 and the negatives pass it, read or write contour 1, and fault when there is none.
+// Scripts/repro/3518/ measured every accessor in nine builder states, one forked process per
+// (state, accessor, index).
+//
+// NbContours() is safe in every one of those states (it only walks the stripe list), so it is the
+// bound to test against. The edge index within a contour (Edge(I, J), SetRadius(R1, R2, IC, IinC))
+// indexes the spine's edge sequence unchecked as well; NbEdges(IC) is safe once IC is in range.
+inline bool occtFilletContourInRange(const BRepFilletAPI_MakeFillet& fillet, int32_t contourIndex)
+{
+  return contourIndex >= 1 && contourIndex <= fillet.NbContours();
+}
+
+inline bool occtFilletEdgeInContourInRange(const BRepFilletAPI_MakeFillet& fillet,
+                                           int32_t                         contourIndex,
+                                           int32_t                         edgeIndex)
+{
+  return occtFilletContourInRange(fillet, contourIndex) && edgeIndex >= 1
+         && edgeIndex <= fillet.NbEdges(contourIndex);
+}
+
 // === #505: the precondition BRepFilletAPI_MakeFillet's edge-keyed radius laws never check ===
 //
 // GetBounds, GetLaw and SetLaw each take a (contour index, TopoDS_Edge) pair and each resolve it
@@ -3263,7 +3291,7 @@ inline bool occtFilletContourHoldsEdge(const BRepFilletAPI_MakeFillet& fillet,
                                        int32_t                         contourIndex,
                                        const TopoDS_Edge&              edge)
 {
-  if (contourIndex < 1 || contourIndex > fillet.NbContours())
+  if (!occtFilletContourInRange(fillet, contourIndex))
     return false;
   return fillet.Contour(edge) == contourIndex;
 }
