@@ -570,7 +570,9 @@ Returns all edges from the shape as typed `Edge` objects.
 public func edges() -> [Edge]
 ```
 
-Iterates `edge(at:)` from 0 to `edgeCount - 1`. The order matches `edgeCount` / `edge(at:)`, i.e., `TopTools_IndexedMapOfShape` traversal order, which can vary between runs.
+Maps the shape once and reads every edge off that map, so the call is linear in the edge count, the way `faces()` and `vertices()` are. The order matches `edgeCount` / `edge(at:)`, i.e., `TopTools_IndexedMapOfShape` traversal order, which can vary between runs.
+
+**Cost.** Looping `edge(at:)` over `edgeCount` is not equivalent in cost, only in result: each `edge(at:)` builds the whole `TopTools_IndexedMapOfShape` to read one entry and throws it away, so a loop is one map per edge and quadratic in the edge count. `edges()` was that loop until #3526 (1.4 s on a 3,883-edge shape, where `faces()` took 0.5 ms); it is now one bridge call (`OCCTShapeGetEdges`). Use `edge(at:)` for a single edge and `edges()` for more than a few.
 
 **Identity, not orientation.** Edges are distinguished the way OCCT distinguishes them for an index: by `TopoDS_Shape::IsSame`, which compares the underlying curve and placement and ignores orientation. An edge reachable from two owners, the ordinary case of any two adjacent faces on one solid, collapses to a single entry here, carrying whichever orientation was reached first:
 
@@ -588,7 +590,7 @@ each would then answer for its neighbour with no error and no diagnostic (#979).
 
 - **Returns:** Every distinct `Edge` in enumeration order; empty if the shape has no edges, or if
   any edge could not be built.
-- **OCCT:** `TopExp::MapShapes(shape, TopAbs_EDGE)`, collects all edges via indexed map.
+- **OCCT:** `TopExp::MapShapes(shape, TopAbs_EDGE)` once, then every entry of the indexed map is wrapped as a `TopoDS_Edge` (`OCCTShapeGetEdges`).
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
