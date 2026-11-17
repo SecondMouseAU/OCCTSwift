@@ -102,8 +102,10 @@ struct EdgesEnumerationTests {
 
     /// The fixtures exist to put shared and repeated edges in front of the enumeration.
     ///
-    /// A fixture that has stopped doing that proves nothing about it. Measured, not assumed: the
-    /// compounds that must share an edge answer fewer distinct edges than the walk visits.
+    /// A fixture that has stopped doing that proves nothing about it, so the sharing is measured
+    /// rather than assumed. Each box edge borders two faces, so every solid's face walk visits its
+    /// edges twice and that proves nothing about sharing between parents; what does is a compound
+    /// whose parts, counted one by one, hold more edges than the compound has distinct edges.
     @Test("The sharing fixtures really share edges, and the edgeless ones really have none")
     func fixturesMeanTheirNames() throws {
         let byName = Dictionary(
@@ -117,18 +119,29 @@ struct EdgesEnumerationTests {
         }
 
         #expect(try edge("box") == 12)
-        #expect(try edge("boxWithItself") == 12, "the same TShape twice is still 12 edges")
-        #expect(
-            try occurrences("boxWithItself") > edge("boxWithItself"),
-            "the same TShape is reached twice, so the walk is longer than the map")
         #expect(
             try occurrences("box") > edge("box"),
             "each box edge is reached once per adjacent face, so the walk is longer than the map")
+
+        // One TShape handed in twice: the walk visits every edge twice as often as a lone box's,
+        // and the map still holds 12.
+        #expect(try edge("boxWithItself") == 12, "the same TShape twice is still 12 edges")
+        #expect(
+            try occurrences("boxWithItself") == 2 * occurrences("box"),
+            "boxWithItself no longer reaches the same box twice")
+
+        // Two solids sharing the cut face: counted one solid at a time they hold more edges than
+        // the compound has, because the cut face's four edges belong to both.
+        let split = try #require(byName["splitBoxCompound"])
+        let solids = split.solids
+        #expect(solids.count == 2, "the split should leave two solids")
+        #expect(
+            solids.map { $0.edgeCount }.reduce(0, +) > split.edgeCount,
+            "the two halves share no edge, so the fixture no longer exercises sharing")
+
         #expect(try edge("compoundOf20Boxes") == 240)
         #expect(try edge("bareEdge") == 1)
         #expect(try edge("lBracket") > 12, "the fuse should leave more edges than one box")
-        // The cut face's edges belong to both halves, so they are counted once.
-        #expect(try occurrences("splitBoxCompound") > edge("splitBoxCompound"))
         // A fillet puts curved edges where there were none: more edges than the 12 it started with.
         #expect(try edge("filletedBox") > 12)
 
