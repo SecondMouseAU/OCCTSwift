@@ -65,9 +65,20 @@ multiple of `faces()` (1.3x to 4.4x across every row, the extra being one heap o
 | 1,000 cylinders | 3,000 | 987 ms | 0.69 ms |
 | drilled plate | 1,212 | 139 ms | 0.32 ms |
 
-## The sibling, filed separately
+## The sibling, fixed in the same PR (#3527)
 
-`Shape.measure()` (`ShapeMeasurements.swift`) reads each edge length through `edge(at:)` in a loop,
-the identical defect in a different function. The harness times it: on 3,888 edges `measure()` takes
-1.6 to 2.8 s, of which the edge-length loop is 1.4 to 2.5 s, and reading the same lengths from
-`edges()` takes 1.1 ms after the fix. It is not changed here.
+`Shape.measure()` (`ShapeMeasurements.swift`) read each edge length through `edge(at:)` in a loop,
+the identical defect in a different function, and now reads them off one `edges()` pass. The
+harness times it on the 324-box shape (3,888 edges), release:
+
+| | `measure()` | the edge-length loop alone | the lengths from `edges()` |
+|---|---|---|---|
+| before, three runs | 1.58 s, 2.81 s, 3.51 s | 1.38 s, 2.52 s, 1.92 s | 1.2 ms |
+| after | 0.40 s | 3.15 s (the old loop, still run by the harness) | 1.6 ms |
+
+What is left in `measure()` after the change is the face work (areas, centroids and perimeters of
+1,944 faces), about 0.4 s. The "before" figures are three separate runs on a machine whose load
+swung between 19 and 150, which is why they span 1.6 s to 3.5 s; within each run the loop was 55 to
+90 percent of `measure()` (the low end is the run whose `measure()` hit a loaded moment), and that
+share, not the absolute figure, is the reading. The raw output
+is in [`measured-output.txt`](measured-output.txt).

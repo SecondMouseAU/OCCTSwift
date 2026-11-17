@@ -76,3 +76,13 @@
 == Shape.measure(), whose per-edge length is a loop of edge(at:) ==
   162 boxes (1944 edges)  measure()   930.591 ms  lengths via loop   800.593 ms  lengths via edges()     1.771 ms
   324 boxes (3888 edges)  measure()     4.067 s   lengths via loop     3.706 s   lengths via edges()     3.558 ms
+
+################ Shape.measure() (#3527), release. BEFORE the measure() change (same binary as the 'AFTER the #3526 fix, release' run above but a later run; measure() still a loop of edge(at:)) ################
+== Shape.measure(), whose per-edge length is a loop of edge(at:) ==
+  162 boxes (1944 edges)  measure()   545.028 ms  lengths via loop   471.189 ms  lengths via edges()     455.7 us
+  324 boxes (3888 edges)  measure()     3.510 s   lengths via loop     1.922 s   lengths via edges()     1.164 ms
+
+################ Shape.measure() (#3527), release. AFTER the measure() change ################
+== Shape.measure() (#3527): lengths via a loop of edge(at:) against one edges() pass ==
+  162 boxes (1944 edges)  measure()   121.515 ms  lengths via loop   708.183 ms  lengths via edges()     4.605 ms
+  324 boxes (3888 edges)  measure()   400.895 ms  lengths via loop     3.152 s   lengths via edges()     1.607 ms

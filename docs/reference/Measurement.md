@@ -606,7 +606,7 @@ Compute per-face area / centroid / perimeter and per-edge arc length for this sh
 public func measure(linearTolerance: Double = 1e-6) -> ShapeMeasurements
 ```
 
-Iterates `faces()` and `edge(at:)`, computing all four measurement arrays. The `faceCentroids` array is populated from `Face.surfaceInertia` (which calls `BRepGProp_Sinert`); `facePerimeters` uses `Face.outerWire?.length`.
+Reads `faces()` and `edges()` once each, computing all four measurement arrays in time linear in the face and edge counts. (The edge lengths used to come from `edge(at:)` in a loop, which builds the whole sub-shape map per edge and was quadratic: on a 3,888-edge shape it was 1.4 to 2.5 s of a 1.6 to 2.8 s call, #3527. The result is the same array.) The `faceCentroids` array is populated from `Face.surfaceInertia` (which calls `BRepGProp_Sinert`); `facePerimeters` uses `Face.outerWire?.length`.
 
 **`linearTolerance` only ever moves `faceAreas`/`totalFaceArea`, never `Shape.surfaceArea` and its
 two siblings** (see [`Shape-Features.md`](Shape-Features.md#surfacearea) for why, #885). At the

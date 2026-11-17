@@ -149,15 +149,19 @@ private func pad(_ n: Int) -> String {
     String(n).padding(toLength: 5, withPad: " ", startingAt: 0)
 }
 
-/// The sibling of the defect: `Shape.measure()` reads each edge length through `edge(at:)` in a loop.
+/// The sibling of the defect (#3527): `Shape.measure()` read each edge length through `edge(at:)`.
 ///
-/// Timed here so the follow-up issue quotes a measurement, not a reading.
+/// It was a loop of `edge(at:)`, the same one-map-per-edge cost, and now reads the lengths off one
+/// `edges()` pass. The loop column is that old cost spelled out and still runs, so a build before
+/// the #3527 change reports `measure()` close to it and a build after reports `measure()` far
+/// below it, the face work being what is left.
 private func sibling() {
-    print("\n== Shape.measure(), whose per-edge length is a loop of edge(at:) ==")
+    print(
+        "\n== Shape.measure() (#3527): lengths via a loop of edge(at:) against one edges() pass ==")
     for count in [162, 324] {
         let shape = boxes(count)
         let edgeCount = shape.edgeCount
-        let measureSeconds = best(passes: 2) { _ = shape.measure() }
+        let measureSeconds = best(passes: 3) { _ = shape.measure() }
         let lengthsViaLoop = best(passes: 2) {
             _ = (0..<edgeCount).map { shape.edge(at: $0)?.length ?? 0 }
         }
