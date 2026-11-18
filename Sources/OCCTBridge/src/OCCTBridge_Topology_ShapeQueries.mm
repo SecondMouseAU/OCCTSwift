@@ -3535,6 +3535,58 @@ OCCTEdgeRef OCCTShapeGetEdgeAtIndex(OCCTShapeRef shape, int32_t index)
   }
 }
 
+// #3526: the bulk read of OCCTShapeGetEdgeAtIndex. That function maps the whole shape to read one
+// entry, so the loop Shape.edges() ran over it built one TopTools_IndexedMapOfShape per edge. This
+// builds it once, the way OCCTShapeGetFaces and OCCTShapeGetVertices do, so the enumeration costs
+// one traversal whatever the edge count. Same map, same order, same entries: element i is the
+// edge OCCTShapeGetEdgeAtIndex(shape, i) answers.
+//
+// Every slot is filled or nothing is returned. An exception part way through releases what it had
+// built before answering NULL, since no caller has been handed any of it.
+OCCTEdgeRef* OCCTShapeGetEdges(OCCTShapeRef shape, int32_t* outCount)
+{
+  if (!outCount)
+    return nullptr;
+  *outCount = 0;
+  if (!shape)
+    return nullptr;
+
+  OCCTEdgeRef* result = nullptr;
+  int32_t      filled = 0;
+  try
+  {
+    TopTools_IndexedMapOfShape edgeMap;
+    int32_t                    count = occtMapSubShapes(shape->shape, TopAbs_EDGE, edgeMap);
+    if (count == 0)
+      return nullptr;
+
+    result = new OCCTEdgeRef[count];
+    for (; filled < count; filled++)
+    {
+      // OCCT's indexed maps are 1-based, and the map holds only edges.
+      result[filled] = new OCCTEdge(TopoDS::Edge(edgeMap(filled + 1)));
+    }
+
+    *outCount = count;
+    return result;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    for (int32_t i = 0; i < filled; i++)
+      delete result[i];
+    delete[] result;
+    return nullptr;
+  }
+}
+
+void OCCTFreeEdgeArrayOnly(OCCTEdgeRef* edges)
+{
+  if (!edges)
+    return;
+  delete[] edges;
+}
+
 void OCCTEdgeRelease(OCCTEdgeRef edge)
 {
   delete edge;

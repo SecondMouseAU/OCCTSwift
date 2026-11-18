@@ -303,6 +303,11 @@ extension Shape {
     }
 
     /// Get edge by index (0-based).
+    ///
+    /// Each call maps the whole shape to read one entry, so it is the right call for one edge and
+    /// the wrong one to loop over ``edgeCount``: that costs a map per edge, quadratic in the edge
+    /// count. Use ``edges()`` for the whole set, which maps once (#3526).
+    ///
     /// - Parameter index: The edge index
     /// - Returns: Edge at the given index, or nil if index is out of bounds
     public func edge(at index: Int) -> Edge? {
@@ -343,15 +348,40 @@ extension Shape {
     /// accessor or an orientation-sensitive consumer is added, re-run that audit before assuming
     /// the collapse is still safe. See `Scripts/repro/cluster-a-subshape-enumeration/`.
     ///
+    /// ## Cost
+    ///
+    /// The shape is mapped once and every edge is read off that map, the way ``Shape/faces()`` and
+    /// ``Shape/vertices()`` work, so the call is linear in the edge count. It used to call
+    /// ``edge(at:)`` once per edge, and each of those calls built the whole map to read one entry:
+    /// 1.4 s on a 3,883-edge shape where `faces()` took 0.5 ms (#3526). The result is the same
+    /// array either way, so there is nothing to choose between the two for correctness, only for
+    /// cost.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let row = (0..<50).compactMap { box.translated(by: SIMD3(Double($0) * 20, 0, 0)) }
+    /// let compound = Shape.compound(row)!
+    ///
+    /// let edges = compound.edges()      // one pass over the shape, however many edges
+    /// print(edges.count)                // 600
+    /// print(edges.last?.index as Any)   // Optional(599), the position is the index
+    /// ```
+    ///
     /// - Returns: Every distinct edge, so `edges()[k].index == k`, or an empty array if any edge
     ///   could not be built. Never a short array, which would shift every later ordinal (#979).
     public func edges() -> [Edge] {
-        // Each element is already an owning Edge, so discarding one releases its handle and the
-        // enumeration helper has nothing of its own to release.
-        wrapSubShapeEnumeration(
-            (0..<edgeCount).map { edge(at: $0) },
-            wrap: { element, _ in element },
-            release: { _ in })
+        var count: Int32 = 0
+        guard let edgeArray = OCCTShapeGetEdges(handle, &count) else {
+            return []
+        }
+        // Use OCCTFreeEdgeArrayOnly - the Swift Edge objects own the edge handles and release
+        // them in their deinit. Only the array container is freed here.
+        defer { OCCTFreeEdgeArrayOnly(edgeArray) }
+
+        return wrapSubShapeEnumeration(
+            Array(UnsafeBufferPointer(start: edgeArray, count: Int(count))),
+            wrap: { ref, ordinal in Edge(handle: ref, index: ordinal) },
+            release: OCCTEdgeRelease)
     }
 }
 

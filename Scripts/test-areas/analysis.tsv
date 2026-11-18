@@ -155,3 +155,4 @@ Tests/OCCTAnalysisTests/SurfaceIntersectionTests.swift	Tests/OCCTAnalysisTests/I
 Tests/OCCTAnalysisTests/SurfaceSurfaceIntersectionTests.swift	Tests/OCCTAnalysisTests/Intersection/SurfaceSurfaceIntersectionTests.swift	Intersection	-	curve-surface, surface-surface, ray and polygon intersection through the Swift API
 Tests/OCCTAnalysisTests/VolumeInertiaTests.swift	Tests/OCCTAnalysisTests/MassProperties/VolumeInertiaTests.swift	MassProperties	-	GProp mass, centroid and inertia of shapes and elements
 Tests/OCCTAnalysisTests/ZeroMassResultsTests.swift	Tests/OCCTAnalysisTests/MassProperties/ZeroMassResultsTests.swift	MassProperties	-	GProp mass, centroid and inertia of shapes and elements
+Tests/OCCTAnalysisTests/MassProperties/ShapeMeasureEdgeLengthsTests.swift	Tests/OCCTAnalysisTests/MassProperties/ShapeMeasureEdgeLengthsTests.swift	MassProperties	-	Shape.measure() reads the edge lengths off one edges() pass: same lengths as the per-index loop, linear cost (#3527)

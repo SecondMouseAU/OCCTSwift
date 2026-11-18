@@ -37,6 +37,10 @@ enum HarnessRunner {
                     summary: "analyze(tolerance:) vs isSelfIntersecting(timeout:) cost (#772)",
                     run: AnalyzeSelfIntersectionTiming.run),
                 RunnableEntry(
+                    name: "3526-edges-enumeration",
+                    summary: "edges() against faces(), vertices() and a per-index loop (#3526)",
+                    run: EdgesEnumerationTiming.run),
+                RunnableEntry(
                     name: "777-pocket-isopen",
                     summary: "PocketFeature.isOpen's enclosure test, four ways (#777)",
                     run: PocketEnclosureTiming.run),

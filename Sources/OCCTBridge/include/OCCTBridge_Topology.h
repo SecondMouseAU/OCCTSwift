@@ -216,6 +216,31 @@ int32_t OCCTShapeGetTotalEdgeCount(OCCTShapeRef shape);
 /// @return Edge reference, or NULL if index out of bounds. Caller must release.
 OCCTEdgeRef OCCTShapeGetEdgeAtIndex(OCCTShapeRef shape, int32_t index);
 
+/// Get every edge of a shape, in enumeration order: the bulk counterpart of
+/// OCCTShapeGetEdgeAtIndex, the way OCCTShapeGetFaces is of OCCTShapeGetFaceAtIndex.
+///
+/// #3526: the shape is mapped ONCE and the array is read off that map. Each OCCTShapeGetEdgeAtIndex
+/// call builds the whole TopTools_IndexedMapOfShape (TopExp::MapShapes) to read one entry and
+/// discards it, so a caller that looped that function over OCCTShapeGetTotalEdgeCount edges paid
+/// one map per edge: quadratic, 1.4 s on a 3,883-edge shape where OCCTShapeGetFaces took 0.5 ms.
+/// Element i is exactly OCCTShapeGetEdgeAtIndex(shape, i): one entry per distinct edge
+/// (TopoDS_Shape::IsSame, orientation ignored), carrying the orientation it was first reached with.
+///
+/// Every slot is filled or the call answers NULL; there is no array with a hole in it, since a hole
+/// would shift every later ordinal.
+///
+/// @param shape The shape to extract edges from
+/// @param outCount Output: number of edges returned; written 0 whenever NULL is returned
+/// @return Array of `*outCount` edge references, or NULL for a null shape, a shape with no edge, a
+///         null `outCount` or a failure. The caller owns each edge and releases it with
+///         OCCTEdgeRelease, and frees the array itself with OCCTFreeEdgeArrayOnly.
+OCCTEdgeRef* OCCTShapeGetEdges(OCCTShapeRef shape, int32_t* outCount);
+
+/// Free only the edge array container, not the edges - use when Swift takes ownership of each
+/// edge (the counterpart of OCCTFreeFaceArrayOnly). A NULL array is ignored.
+/// @param edges Array returned by OCCTShapeGetEdges
+void OCCTFreeEdgeArrayOnly(OCCTEdgeRef* edges);
+
 /// Release an edge reference
 void OCCTEdgeRelease(OCCTEdgeRef edge);
 

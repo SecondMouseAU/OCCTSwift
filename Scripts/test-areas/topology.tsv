@@ -145,3 +145,4 @@ Tests/OCCTTopologyTests/WireOrderTests.swift	Tests/OCCTTopologyTests/Wires/WireO
 Tests/OCCTTopologyTests/WireTests.swift	Tests/OCCTTopologyTests/Wires/WireTests.swift	Wires	-	Wire factories: rectangle, polygon, arc, line, BSpline
 Tests/OCCTTopologyTests/Issue3130BorrowedHandleTests.swift	Tests/OCCTTopologyTests/TopoDS/BorrowedHandleTests.swift	TopoDS	-	Shape, Edge and Face wrappers keep their owner alive across a bridge call (#3130)
 Tests/OCCTTopologyTests/BRepTool/BRepToolLooseEdgeFixture.swift	Tests/OCCTTopologyTests/BRepTool/BRepToolLooseEdgeFixture.swift	BRepTool	-	shared loose-edge box fixture (boxWithLooseEdges); no suites
+Tests/OCCTTopologyTests/SubShapes/EdgesEnumerationTests.swift	Tests/OCCTTopologyTests/SubShapes/EdgesEnumerationTests.swift	SubShapes	-	edges() maps the shape once: same answer as the per-index path, owned handles, linear cost (#3526)

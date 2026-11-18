@@ -2560,7 +2560,8 @@ inline int32_t occtMapSubShapes(const TopoDS_Shape&         shape,
 
 /// The single sub-shape at 0-based `index` in the enumeration above, or a null TopoDS_Shape when
 /// the index is negative or past the end. Callers that want the whole set should map once and
-/// read the map, rather than calling this in a loop.
+/// read the map, rather than calling this in a loop: Shape.edges() did, and was quadratic until
+/// OCCTShapeGetEdges read the map once (#3526).
 inline TopoDS_Shape occtSubShapeAt(const TopoDS_Shape& shape, int32_t type, int32_t index)
 {
   if (index < 0)

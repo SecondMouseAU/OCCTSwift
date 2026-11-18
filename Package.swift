@@ -1322,12 +1322,12 @@ let package = Package(
             name: "Harnesses",
             dependencies: ["OCCTSwift", "RunnerCore"],
             path: "Scripts/repro/harnesses",
-            // Two harnesses cannot exist on wasm32-unknown-wasip1, and they are EXCLUDED here
-            // rather than wrapped in `#if !os(WASI)` in their own files. Both time work against a
+            // Three harnesses cannot exist on wasm32-unknown-wasip1, and they are EXCLUDED here
+            // rather than wrapped in `#if !os(WASI)` in their own files. Each times work against a
             // wall clock with `DispatchTime`, and #772's also calls
             // `Shape.isSelfIntersecting(hardTimeout:)`, which is `#if !os(WASI)` as of #2175
             // because its contract needs a second thread the non-threads target does not have
-            // (#2760). Neither would mean anything on a single-threaded module under an
+            // (#2760). None would mean anything on a single-threaded module under an
             // interpreter: it would be timing the interpreter.
             //
             // Excluded and not guarded because wrapping a whole file in `#if` makes swift-format
@@ -1339,7 +1339,10 @@ let package = Package(
             // and nothing built this target for wasm, because that spike consumed OCCTSwift through
             // a separate package.
             exclude: isWASI
-                ? ["AnalyzeSelfIntersectionTiming.swift", "PocketEnclosureTiming.swift"]
+                ? [
+                    "AnalyzeSelfIntersectionTiming.swift", "EdgesEnumerationTiming.swift",
+                    "PocketEnclosureTiming.swift",
+                ]
                 : [],
             swiftSettings: [
                 .swiftLanguageMode(.v6)

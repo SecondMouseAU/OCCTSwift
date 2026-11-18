@@ -957,6 +957,14 @@ One enumeration behind all of these: `TopExp::MapShapes` into a `TopTools_Indexe
 geometry *and* placement, orientation ignored). A sub-shape reachable from two parents appears
 once; two placements of one body appear twice. (#502)
 
+**Each call builds that map, so the array forms map a fixed number of times and the indexed forms
+map once per call.** `faces()`, `edges()`, `vertices()` and `subShapes(ofType:)` read a whole
+enumeration with one or two maps whatever its length, and are linear in it. `face(at:)`, `edge(at:)`, `vertex(at:)` and `subShape(type:index:)` each
+build the map to read one entry, which is the right cost for one entry and the wrong one inside a
+loop over the count: that is one map per element, quadratic. `edges()` was such a loop until #3526
+(1.4 s on a 3,883-edge shape, against 0.5 ms for `faces()`), so prefer the array form whenever more
+than a handful of entries are wanted.
+
 **A position in one of these arrays is an ordinal, not just a place in a list.** `faces()[k]` is the
 face `face(at: k)` names, `edges()[k]` is `edge(at: k)`, and `subShapes(ofType: t)[k]` is
 `subShape(type: t, index: k)`. Each array is therefore returned complete or empty, never short: an

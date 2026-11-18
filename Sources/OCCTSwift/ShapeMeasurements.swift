@@ -66,6 +66,21 @@ extension Shape {
     /// `linearTolerance` only ever moves ``ShapeMeasurements/faceAreas`` and
     /// ``ShapeMeasurements/totalFaceArea``, never ``Shape/surfaceArea`` and its two siblings; see
     /// ``Shape/surfaceArea`` for why (#885).
+    /// ## Cost
+    ///
+    /// Linear in the face and edge counts. The edge lengths are read off one ``edges()``
+    /// enumeration, which maps the shape once. They used to come from ``edge(at:)`` in a loop,
+    /// and each of those calls built the whole sub-shape map to read one entry, so the loop was
+    /// quadratic and was most of this call: on a 3,888-edge shape, 1.4 to 2.5 s of a 1.6 to 2.8 s
+    /// measurement (#3527). The result is the same array.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 2, height: 3, depth: 5)!
+    /// let m = box.measure()
+    /// print(m.edgeLengths.count)       // 12, one per distinct edge
+    /// print(m.totalEdgeLength)         // 40.0 = 4 * (2 + 3 + 5)
+    /// ```
+    ///
     /// - Parameter linearTolerance: tolerance forwarded to `Face.area(tolerance:)`.
     ///   Defaults to OCCT's `1e-6`, tighten only if you hit precision issues.
     /// - Returns: A `ShapeMeasurements` snapshot with all four arrays populated and indexed
@@ -77,10 +92,16 @@ extension Shape {
         let facePerimeters: [Double?] = faceList.map { $0.outerWire?.length }
 
         let count = edgeCount
-        var edgeLengths: [Double] = []
-        edgeLengths.reserveCapacity(count)
-        for i in 0..<count {
-            edgeLengths.append(edge(at: i)?.length ?? 0)
+        let edgeList = edges()
+        let edgeLengths: [Double]
+        if edgeList.count == count {
+            edgeLengths = edgeList.map { $0.length }
+        } else {
+            // `edges()` answers an empty array for the whole shape if any one edge cannot be
+            // built (#979), where this array has always read `0` for that edge alone and kept every
+            // other entry. The bridge cannot produce such a hole today, so this branch is
+            // unreachable on a real shape; it keeps the per-edge contract if that ever changes.
+            edgeLengths = (0..<count).map { edge(at: $0)?.length ?? 0 }
         }
 
         return ShapeMeasurements(
