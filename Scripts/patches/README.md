@@ -21,7 +21,7 @@ retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), a
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry), and
 `0031` retired 2026-10-10 at the `v4.0.0-kernel.6` repin (#3065: the supported pattern is one
 adaptor per worker, so the lock it added is not needed).
-The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0066, 0068–0078.
+The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0066, 0068–0080.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -3848,6 +3848,66 @@ Measured after, same harness: 100 and 400 levels load with status ok; 600, 4000 
 **Upstream checked 2026-10-20:** `BinLDrivers_DocumentRetrievalDriver.cxx` on `IR` has no depth bound; its last change is the deep-XBF-references fix of 2026-09-04 (#1528). **Not yet filed upstream.**
 
 **Retire** once the bundled OCCT includes this fix.
+
+## 0079-IntCurve_IntConicConic-brings-an-angle-into-a-turn-in-one-step-3506.patch
+
+**`IntCurve_IntConicConic` brings an angle into a turn in one step, so a circle or ellipse with no radius, or a domain with an infinite parameter, no longer makes it loop** ([#3506](https://github.com/SecondMouseAU/OCCTSwift/issues/3506); not filed upstream).
+
+`BRepCheck_Analyzer` never returned on a shape whose face has a pcurve that is a `Geom2d_Circle` of radius 0, which `BRepTools::Read` builds from a complete, well-formed BREP (`gp_Circ2d` allows a radius of 0). The stack is `BRepCheck_Wire::SelfIntersect` to `Geom2dInt_GInter::InternalPerform` to `IntCurve_IntConicConic::Perform(gp_Lin2d, ..., gp_Circ2d, ...)`, a wire that holds a line and a circle. A plain cylinder with the same edit does not hang on `kernel.8` (its cap's wire is the circle alone, so there is no line to intersect it with), which is why the fixture is `fused.brep`.
+
+**Root cause.** Each `Perform` that takes a circle or an ellipse brings the first parameter of the conic's domain into [0, 2PI) with `while (Binf >= PIpPI) Binf -= PIpPI; while (Binf < 0.0) Binf += PIpPI;`: six such pairs in `IntCurve_IntConicConic_1.cxx` (the circle against circle overload, the line against circle overload, the line against ellipse overload, each before and after the widening). The widening divides the domain's tolerance by the conic's radius (`CIRC_Domain.FirstTolerance() / Circle.Radius()`, `DE.FirstTolerance() / E.MinorRadius()`). At radius 0 that is an infinity, `Binf` becomes minus infinity, and `-inf + 2PI` is `-inf` for ever. A merely tiny radius makes a finite value so large that a turn is below its last digit, with the same result. An infinite parameter in the domain itself does it at the first of the two pairs. The `while` comparisons on a NaN are false, so NaN ended the loop and was never the problem.
+
+**The change.** One helper in an anonymous namespace, `ReducedToTurn`, which is `std::fmod` and one addition, and the six pairs call it. It terminates for every input; an infinite or NaN angle stays one, the comparisons after it fail, and the function returns with whatever it found. The answers for finite in-range input are unchanged: the fmod of an angle within a few turns is the value the loop reached by subtracting.
+
+**Measured**, `Scripts/repro/3506/probe.cxx`, a direct probe of the three overloads, 23 cases each in its own process with a 3 second alarm, against the `macos-arm64` slice of `v4.0.0-kernel.8`, then with the two patched files compiled with the kernel's own flags (`-O3 -DNDEBUG -DNo_Exception`) linked ahead of the archive:
+
+| case | `kernel.8` | patched |
+|---|---|---|
+| circle radius 1, 1e-7, 1e-9, 1e-12 (controls) | 2, 2, 2, 1 points | same |
+| circle radius 1e-20, 1e-300, the smallest denormal, 0 | **hang** | return (1, 1, 2, 2 points) |
+| circle radius 0, the line off the centre | 0 points | same |
+| circle radius NaN, +inf | 4, 2 points | same |
+| ellipse 2 x 1, 2 x 1e-12 (controls) | 2, 2 points | same |
+| ellipse 2 x 1e-300, 2 x 0, 0 x 0 | **hang** | return (2, 4, 4 points) |
+| circle domain first = -inf, last = +inf | **hang** | return (2, 2 points) |
+| circle domain first or last = NaN | 4 points | same |
+| two circles, domain first = -inf | **hang** | return (2 points) |
+| two circles, domain last = +inf; two circles (control) | 2 points | same |
+
+10 of 23 hang before and 0 after, and all 13 that returned keep their number of points. On the shape: `fused.brep` (the `Scripts/repro/3487` corpus) with the radius token of its first circle pcurve (byte 143, the `5`) replaced by `0` or `1e-300`, or by `00`, `ff`, `-` or `*`, which the reader takes as 0 (the issue's four): `Shape.loadBREP` returns the shape, `BRepCheck_Analyzer` never returned on `kernel.8` and answers `isValid == false` with the patch, six variants of six. `1e-20`, `1e-12`, `nan` and `inf` returned `false` on `kernel.8` already, in this configuration.
+
+**What it does not do.** A conic with no radius is not turned into "no intersection": the three overloads return whatever the geometry gives (a circle of radius 0 against a line through its centre answers 2 points). The shapes that carry one are invalid on other grounds, and `BRepCheck_Analyzer` says so, which is the answer a caller needs. The reader is not changed to refuse a radius of 0 (patch `0075`'s shape for a non-finite trim parameter): this class is reached by anything that builds a circle of radius 0 without a file, and the reader would still hand it a radius of 1e-300. The other `while`-by-a-turn reductions elsewhere in OCCT were not audited.
+
+**Verification.** `StressPCurveCircleRadiusTests` (`OCCTStressTests`, gated on `OCCTSWIFT_LOCAL=1` until the repin that pins this): the undamaged fixture is valid, and the fixture with the first circle's radius edited to `0` and to `1e-300` answers `isValid == false`. It does not return on `kernel.8`.
+
+**Upstream checked 2026-11-23:** `IntCurve_IntConicConic_1.cxx` is byte-identical in `V8_0_1` and `V8_0_2` (the tag of 2026-11-21). On `IR` its only changes since `V8_0_1` are the licence notice (#1724) and the removal of mutable static state (#1519); the loops are as they were. A search of `Open-Cascade-SAS/OCCT` issues and pull requests for `IntConicConic` finds nothing. **Not filed upstream.**
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0080-IntTools_FaceFace-Perform-refuses-a-face-without-a-surface-3509.patch
+
+**`IntTools_FaceFace::Perform` refuses a face without a surface, so `BRepAlgoAPI_Check` and `BOPAlgo_CheckerSI` stop faulting on one that carries a wire** ([#3509](https://github.com/SecondMouseAU/OCCTSwift/issues/3509); not filed upstream).
+
+`BRepAlgoAPI_Check` (and so `OCCTShapeBooleanCheckSingle` and `OCCTShapeBooleanCheckPair`) SIGSEGVs on a face with no surface that carries a wire, after `0077` fixed `BRepCheck_Analyzer` for the same shapes. `IntTools_FaceFace.cxx`'s `CorrectSurfaceBoundaries` calls `->Bounds(...)` on `BRep_Tool::Surface(theFace)`, a null handle. `BOPAlgo_CheckerSI::CheckFaceSelfIntersection` skips faces of four types (plane, cylinder, cone, sphere) and runs `IntTools_FaceFace::Perform(face, face)` on the rest, which includes a face with no surface.
+
+**The change.** `Perform` returns after assigning its two faces, with `IsDone()` false, when either has no surface: the same state every other reason for not finishing leaves, and the one `BOPAlgo_CheckerSI` tests (`if (bIsDone)`) before it reads the curves and points. It sits at the top, before the `SurfaceAdaptor` calls, so it covers every caller of the class and not only this one.
+
+**Measured**, `Scripts/repro/3509/probe.cxx`, each entry point in its own process on `Tests/OCCTStressTests/Fixtures/surfaceless-face-with-wire.brep`, against `v4.0.0-kernel.8` and then with `IntTools_FaceFace.cxx` patched, compiled with the kernel's own flags:
+
+| entry point | `kernel.8` | patched |
+|---|---|---|
+| `BRepAlgoAPI_Check(shape)` | **SIGSEGV, 139** | `IsValid` false |
+| `BRepAlgoAPI_Check(box, shape, FUSE)` | **SIGSEGV, 139** | `IsValid` false |
+| `BOPAlgo_CheckerSI`, level 5 | **SIGSEGV, 139** | no errors |
+| `BRepAlgoAPI_Fuse`, `Common`, `Cut`, `Section` of a box and the shape | done false, errors | same |
+
+This answers the issue's "not measured": the Boolean operations do not reach `CorrectSurfaceBoundaries` with this shape, because they reject the argument first. The `Scripts/repro/2789-brepcheck-analyzer-surfaceless-face` harness (`algocheck`) agrees: `barewithwire`, `withwire` and `surfaceless-face-with-wire.brep` answer `IsValid` false in place of 139, and `box` (true) and `bare` (false) are as before.
+
+**The bridge guard is still needed, and is the next thing to retire.** `OCCTShapeBooleanCheckSingle` and `OCCTShapeBooleanCheckPair` (`OCCTBridge_Healing_Fix.mm`) refuse a surface-less shape before `BRepAlgoAPI_Check` for exactly this fault (#2789, #3503). With `0080` pinned the guard's answer (`false`) is the kernel's, so the surface-less clause at those two sites can go, by the route #3503 took for the analyzer sites: only after the repin, with a test through `Shape.isBooleanValid` that fails if the mitigation comes back. It cannot go before: the Swift API has no other path to `BRepAlgoAPI_Check`, so no Swift test can reach the fault while the guard stands, and the evidence for this patch is the C++ probe above.
+
+**Upstream checked 2026-11-23:** `IntTools_FaceFace.cxx` and `BOPAlgo_CheckerSI.cxx` are byte-identical in `V8_0_1` and `V8_0_2`. `IR` replaced the route this fault takes: #1640 (`8f817f5da5`, 2026-10-19) rewrote `BOPAlgo_FaceSelfIntersect` to check the face's surface preimages itself, and it opens with `if (aGeometry.IsNull()) return;`. That is a null test at the same point, so on `IR` `BRepAlgoAPI_Check` no longer reaches this site; the backport of #1640 to `OCCT-802` (`3685e958f9`) did not include `BOPAlgo_CheckerSI.cxx`. `IntTools_FaceFace::CorrectSurfaceBoundaries` still dereferences the handle on `IR`, so a test against `IR` would need another caller of `IntTools_FaceFace::Perform`; none was found that reaches it with a surface-less face (the four Boolean operations do not). A search of `Open-Cascade-SAS/OCCT` for `IntTools_FaceFace` finds helical-section and tangent-face issues and nothing about a null surface. **Not filed upstream.**
+
+**Retire** once the bundled OCCT includes this fix, or, if the pinned base becomes a tag that has taken `IR`'s #1640, once `BOPAlgo_CheckerSI.cxx` is shown to be the only caller that reached it.
 
 # Retired patches
 

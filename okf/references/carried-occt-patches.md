@@ -126,15 +126,28 @@ mistake the rest of this page is about.
 
 ### The xcframework
 
-`Scripts/patches/` holds fifty-nine patches, of which the pinned asset carries fifty-nine. **These
+`Scripts/patches/` holds sixty-one patches, of which the pinned asset carries fifty-nine. **These
 are the counts `CLAUDE.md` used to restate and no longer does** (#2954); both are derived from
 `Scripts/patches/` and `Package.swift` by `check-inventory-prose.py`, which fails the PR that lets
-this page and the tree disagree. The v4.0.0-kernel.8 asset `Package.swift` pins lacks none of them,
-so **there is no native divergence**, per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md). It was
+this page and the tree disagree. The v4.0.0-kernel.8 asset `Package.swift` pins lacks two of them, `0079` and `0080`,
+so **there are two native divergences**, written up below, per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md). It was
 built from a `V8_0_1` tree whose only modifications are the fifty-nine patches it holds (the
 modified-file set was computed against the patches' own file lists: 139 files, none unexplained, see
 `Package.swift`), so none of a retired patch's edits is in it.
 `0031` left at v4.0.0-kernel.6 and is not in either asset.
+
+**The two open divergences.** Both are uncatchable or endless faults in the kernel on a shape a reader
+returns, found by the #3487 matrix re-run and by the #3503 measurement of the analyzer guards, and
+neither is in `V8_0_2`, tagged 2026-11-21: the files they touch are byte-identical to `V8_0_1`. The
+Swift suite for `0079` (`StressPCurveCircleRadiusTests`) is gated on `OCCTSWIFT_LOCAL=1` until the
+repin that pins it. `0080` has no Swift test, because the bridge guard at the two Boolean-check
+sites stands in front of the fault; it is retired at the repin, with the test, by the route #3503
+took for the analyzer sites.
+
+| Unpinned (not in v4.0.0-kernel.8) | What it leaves exposed |
+|---|---|
+| `0079-IntCurve_IntConicConic-brings-an-angle-into-a-turn-in-one-step-3506` | `BRepCheck_Analyzer`, and so `Shape.isValid` and every entry that runs it first, never returns on a face whose wire holds a line and a `Geom2d_Circle` of radius 0 (or of 1e-300, or an ellipse with a minor radius that small, or a domain with an infinite parameter): `IntCurve_IntConicConic::Perform` reduces an angle into a turn by taking a turn off at a time and the widening by tolerance over radius made it infinite. `BRepTools::Read` builds such a circle from a well-formed BREP. 10 of 23 direct probe cases hang. |
+| `0080-IntTools_FaceFace-Perform-refuses-a-face-without-a-surface-3509` | `BRepAlgoAPI_Check`, `OCCTShapeBooleanCheckSingle` and `OCCTShapeBooleanCheckPair` SIGSEGV on a face with no surface that carries a wire, in `IntTools_FaceFace.cxx`'s `CorrectSurfaceBoundaries` (a null `->Bounds`). The bridge refuses a surface-less shape before the call, so `Shape.isBooleanValid` and `isBooleanValidWith` answer false and the process lives; the kernel is exposed to a caller that reaches `BRepAlgoAPI_Check` or `BOPAlgo_CheckerSI` itself. Fuse, Common, Cut and Section do not reach it. |
 
 **The divergence that stood until v4.0.0-kernel.8 is closed.** `0070` to `0078` were merged after
 v4.0.0-kernel.7 and were live nowhere until the v4.0.0-kernel.8 rebuild pinned all nine. The table
@@ -238,7 +251,7 @@ older asset. `Package.swift`'s pin block records that exception against
 
 `libOCCT-wasm.a` and its header tree are a **second** pinned asset, recorded in
 `Scripts/wasm-kernel-pin.txt` rather than in `Package.swift`, because SwiftPM has no `binaryTarget`
-for a bare static library. Both kernels carry the same patches, `0010` to `0078`. As of this
+for a bare static library. Both kernels carry the same patches, `0010` to `0078`; `0079` and `0080` are on neither. As of this
 writing the pinned native asset carries fifty-nine, and so does this one, plus the eleven in
 `Scripts/patches-wasi/` that only the wasm build applies. They were built from one tree in one
 sitting and published to one release tag, so **there is no divergence between the two platforms to

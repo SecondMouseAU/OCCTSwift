@@ -1,0 +1,155 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - IntCurve_IntConicConic brings an angle into a turn in one
+ step, so a zero radius or an infinite parameter no longer loops
+
+IntCurve_IntConicConic::Perform for a line against a circle, a line against an ellipse and two
+circles brings the first parameter of the conic's domain into [0, 2PI) by taking a turn off, or
+adding one, while it is out of range. Two kinds of value make that loop endless:
+ - an infinite parameter, which a turn does not change;
+ - a finite one so large that a turn is below its last digit.
+The domain is widened by its tolerance over the conic's radius before the second reduction
+(`FirstTolerance() / Circle.Radius()`, `DE.FirstTolerance() / E.MinorRadius()`), so a radius of 0
+gives an infinity and a radius that is merely tiny gives a huge value. gp_Circ2d and gp_Elips2d
+accept a radius of 0, and BRepTools::Read builds a Geom2d_Circle of radius 0 from a BREP that
+says so, which BRepCheck_Wire::SelfIntersect then hands to this class: BRepCheck_Analyzer never
+returns.
+
+The reduction is now std::fmod, which terminates for every input. An infinite or NaN angle stays
+one, the comparisons after it fail, and the function returns with whatever it found.
+
+Measured with a direct probe of the three overloads (23 cases, each in its own process with an
+alarm): 10 hang before (a circle of radius 0, 1e-20, 1e-300 and the smallest denormal; an ellipse
+with a minor radius of 0 and 1e-300; an infinite first or last parameter of a circle domain; an
+infinite first parameter of the second circle of a circle pair), 0 after, and the 13 that returned
+keep their number of points. BRepCheck_Analyzer on the four damaged files that reproduced it
+answers false in place of never returning.
+
+Tracked as SecondMouseAU/OCCTSwift#3506.
+
+---
+diff --git a/src/ModelingAlgorithms/TKGeomAlgo/IntCurve/IntCurve_IntConicConic_1.cxx b/src/ModelingAlgorithms/TKGeomAlgo/IntCurve/IntCurve_IntConicConic_1.cxx
+--- a/src/ModelingAlgorithms/TKGeomAlgo/IntCurve/IntCurve_IntConicConic_1.cxx
++++ b/src/ModelingAlgorithms/TKGeomAlgo/IntCurve/IntCurve_IntConicConic_1.cxx
+@@ -33,6 +33,8 @@
+ #include <Precision.hxx>
+ #include <Extrema_ExtElC2d.hxx>
+ 
++#include <cmath>
++
+ bool Affichage      = false;
+ bool AffichageGraph = true;
+ 
+@@ -45,6 +47,17 @@ bool AffichageGraph = true;
+ 
+ const double PIsur2 = 0.5 * M_PI;
+ 
++namespace
++{
++// reduces an angle to [0, 2PI) in one step; stepping a turn at a time never ends for an infinite
++// angle, nor for one so large that a turn is below its last digit
++double ReducedToTurn(const double theAngle)
++{
++  const double aReduced = std::fmod(theAngle, PIpPI);
++  return aReduced < 0.0 ? aReduced + PIpPI : aReduced;
++}
++} // namespace
++
+ //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ IntRes2d_Position                FindPositionLL(double&, const IntRes2d_Domain&);
+ const IntRes2d_IntersectionPoint SegmentToPoint(const IntRes2d_IntersectionPoint& Pa,
+@@ -851,14 +864,7 @@ void IntCurve_IntConicConic::Perform(const gp_Circ2d&       Circle1,
+     deltat = std::nextafter(PIpPI, 0.);
+   }
+ 
+-  while (C1Domain.Binf >= PIpPI)
+-  {
+-    C1Domain.Binf -= PIpPI;
+-  }
+-  while (C1Domain.Binf < 0.0)
+-  {
+-    C1Domain.Binf += PIpPI;
+-  }
++  C1Domain.Binf = ReducedToTurn(C1Domain.Binf);
+ 
+   C1Domain.Bsup = C1Domain.Binf + deltat;
+ 
+@@ -869,14 +875,7 @@ void IntCurve_IntConicConic::Perform(const gp_Circ2d&       Circle1,
+     deltat = std::nextafter(PIpPI, 0.);
+   }
+ 
+-  while (C2Domain.Binf >= PIpPI)
+-  {
+-    C2Domain.Binf -= PIpPI;
+-  }
+-  while (C2Domain.Binf < 0.0)
+-  {
+-    C2Domain.Binf += PIpPI;
+-  }
++  C2Domain.Binf = ReducedToTurn(C2Domain.Binf);
+ 
+   C2Domain.Bsup = C2Domain.Binf + deltat;
+ 
+@@ -2282,14 +2281,7 @@ void IntCurve_IntConicConic::Perform(const gp_Lin2d&        Line,
+ 
+   PeriodicInterval CDomain(CIRC_Domain);
+   double           deltat = CDomain.Bsup - CDomain.Binf;
+-  while (CDomain.Binf >= PIpPI)
+-  {
+-    CDomain.Binf -= PIpPI;
+-  }
+-  while (CDomain.Binf < 0.0)
+-  {
+-    CDomain.Binf += PIpPI;
+-  }
++  CDomain.Binf = ReducedToTurn(CDomain.Binf);
+   CDomain.Bsup = CDomain.Binf + deltat;
+ 
+   //------------------------------------------------------------
+@@ -2313,14 +2305,7 @@ void IntCurve_IntConicConic::Perform(const gp_Lin2d&        Line,
+     CDomain.Bsup = BsupModif - t;
+   }
+   deltat = CDomain.Bsup - CDomain.Binf;
+-  while (CDomain.Binf >= PIpPI)
+-  {
+-    CDomain.Binf -= PIpPI;
+-  }
+-  while (CDomain.Binf < 0.0)
+-  {
+-    CDomain.Binf += PIpPI;
+-  }
++  CDomain.Binf = ReducedToTurn(CDomain.Binf);
+   CDomain.Bsup = CDomain.Binf + deltat;
+   //-- ------------------------------------------------------------
+ 
+@@ -2898,14 +2883,7 @@ void IntCurve_IntConicConic::Perform(const gp_Lin2d&        L,
+   //
+   PeriodicInterval EDomain(DE);
+   double           deltat = EDomain.Bsup - EDomain.Binf;
+-  while (EDomain.Binf >= PIpPI)
+-  {
+-    EDomain.Binf -= PIpPI;
+-  }
+-  while (EDomain.Binf < 0.0)
+-  {
+-    EDomain.Binf += PIpPI;
+-  }
++  EDomain.Binf = ReducedToTurn(EDomain.Binf);
+   EDomain.Bsup = EDomain.Binf + deltat;
+   //
+   double BinfModif = EDomain.Binf;
+@@ -2926,14 +2904,7 @@ void IntCurve_IntConicConic::Perform(const gp_Lin2d&        L,
+     EDomain.Bsup = BsupModif - t;
+   }
+   deltat = EDomain.Bsup - EDomain.Binf;
+-  while (EDomain.Binf >= PIpPI)
+-  {
+-    EDomain.Binf -= PIpPI;
+-  }
+-  while (EDomain.Binf < 0.0)
+-  {
+-    EDomain.Binf += PIpPI;
+-  }
++  EDomain.Binf = ReducedToTurn(EDomain.Binf);
+   EDomain.Bsup = EDomain.Binf + deltat;
+   //
+   Interval LDomain(DL);
