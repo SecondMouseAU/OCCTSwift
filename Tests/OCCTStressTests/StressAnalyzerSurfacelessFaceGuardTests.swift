@@ -38,10 +38,11 @@
 
 // Since v4.0.0-kernel.8 (patch 0077, #3503) the analyzer survives this shape, and the guard is gone
 // from every entry point whose answer was the analyzer's own; see StressBRepCheckInContextGuardTests
-// for which. These tests still pin those answers and now run the kernel. Two clauses stay: the
-// boolean checks refuse a surface-less face because BRepAlgoAPI_Check's self-interference test
-// faults on it in IntTools_FaceFace (#3509), which 0077 does not touch, and the same guards
-// as in the pcurve-only suite keep checkResult, detailedCheckStatuses and isSubShapeValid.
+// for which. These tests still pin those answers and now run the kernel. The boolean checks lost
+// their surface-less clause at v4.0.0-kernel.9 (patch 0080, #3509): BRepAlgoAPI_Check's
+// self-interference test faulted on such a face in IntTools_FaceFace, and now answers false. The
+// same guards as in the pcurve-only suite keep checkResult, detailedCheckStatuses and
+// isSubShapeValid.
 
 import Foundation
 import Testing
@@ -175,7 +176,10 @@ struct StressAnalyzerSurfacelessFaceGuardTests {
     func booleanValidityRefuses() throws {
         // BRepAlgoAPI_Check::Perform builds `BRepCheck_Analyzer(myS1)` at BRepAlgoAPI_Check.cxx:92,
         // so these two entry points construct an analyzer with no `BRepCheck_Analyzer` text anywhere
-        // in the bridge. Measured to exit 139 unguarded, on this fixture AND on #2746's.
+        // in the bridge. Measured to exit 139 unguarded on v4.0.0-kernel.8, on this fixture AND on
+        // #2746's: the self-interference test faults in IntTools_FaceFace (#3509). Since
+        // v4.0.0-kernel.9 (0080) no bridge guard stands in front of it, so this test reaches the
+        // kernel, and ends its process on a kernel without that patch.
         #expect(try Self.fixture().isBooleanValid() == false)
         #expect(try Self.bareFixture().isBooleanValid() == false)
         #expect(try Self.fixture().isBooleanValidWith(Self.control()) == false)
