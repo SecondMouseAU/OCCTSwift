@@ -82,21 +82,24 @@ import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Built from its parts so it cannot run out: it was a typed list that stopped at forty-five, then at
+# fifty, then at sixty, and each time the day the count reached the next number the gate failed a
+# correct sentence (#2759, and the 61st carried patch).
+_UNITS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+          "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen",
+          "nineteen"]
+_TENS = {"twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60, "seventy": 70,
+         "eighty": 80, "ninety": 90}
 WORDS = {
     # "none" is here so the unpinned-count sentences can read naturally at zero, which is their
     # normal state between a repin and the next patch landing (#2773, v4.0.0-kernel.2).
-    "none": 0, "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
-    "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14,
-    "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19, "twenty": 20,
-    "twenty-one": 21, "twenty-two": 22, "twenty-three": 23, "twenty-four": 24, "twenty-five": 25,
-    "twenty-six": 26, "twenty-seven": 27, "twenty-eight": 28, "twenty-nine": 29, "thirty": 30,
-    "thirty-one": 31, "thirty-two": 32, "thirty-three": 33, "thirty-four": 34, "thirty-five": 35,
-    "thirty-six": 36, "thirty-seven": 37, "thirty-eight": 38, "thirty-nine": 39, "forty": 40,
-    "forty-one": 41, "forty-two": 42, "forty-three": 43, "forty-four": 44, "forty-five": 45,
-    "forty-six": 46, "forty-seven": 47, "forty-eight": 48, "forty-nine": 49, "fifty": 50,
-    "fifty-one": 51, "fifty-two": 52, "fifty-three": 53, "fifty-four": 54, "fifty-five": 55,
-    "fifty-six": 56, "fifty-seven": 57, "fifty-eight": 58, "fifty-nine": 59, "sixty": 60,
+    "none": 0,
 }
+WORDS.update({word: number for number, word in enumerate(_UNITS)})
+for _tens, _value in _TENS.items():
+    WORDS[_tens] = _value
+    for _unit in range(1, 10):
+        WORDS["%s-%s" % (_tens, _UNITS[_unit])] = _value + _unit
 
 
 def to_int(token):
@@ -1188,8 +1191,10 @@ def self_test():
     # The table once stopped at forty-five, so the day the job's invocation count reached 46 the
     # claim "forty-six" was unreadable and the gate failed a correct sentence.
     # ...and stopped at fifty the day it reached 52 (#2759).
-    case("number-words-reach-sixty", to_int("forty-six") == 46 and to_int("fifty-two") == 52
-         and to_int("sixty") == 60 and to_int("sixty-one") is None)
+    case("number-words-reach-ninety-nine", to_int("forty-six") == 46 and to_int("fifty-two") == 52
+         and to_int("sixty") == 60 and to_int("sixty-one") == 61 and to_int("seventy-three") == 73
+         and to_int("ninety-nine") == 99 and to_int("one hundred") is None
+         and to_int("twenty-zero") is None)
 
     # 5. The ci.yml parser stops at the next job rather than counting the whole file.
     sample = (

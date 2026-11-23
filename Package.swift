@@ -316,12 +316,12 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The pinned asset lacks none of them: it holds fifty-nine and Scripts/patches/ holds
-        // fifty-nine, so there is no untested patch. 0070 through 0072 and 0078 (#3489), 0073,
-        // 0074 and 0077 (#3490), 0075 (#3496) and 0076 (#3495) were carried after
-        // v4.0.0-kernel.7 and are pinned by v4.0.0-kernel.8; the rows for 0053 through 0078 below
-        // are history in the way the rows for 0044 through 0052 became at v4.0.0-kernel.4.
-        // kernel.8 retired nothing: 0031 left at kernel.6.
+        // The pinned asset lacks two of them, 0079 and 0080: it holds fifty-nine and Scripts/patches/
+        // holds sixty-one, so those two are exercised by no CI job until the next repin. 0070
+        // through 0072 and 0078 (#3489), 0073, 0074 and 0077 (#3490), 0075 (#3496) and 0076 (#3495)
+        // were carried after v4.0.0-kernel.7 and are pinned by v4.0.0-kernel.8; the rows for 0053
+        // through 0078 below are history in the way the rows for 0044 through 0052 became at
+        // v4.0.0-kernel.4. kernel.8 retired nothing: 0031 left at kernel.6.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
         // investigate rather than an expected one, which is the opposite of what this paragraph said
         // while kernel.1 was pinned.
@@ -365,9 +365,9 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds fifty-nine patches and the pinned asset holds the same fifty-nine,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 59 against a list of 59,
-        // and there is no divergence. The v4.0.0-kernel.4 rebuild closed the divergence that 0044 had
+        // Scripts/patches/ holds sixty-one patches and the pinned asset holds fifty-nine of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 61 against a list of 59,
+        // and the two that the list lacks are 0079 and 0080, written up below. The v4.0.0-kernel.4 rebuild closed the divergence that 0044 had
         // opened and that 0045 through 0052 widened, the v4.0.0-kernel.5 rebuild closed the one that
         // 0053 through 0057 opened, the v4.0.0-kernel.6 rebuild closed the one that 0058 and 0059
         // opened, the v4.0.0-kernel.7 rebuild closed the one that 0064 through 0069 opened, and the
@@ -669,6 +669,22 @@ let occtTarget: Target =
         //         Built into v4.0.0-kernel.8; OCAFBinaryDocumentDataKernelReadTests was gated on
         //         OCCTSWIFT_LOCAL=1 until the repin that pinned this, and is ungated by the same
         //         change (#3489).
+        //
+        //   0079  IntCurve_IntConicConic::Perform brought an angle into a turn by taking a turn
+        //         off at a time, and the domain of a circle or ellipse is widened by its
+        //         tolerance over its radius: at radius 0 that is an infinity, and the loop never
+        //         ended, so BRepCheck_Analyzer never returned on a face whose wire holds a line
+        //         and a Geom2d_Circle of radius 0 (which BRepTools::Read builds from a BREP).
+        //         The reduction is now one std::fmod. NOT in v4.0.0-kernel.8;
+        //         StressPCurveCircleRadiusTests is gated on OCCTSWIFT_LOCAL=1 until the next
+        //         repin (#3506).
+        //
+        //   0080  IntTools_FaceFace::Perform returns, not done, for a face without a surface:
+        //         CorrectSurfaceBoundaries called Bounds on its null handle, so
+        //         BRepAlgoAPI_Check and BOPAlgo_CheckerSI died on a face with no surface that
+        //         carries a wire. NOT in v4.0.0-kernel.8. No Swift test reaches it while the
+        //         bridge refuses a surface-less shape in front of BRepAlgoAPI_Check; the guard
+        //         is retired at the repin that pins this (#3509).
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried

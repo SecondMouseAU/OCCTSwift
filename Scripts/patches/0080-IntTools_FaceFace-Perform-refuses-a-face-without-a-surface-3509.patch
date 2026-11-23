@@ -1,0 +1,44 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - IntTools_FaceFace::Perform refuses a face without a
+ surface
+
+IntTools_FaceFace::Perform reads the surface of each face and goes on to use it.
+CorrectSurfaceBoundaries calls Bounds on `BRep_Tool::Surface(theFace)`, which is a null handle for
+a face without a surface. Such a face is legal (BRepCheck_Face reports BRepCheck_NoSurface for it),
+and BOPAlgo_CheckerSI runs this class against every face that is not one of the four types it skips
+(plane, cylinder, cone, sphere), a face without a surface included. BRepAlgoAPI_Check, and so
+BOPAlgo_CheckerSI at the self-interference level, die on such a face when it carries a wire, in
+CorrectSurfaceBoundaries.
+
+Perform now returns with IsDone false for a face without a surface, which is what every other
+reason for not finishing already does and what the callers test. The checker then reports no
+self-interference for it, and the shape, invalid on other grounds, answers false.
+
+Measured on a face with no surface and a wire, each entry point in its own process: BRepAlgoAPI_Check
+of the shape, BRepAlgoAPI_Check of a box and the shape, and BOPAlgo_CheckerSI at level 5 died with
+SIGSEGV before and answer after (false, false, no errors). Fuse, Common, Cut and Section of a box
+and the shape do not reach this class, since they reject the argument first, and are unchanged.
+
+Upstream IR rewrote the class this route goes through (BOPAlgo_FaceSelfIntersect, #1640) with an
+explicit null test of the surface, so the route is closed there, but CorrectSurfaceBoundaries
+itself still dereferences the handle.
+
+Tracked as SecondMouseAU/OCCTSwift#3509.
+
+---
+diff --git a/src/ModelingAlgorithms/TKBO/IntTools/IntTools_FaceFace.cxx b/src/ModelingAlgorithms/TKBO/IntTools/IntTools_FaceFace.cxx
+--- a/src/ModelingAlgorithms/TKBO/IntTools/IntTools_FaceFace.cxx
++++ b/src/ModelingAlgorithms/TKBO/IntTools/IntTools_FaceFace.cxx
+@@ -343,6 +343,12 @@ void IntTools_FaceFace::Perform(const TopoDS_Face& aF1,
+   myFace1 = aF1;
+   myFace2 = aF2;
+ 
++  // a face without a surface has nothing to intersect
++  if (BRep_Tool::Surface(myFace1).IsNull() || BRep_Tool::Surface(myFace2).IsNull())
++  {
++    return;
++  }
++
+   const BRepAdaptor_Surface& aBAS1  = myContext->SurfaceAdaptor(myFace1);
+   const BRepAdaptor_Surface& aBAS2  = myContext->SurfaceAdaptor(myFace2);
+   GeomAbs_SurfaceType        aType1 = aBAS1.GetType();
