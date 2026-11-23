@@ -687,9 +687,10 @@ let occtTarget: Target =
         //   0080  IntTools_FaceFace::Perform returns, not done, for a face without a surface:
         //         CorrectSurfaceBoundaries called Bounds on its null handle, so
         //         BRepAlgoAPI_Check and BOPAlgo_CheckerSI died on a face with no surface that
-        //         carries a wire. Built into v4.0.0-kernel.9. No Swift test reaches it while the
-        //         bridge refuses a surface-less shape in front of BRepAlgoAPI_Check; the guard
-        //         is retired in a follow-up to this repin (#3531).
+        //         carries a wire. Built into v4.0.0-kernel.9. No Swift test reached it while the
+        //         bridge refused a surface-less shape in front of BRepAlgoAPI_Check; that guard
+        //         was retired once this was pinned (#3531), and the existing boolean-validity test
+        //         now reaches the kernel and ends its process on a kernel without 0080.
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried

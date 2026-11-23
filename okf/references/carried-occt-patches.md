@@ -143,9 +143,9 @@ re-run and by the #3503 measurement of the analyzer guards, and neither is in `V
 2026-11-21: the files they touch are byte-identical to `V8_0_1`. The table below is kept as the
 record of what each left exposed while it was unpinned; it is history now, not a live gap. The Swift
 suite for `0079` (`StressPCurveCircleRadiusTests`) was gated on `OCCTSWIFT_LOCAL=1` and is ungated
-by the repin. `0080` has no Swift test, because the bridge guard at the two Boolean-check sites
-stands in front of the fault; it is retired in a follow-up (#3531), with the test, by the route
-#3503 took for the analyzer sites.
+by the repin. `0080` had no Swift test, because the bridge guard at the two Boolean-check sites
+stood in front of the fault; the guard was retired once it was pinned (#3531), by the route #3503
+took for the analyzer sites, and `booleanValidityRefuses` is the test that now reaches the kernel.
 
 | Was unpinned until v4.0.0-kernel.9 | What it left exposed |
 |---|---|

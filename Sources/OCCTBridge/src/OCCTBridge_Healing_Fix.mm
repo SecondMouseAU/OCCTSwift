@@ -2471,18 +2471,16 @@ bool OCCTShapeFixerStatusFlag(OCCTShapeFixerRef ref, int32_t flag)
 // bridge: BRepAlgoAPI_Check::Perform builds `BRepCheck_Analyzer(myS1)` at BRepAlgoAPI_Check.cxx:92
 // and `(myS2)` at :94 after running BOPAlgo_ArgumentAnalyzer. Patch 0077 (v4.0.0-kernel.8) makes
 // the analyzer report an edge with no 3D curve and a pcurve as invalid, and the pcurve clause that
-// screened it is gone (#3503). The surface-less clause stays: the analyzer's own self-interference
-// test faults on a face with no surface that carries a wire, in IntTools_FaceFace's
-// CorrectSurfaceBoundaries, which 0077 does not touch (#3509). Measured on kernel.8: the three such
-// shapes exit 139 through `BRepAlgoAPI_Check(shape, true, true)`, the pcurve-only fixture answers
-// IsValid false.
-//
-// false is what both functions already answer for a shape that is not valid for a boolean.
+// screened it went (#3503). Patch 0080 (v4.0.0-kernel.9) makes IntTools_FaceFace::Perform refuse a
+// face with no surface, which is where the analyzer's own self-interference test faulted on a face
+// that carries a wire (CorrectSurfaceBoundaries, #3509), and the surface-less clause went with it.
+// Neither shape is screened here any more: BRepAlgoAPI_Check answers IsValid false for both, which
+// is what both functions already answer for a shape that is not valid for a boolean. Measured on
+// kernel.8 with the clause removed, the three surface-less shapes exit 139 through
+// `BRepAlgoAPI_Check(shape, true, true)`; with 0080 they answer false.
 bool OCCTShapeBooleanCheckSingle(OCCTShapeRef shape, bool testSmallEdges, bool testSelfInterference)
 {
   if (!shape)
-    return false;
-  if (occtShapeHasSurfacelessFace(shape->shape))
     return false;
   try
   {
@@ -2504,10 +2502,6 @@ bool OCCTShapeBooleanCheckPair(OCCTShapeRef shape1,
                                bool         testSelfInterference)
 {
   if (!shape1 || !shape2)
-    return false;
-  // #2750, #2789: see OCCTShapeBooleanCheckSingle above. Both arguments are analyzed, so both are
-  // screened.
-  if (occtShapeHasSurfacelessFace(shape1->shape) || occtShapeHasSurfacelessFace(shape2->shape))
     return false;
   try
   {
