@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Kernel repin to v4.0.0-kernel.9: patches 0079 and 0080 pinned (#3506, #3509)
+
+The pinned kernel is now `v4.0.0-kernel.9`, OCCT `V8_0_1` plus 61 carried patches, for both the Apple and the wasm kernels. Two patches that were merged but not in the previous asset are now shipped. `Shape.isValid`, and every entry that runs `BRepCheck_Analyzer` first, now returns `false` for a shape whose face has a wire holding a line and a pcurve circle of no radius (a radius of 0, 1e-20 or less, or an ellipse minor radius of 1e-300 or less, or an infinite domain parameter), where it never returned (`0079`, #3506). `BRepAlgoAPI_Check` and `BOPAlgo_CheckerSI` answer `false`, or no error, for a face with no surface that carries a wire, where they died with a SIGSEGV (`0080`, #3509). The OCCT 8.0.2 release (`V8_0_2`, 2026-11-21) does not change the files either patch touches.
+
 ### A pcurve circle of no radius no longer stops `Shape.isValid`, and a face without a surface no longer faults the Boolean self-interference check, in two carried kernel patches (#3506, #3509)
 
 Two defects in OCCT 8.0.1 that 8.0.2 does not fix are carried as patches `0079` and `0080`, and take effect at the next kernel repin.

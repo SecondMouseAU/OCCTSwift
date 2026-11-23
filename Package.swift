@@ -47,7 +47,7 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the fifty-nine carried patches are documented in Scripts/patches/README.md
+// OCCT V8.0.1 plus the sixty-one carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target =
     isWASI
@@ -86,10 +86,10 @@ let occtTarget: Target =
             name: "OCCT",
             path: "Libraries/OCCT.xcframework"
         )
-        // OCCT V8_0_1 + the fifty-nine carried patches listed below.
+        // OCCT V8_0_1 + the sixty-one carried patches listed below.
         //
         // Scripts/build-occt.sh builds V8_0_1, which absorbed ten of the previously carried patches (0001-0009 and 0013; their files are deleted,
-        // their writeups kept in Scripts/patches/README.md under "Retired patches"). The fifty-nine that
+        // their writeups kept in Scripts/patches/README.md under "Retired patches"). The sixty-one that
         // survive, all present in Scripts/patches/, are:
         //
         //   0010  Intf_Interference O(1) tangent-zone lookup + checkpointed breaker            #319
@@ -217,6 +217,11 @@ let occtTarget: Target =
         //   0078  BinLDrivers_DocumentRetrievalDriver::ReadSubTree refuses a label             #3489
         //         nested past 512 levels, where a file chose its own depth. Pinned by
         //         v4.0.0-kernel.8
+        //   0079  IntCurve_IntConicConic brings an angle into a turn in one step, so a            #3506
+        //         circle or ellipse with no radius no longer loops. Pinned by
+        //         v4.0.0-kernel.9
+        //   0080  IntTools_FaceFace::Perform returns, not done, for a face without a             #3509
+        //         surface. Pinned by v4.0.0-kernel.9
         //
         // This list said "fifteen" above a list of eleven until the release check ran, which is the
         // #585 failure shape in miniature: `ls Scripts/patches/*.patch | wc -l` agreed with the count
@@ -278,7 +283,7 @@ let occtTarget: Target =
         //     They are the only two patches in the tree with no CI coverage of any kind, which is
         //     worth knowing before trusting "the fix is in the kernel" about either.
         //
-        // Pinned to the v4.0.0-kernel.8 pre-release asset: upstream V8_0_1 plus the fifty-nine patches listed above,
+        // Pinned to the v4.0.0-kernel.9 pre-release asset: upstream V8_0_1 plus the sixty-one patches listed above,
         // and nothing else. That was NOT true of v4.0.0-kernel.1, which carried two patches that are
         // not in Scripts/patches/ at all, so read the next paragraph before treating any older asset's
         // enumeration as its contents.
@@ -307,21 +312,20 @@ let occtTarget: Target =
         // probe. Nothing a consumer can call behaves differently.
         //
         // THAT DIVERGENCE IS CLOSED. The two strays above belonged to the v4.0.0-kernel.1 asset. The
-        // pin below is now v4.0.0-kernel.8, built from a tree whose only modifications are the carried
+        // pin below is now v4.0.0-kernel.9, built from a tree whose only modifications are the carried
         // patches, so neither is present: step 1 of "Shipping a rebuild" computes zero modified files
-        // that no carried patch explains, over 139 as of 2026-11-01 (v4.0.0-kernel.7 computed the same
-        // over 102, v4.0.0-kernel.6 over 93, v4.0.0-kernel.5 over 96, v4.0.0-kernel.4 over 92, v4.0.0-kernel.3 over 79 and v4.0.0-kernel.2 over 78, before 0043 added its one).
+        // that no carried patch explains, over 141 as of 2026-11-23 (v4.0.0-kernel.8 computed the same
+        // over 139, v4.0.0-kernel.7 over 102, v4.0.0-kernel.6 over 93, v4.0.0-kernel.5 over 96, v4.0.0-kernel.4 over 92, v4.0.0-kernel.3 over 79 and v4.0.0-kernel.2 over 78, before 0043 added its one).
         // The two ACKNOWLEDGED rows in
         // check-pinned-asset-patches.py stay keyed on v4.0.0-kernel.1 and so expire on their own here,
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The pinned asset lacks two of them, 0079 and 0080: it holds fifty-nine and Scripts/patches/
-        // holds sixty-one, so those two are exercised by no CI job until the next repin. 0070
-        // through 0072 and 0078 (#3489), 0073, 0074 and 0077 (#3490), 0075 (#3496) and 0076 (#3495)
-        // were carried after v4.0.0-kernel.7 and are pinned by v4.0.0-kernel.8; the rows for 0053
-        // through 0078 below are history in the way the rows for 0044 through 0052 became at
-        // v4.0.0-kernel.4. kernel.8 retired nothing: 0031 left at kernel.6.
+        // The pinned asset lacks none of them: it holds sixty-one and Scripts/patches/ holds
+        // sixty-one, so there is no untested patch. 0079 (#3506) and 0080 (#3509) were carried
+        // after v4.0.0-kernel.8 and are pinned by v4.0.0-kernel.9; the rows for 0053 through
+        // 0080 below are history in the way the rows for 0044 through 0052 became at
+        // v4.0.0-kernel.4. kernel.9 retired nothing: 0031 left at kernel.6.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
         // investigate rather than an expected one, which is the opposite of what this paragraph said
         // while kernel.1 was pinned.
@@ -365,13 +369,14 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds sixty-one patches and the pinned asset holds fifty-nine of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 61 against a list of 59,
-        // and the two that the list lacks are 0079 and 0080, written up below. The v4.0.0-kernel.4 rebuild closed the divergence that 0044 had
+        // Scripts/patches/ holds sixty-one patches and the pinned asset holds the same sixty-one,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 61 against a list of 61,
+        // and there is no divergence. The v4.0.0-kernel.4 rebuild closed the divergence that 0044 had
         // opened and that 0045 through 0052 widened, the v4.0.0-kernel.5 rebuild closed the one that
         // 0053 through 0057 opened, the v4.0.0-kernel.6 rebuild closed the one that 0058 and 0059
         // opened, the v4.0.0-kernel.7 rebuild closed the one that 0064 through 0069 opened, and the
-        // v4.0.0-kernel.8 rebuild closed the one that 0070 through 0078 opened. The rows that
+        // v4.0.0-kernel.8 rebuild closed the one that 0070 through 0078 opened, and the
+        // v4.0.0-kernel.9 rebuild closed the one that 0079 and 0080 opened. The rows that
         // follow are kept as the record of what each patch does and which bridge mitigation it
         // does or does not retire:
         //
@@ -675,16 +680,16 @@ let occtTarget: Target =
         //         tolerance over its radius: at radius 0 that is an infinity, and the loop never
         //         ended, so BRepCheck_Analyzer never returned on a face whose wire holds a line
         //         and a Geom2d_Circle of radius 0 (which BRepTools::Read builds from a BREP).
-        //         The reduction is now one std::fmod. NOT in v4.0.0-kernel.8;
-        //         StressPCurveCircleRadiusTests is gated on OCCTSWIFT_LOCAL=1 until the next
-        //         repin (#3506).
+        //         The reduction is now one std::fmod. Built into v4.0.0-kernel.9;
+        //         StressPCurveCircleRadiusTests was gated on OCCTSWIFT_LOCAL=1 until the repin
+        //         that pinned this, and is ungated by the same change (#3506).
         //
         //   0080  IntTools_FaceFace::Perform returns, not done, for a face without a surface:
         //         CorrectSurfaceBoundaries called Bounds on its null handle, so
         //         BRepAlgoAPI_Check and BOPAlgo_CheckerSI died on a face with no surface that
-        //         carries a wire. NOT in v4.0.0-kernel.8. No Swift test reaches it while the
+        //         carries a wire. Built into v4.0.0-kernel.9. No Swift test reaches it while the
         //         bridge refuses a surface-less shape in front of BRepAlgoAPI_Check; the guard
-        //         is retired at the repin that pins this (#3509).
+        //         is retired in a follow-up to this repin (#3531).
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
@@ -790,8 +795,8 @@ let occtTarget: Target =
         : .binaryTarget(
             name: "OCCT",
             url:
-                "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.8/OCCT.xcframework.zip",
-            checksum: "8d737fb2b4d4eaf2079ca1c648076b6ad0f00f4d28239f96241ecb47d15880e7"
+                "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.9/OCCT.xcframework.zip",
+            checksum: "13b866e1df8a7a75a7b3cd87b8d2c23e80d0cf48ff4009f98d25618f3ce68bce"
         )
 
 // OCCTBridge is 16 Objective-C++ files / ~62K lines wrapping the OCCT header tree; SwiftPM recompiles

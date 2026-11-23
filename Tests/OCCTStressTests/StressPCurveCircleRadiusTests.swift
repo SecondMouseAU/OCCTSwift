@@ -19,9 +19,10 @@
 // method) has no circle to change. The undamaged file is the control, so a check that answered
 // false for everything would not pass.
 //
-// Gated on `OCCTSWIFT_LOCAL=1` while the pinned asset lacks `0079`, because `ci.yml`'s
-// `build-and-test` resolves that asset and on it the damaged tests never return;
-// `kernel-integration.yml` runs them. The gate comes off at the repin that pins `0079`.
+// `0079` is in `v4.0.0-kernel.9`, the first asset to hold it. The damaged cases were gated on
+// `OCCTSWIFT_LOCAL=1` until the repin that pinned it, because on `v4.0.0-kernel.8` they never
+// return; a gate that outlives its fix leaves the test skipped, which is the one outcome a test
+// cannot recover from.
 
 import Foundation
 import Testing
@@ -39,9 +40,6 @@ import Testing
 
 @Suite("Stress: a pcurve circle of no radius does not stop BRepCheck_Analyzer", .serialized)
 struct StressPCurveCircleRadiusTests {
-
-    private static let isLocalKernel =
-        ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"
 
     private static func fixtureText() throws -> String {
         let url = URL(fileURLWithPath: #filePath)
@@ -89,7 +87,6 @@ struct StressPCurveCircleRadiusTests {
     /// move.
     @Test(
         "a pcurve circle of radius 0, or of one too small to measure, is invalid and returns",
-        .enabled(if: StressPCurveCircleRadiusTests.isLocalKernel),
         hangLimit,
         arguments: ["0", "1e-300"])
     func aCircleOfNoRadiusIsInvalidAndReturns(radius: String) throws {
