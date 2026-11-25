@@ -118,6 +118,7 @@ python3 Scripts/check-patch-deletes-guarded-symbol.py  # no carried patch delete
 python3 Scripts/check-bridge-diagnostics.py      # every function-level bridge catch (...) records what it caught (#2077)
 python3 Scripts/check-wasm-kernel-parity.py      # the wasm kernel asset carries the same patch set as the pinned native one (#2269)
 python3 Scripts/check-preprocessor-balance.py     # no patch unbalances a source file's #if/#else/#endif (#2167)
+python3 Scripts/check-kernel-fixes.py            # the kernel-fix ledger, Scripts/patches and every guard that names a fix agree; a dead guard fails (#3543)
 python3 Scripts/check-wasi-patch-base.py         # every patches-wasi patch was cut from the carried-patch tree (#2168)
 python3 Scripts/check-bridge-type-odr.py         # every type defined in more than one bridge .mm is defined identically (#2820)
 python3 Scripts/check-bridge-adaptor-members.py # no bridge struct stores an OCCT adaptor beyond the two allowlisted ones (#3065)

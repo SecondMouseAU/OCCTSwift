@@ -112,6 +112,9 @@ run "check-throwing-calls.py"                 Scripts/check-throwing-calls.py
 # an hour into kernel-integration.yml, which is how 0035 was found.
 run "check-patch-deletes-guarded-symbol.py --self-test" Scripts/check-patch-deletes-guarded-symbol.py --self-test
 run "check-patch-deletes-guarded-symbol.py"   Scripts/check-patch-deletes-guarded-symbol.py
+# #3543: the kernel-fix ledger, the patch directory and every guard that names a fix must agree.
+run "check-kernel-fixes.py --self-test"       Scripts/check-kernel-fixes.py --self-test
+run "check-kernel-fixes.py"                   Scripts/check-kernel-fixes.py
 # #2167, from PR #2076: a WASI patch that unbalances a file's #if/#else/#endif breaks it on every
 # platform, and "the patch applies cleanly" does not measure that. Reads the patch text only; the
 # deeper --tree mode needs a checkout and is not run here, matching CI.

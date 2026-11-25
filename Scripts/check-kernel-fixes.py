@@ -164,7 +164,7 @@ def main() -> int:
         print('check-kernel-fixes: %d finding(s):' % len(found))
         for f in found:
             print('  ' + f)
-        print('\nokf/references/kernel-fix-ledger.md has the rules.')
+        print('\nokf/policies/kernel-fix-ledger.md has the rules.')
         return 1
     print('check-kernel-fixes: the ledger, Scripts/patches and every guard agree.')
     return 0

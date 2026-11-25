@@ -24,7 +24,7 @@ adaptor per worker, so the lock it added is not needed).
 Re-pinning to OCCT `V8_0_2` on 2026-11-24 retired ten more (0019, 0029, 0034, 0043, 0044, 0045, 0048, 0052,
 0054, 0064; seven absorbed unchanged, two replaced by upstream's own form, one doc-only), and rebased three
 (0053, 0073, 0074).
-The carried sequence now reads 0010–0012, 0014–0018, 0020–0028, 0030, 0033, 0036–0042, 0046–0047, 0050–0051, 0053, 0055–0059, 0065–0066, 0068–0080 (51 patches).
+The carried sequence now reads 0010–0012, 0014–0018, 0020–0028, 0030, 0033, 0036–0042, 0046–0047, 0050–0051, 0053, 0055–0059, 0065–0066, 0068–0080.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.

@@ -16,7 +16,7 @@ every number about the list is written down.
 
 ## How many there are
 
-Twenty-one gates, eight censuses and one merge-history audit run in `ci.yml`'s `gate-scripts` job,
+Twenty-two gates, eight censuses and one merge-history audit run in `ci.yml`'s `gate-scripts` job,
 beside the release check that "The fourth kind" below counts apart from them. Every one of those
 numbers is derived from the job rather than kept by hand:
 `Scripts/check-inventory-prose.py` reads this sentence against `ci.yml` on every PR and fails when
@@ -733,7 +733,7 @@ build was on disk.
 
 ## Every detector proves it is not blind
 
-Twenty of the twenty-one gates, all eight censuses, the merge-history audit and the release check
+Twenty-one of the twenty-two gates, all eight censuses, the merge-history audit and the release check
 take `--self-test`, a fixture battery proving the *detector* catches each failure mode. Run it
 whenever you change one of these scripts. Three gate scripts were confidently wrong while
 reporting all clear (#618, #624/#630, #626), and a detector reporting "all clear" because it is
@@ -843,7 +843,7 @@ change to the ruleset.
 
 ## The pre-commit hook
 
-`Scripts/git-hooks/pre-commit` runs fifty of `gate-scripts`' fifty-two invocations, flag for
+`Scripts/git-hooks/pre-commit` runs fifty-two of `gate-scripts`' fifty-four invocations, flag for
 flag. The one it omits is `check-changelog-transcription.py`'s real run, which answers a question
 about the branch rather than about the commit being made; its `--self-test` does run. That is the
 only deliberate divergence, and it is written here because an undocumented difference between the
