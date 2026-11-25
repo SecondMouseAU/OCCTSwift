@@ -52,7 +52,7 @@ F0024	crash-guard	Extrema_ExtCC Points bound against mypoints	OCCT#1445	-	none
 F0025	wrong-answer	GeomFill_Sweep report achieved conversion error	OCCT#1547	-	none
 F0026	crash-guard	BRepOffsetAPI_ThruSections capping guard	OCCT#1462	-	none
 F0027	crash-guard	BRepOffsetAPI_ThruSections CreateSmoothed section edge count guard	OCCT#1466	-	none
-F0028	wrong-answer	GeomPlate_BuildPlateSurface uninitialised G0 G1 G2 errors	OCCT#1481	-	none
+F0028	wrong-answer	GeomPlate_BuildPlateSurface uninitialised G0 G1 G2 errors	OCCT#1481 OCCT#1620	-	none
 F0029	absorbed	XCAFDoc_Datum point read from plane array	OCCT#1483	8.0.2	identical
 F0030	thread-safety	TopoDS_TShape myState atomic	OCCT#1548	-	none
 F0033	thread-safety	Interface_Static thread safety mutex	OCCT#1553	-	none
@@ -76,20 +76,20 @@ F0053	wrong-answer	BRepOffset_MakeOffset arc join roots in binding order	OCCT#16
 F0054	absorbed	ChFi3d_Builder StartSol drops an obstacle with no edge	OCCT#1708	8.0.2	different-behaviour
 F0055	wrong-answer	GProp_SelGProps GProp_VelGProps cone matrix of inertia	OCCT#1599	-	none
 F0056	thread-safety	BRepLib Plane creates the default plane under the magic static lock	OCCT#1597	-	none
-F0057	wrong-answer	GProp_SelGProps GProp_VelGProps cylinder sphere torus inertia	-	-	none
+F0057	wrong-answer	GProp_SelGProps GProp_VelGProps cylinder sphere torus inertia	OCCT#1599	-	none
 F0058	crash-guard	BRepOffsetAPI_MiddlePath Build carries a vertex path forward	-	-	none
-F0059	ahead	ChFi3d Builder fillets that meet exactly are built not refused	OCCT#1177	-	none
+F0059	ahead	ChFi3d Builder fillets that meet exactly are built not refused	OCCT#1177 OCCT#1293 OCCT#1449	-	none
 F0064	absorbed	TopOpeBRepBuild CorrectUnclosedWire collects the edges before removing them	OCCT#1787	8.0.2	different-form
 F0065	crash-guard	BRepBlend_Walking Perform reports not done for a non finite range	OCCT#1576	-	none
 F0066	wrong-answer	BRepOffset_MakeLoops cap splits oriented against the offset faces	OCCT#1600 OCCT#1717 OCCT#1718	-	none
-F0068	crash-guard	BRepFill_TrimSurfaceTool IntersectWith refuses incoherent intersection	-	-	none
+F0068	crash-guard	BRepFill_TrimSurfaceTool IntersectWith refuses incoherent intersection	OCCT#1739	-	none
 F0069	hardening	OCAF readers report a damaged file through the reader status	-	-	none
 F0070	hardening	BinObjMgt_Persistent compares a size from the file without overflow	-	-	none
 F0071	hardening	BinMDataStd array and list drivers bound a declared span by the data left	-	-	none
 F0072	hardening	BinTools Set Read cuts the table name token at the buffer	-	-	none
-F0073	hardening	Text shape readers bound a token and stop at a failed stream	OCCT#1560 OCCT#1608	-	none
+F0073	hardening	Text shape readers bound a token and stop at a failed stream	OCCT#1560 OCCT#1608 OCCT#1786	-	none
 F0074	hardening	Shape readers refuse a count the stream cannot supply	-	-	none
-F0075	hardening	Trimmed curve and surface refuse a parameter that is not a number	-	-	none
+F0075	hardening	Trimmed curve and surface refuse a parameter that is not a number	OCCT#1757 OCCT#1618	-	none
 F0076	hardening	BinTools_ShapeReader refuses a position reference that leaves the stream	-	-	none
 F0077	hardening	BRepCheck_Edge InContext copes with a face without a surface and an edge without a 3D curve	-	-	none
 F0078	hardening	BinLDrivers ReadSubTree refuses a label nested too deeply	-	-	none
