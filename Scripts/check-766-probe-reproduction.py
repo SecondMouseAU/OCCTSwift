@@ -19,6 +19,12 @@ skill, run it, and compare stdout+stderr with `transcript.txt`. Verdicts:
     RERUN-EXTRA       the rerun printed lines the transcript does not hold
     NOT-REPRODUCIBLE  reproduce.json declares the transcript is not one capture of one run, with a
                       reason; the report prints the reason every time and never a value
+    ACKNOWLEDGED      the output differs, and this script's ACKNOWLEDGED table says the transcript
+                      records the UNPATCHED kernel on purpose, names the carried patches (or
+                      `environment`) that explain the difference and says why; printed with that
+                      reason every run, and not a failure
+    STALE-ACK         an ACKNOWLEDGED row whose probe now reproduces its transcript (or is declared
+                      not-reproducible). A failure: the row describes a difference that is gone
     DECL-UNUSED       a reproduce.json pattern matched nothing, so it is either stale or was always
                       wrong. A defect, for the reason a blind gate is one
     DECL-INVALID      a reproduce.json is unreadable, or an allowance carries no reason
@@ -132,6 +138,42 @@ to `e2254f34...` and the pinned `v4.0.0-kernel.2` asset to `27329ac2...`. And in
 artifact under `.build/artifacts/*/OCCT/OCCT.xcframework` is now the fallback, which is the asset CI
 links. `--require-pinned-asset` refuses to report at all unless identity is proven.
 
+A TRANSCRIPT THAT RECORDS THE UNPATCHED KERNEL ON PURPOSE (the ACKNOWLEDGED table)
+-----------------------------------------------------------------------------------
+"Every transcript reproduces" is not the invariant, and a script that demanded it would push the
+repo into one of two wrong moves. Some transcripts are the evidence of a kernel defect: they record
+what the UNPATCHED kernel did (a hang, a SIGSEGV, a cone area off by `cos(a)`), a carried patch
+fixes it, and the hardened kernel therefore prints something else. Re-recording one would erase the
+only place that says what the defect was (`GPropCylConeTests.swift`, `BisectorDomainTests.swift`
+and `Scripts/repro/2992/README.md` cite them for that); leaving it red teaches people to read past
+a failing check. Five were in that position on the `kernel-8.0.2-c1` pin (#3537): four explained by
+carried patches `0075`, `0050`/`0051` and `0073`/`0074`, and one, `766-foundation-osd-io`, by the
+machine rather than the kernel (its transcript holds the capturing host's OS release, #3551).
+
+So the module-level `ACKNOWLEDGED` table says so, in the shape of `check-pinned-asset-patches.py`'s
+table of the same name: `{(asset key, pair label): {explained_by, covers, reason}}`. `explained_by`
+is the carried patch numbers, or `("environment",)`. An acknowledged probe prints as ACKNOWLEDGED
+with those and its reason on every run, and does not fail it. What stops a row from excusing
+anything else is stated beside the table and proved by `--self-test`:
+
+  * the key is the asset READ (`ident.key`: the pinned tag when identity is proven, `sha256:<16
+    hex>` otherwise), so a row about the pinned kernel excuses nothing on a local build, and a
+    repin retires every row for the next reader to re-adjudicate;
+  * `covers` is a list of regexes that every changed line, from either side, must match, and they
+    pin what each side SAYS (`hang ... signal 14`, `no_points`), so a probe that differs on a line
+    the row does not cover is DIFF-VALUES again, with the uncovered lines named;
+  * a row whose probe now MATCHES its transcript (or is declared not-reproducible) is STALE-ACK and
+    fails: the unpatched output reappearing means a patch stopped taking effect or the row
+    outlived what it described;
+  * a row naming no pair in the tree, a patch that is not carried, no reason or an uncompilable
+    regex is refused before any probe is compiled.
+
+What a row does NOT do: it never rewrites, drops or normalises a line, it cannot cover a probe that
+did not run (COMPILE-FAIL, TIMEOUT, MISSING and DECL-* keep their verdicts), and the numeric rows
+pin only the label of a value a patch moves, so a probe that is wrong in a NEW way on a covered
+line is not caught by the row; what catches the patch breaking is STALE-ACK, because that restores
+the transcript. To acknowledge a probe on an asset, add a row keyed to the key the banner prints.
+
 NOT A GATE, AND NOT FOR `gate-scripts`
 --------------------------------------
 It reads a 1.3 GB xcframework that CI does not check out and compiles one translation unit per pair
@@ -139,7 +181,10 @@ It reads a 1.3 GB xcframework that CI does not check out and compiles one transl
 is the release-check shape `okf/policies/static-gates.md` describes: a question about something the
 repo points at rather than something it contains. `--require-asset` makes a run that examined
 nothing exit 2 instead of reporting clean (#2098's mode). It exits 1 when any probe fails to
-reproduce, so it can be run as a gate by hand or in a job that does have the asset.
+reproduce and is not acknowledged, and when an acknowledgement is stale, so it can be run as a gate
+by hand or in a job that does have the asset. Against the pinned asset it exits 0 with every pair
+accounted for as reproduced (MATCH, MATCH-DECLARED), ACKNOWLEDGED, or NOT-REPRODUCIBLE, each of
+the last two printed with its reason.
 
     python3 Scripts/check-766-probe-reproduction.py --require-asset
     python3 Scripts/check-766-probe-reproduction.py --require-pinned-asset
@@ -152,8 +197,10 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
+import contextlib
 import difflib
 import glob
+import io
 import json
 import os
 import re
@@ -170,6 +217,111 @@ DEFAULT_ASSET = identity_helper.LIBRARIES_ASSET
 DEFAULT_PROBES = os.path.join("Scripts", "repro")
 SLICE = "macos-arm64"
 LIB = "OCCT-macos"
+
+# A transcript that records the UNPATCHED kernel on purpose is not wrong, and re-recording it would
+# erase the only place that says what the defect was. `GPropCylConeTests.swift`,
+# `BisectorDomainTests.swift` and `Scripts/repro/2992/README.md` cite these for exactly that. The
+# carried patches that fix the defect are what make the hardened kernel print something else, so
+# for a run against that kernel the difference is expected, and this table says so for the machine
+# as well as the reader: {(asset key, pair label): row}. An acknowledged probe is printed with its
+# reason on every run and does not fail it. That is the `ACKNOWLEDGED` shape of
+# `Scripts/check-pinned-asset-patches.py`, and it keeps an acknowledgement from excusing anything
+# else in four ways:
+#
+#   * THE KEY IS THE ASSET READ, NOT THE TAG `Package.swift` PINS (#2818). `ident.key` is the
+#     pinned tag where identity is PROVEN and `sha256:<16 hex>` of the macos archive where it is
+#     not, so a row written about the pinned kernel cannot excuse a finding about a local build
+#     with the same probe. A repin changes the key and retires every row, which forces the next
+#     reader to look at the difference again rather than inherit a verdict about another kernel.
+#     The banner prints the key a new row needs on any asset that is not proven pinned.
+#   * `covers` IS WHAT THE ROW SPEAKS FOR. Every changed line, from either side, must match one of
+#     its regexes, and the regexes pin the statement each side makes (the `hang ... signal 14`
+#     line and the `no_points` line, not merely the label in front of them). One changed line
+#     outside them and the probe is DIFF-VALUES again, with the uncovered lines named. The numeric
+#     rows pin the label only, because a value a patch moves is not a value to freeze; they are
+#     guarded the other way (see the next point).
+#   * A ROW WHOSE PROBE NOW MATCHES ITS TRANSCRIPT IS A FINDING (STALE-ACK). The unpatched output
+#     reappearing means a carried patch stopped taking effect, or the row outlived the divergence
+#     it described, and either way the next reader would trust it. A row whose probe is
+#     NOT-REPRODUCIBLE is stale for the same reason: it excuses nothing that is examined.
+#   * A MISTYPED ROW IS REFUSED, not silently inert. Every row must name a pair that exists in the
+#     tree, an `explained_by` that is the single word `environment` or carried patch numbers that
+#     are in `Scripts/patches/`, a `covers` list of valid regexes, and a reason.
+#
+# `explained_by` is ("environment",) for a difference that is the machine and not the kernel, and
+# otherwise the carried patch numbers that account for it. A row is NOT a way to make a transcript
+# pass: nothing here rewrites or ignores a line, and a probe that differs on a line no row covers,
+# or on an asset no row is keyed to, fails exactly as before.
+PINNED_KEY = "kernel-8.0.2-c1"
+ACKNOWLEDGED = {
+    (PINNED_KEY, "766-geom2d-bisector-domain-nonfinite/probe.mm"): {
+        "explained_by": ("0075",),
+        "covers": (
+            r"^[-+]?(inf|1e200) [a-d]\.[xy]: (child killed by signal 14 \(hang, 20 s alarm\)"
+            r"|throws Geom2d_TrimmedCurve::parameter is not a finite number)$",
+        ),
+        "reason": "The transcript records the unpatched kernel hanging on an infinite or 1e200 "
+                  "coordinate (a 20 s alarm kills the child). Carried patch 0075 (#3496) makes "
+                  "Geom_/Geom2d_TrimmedCurve refuse a non-finite parameter, so the hardened "
+                  "kernel throws instead. `BisectorDomainTests.swift` cites the hang as the "
+                  "reason the bridge guards these inputs.",
+    },
+    (PINNED_KEY, "766-geom2d-evidence-fix/probe.mm"): {
+        "explained_by": ("0075",),
+        # Matches both transcripts: the unpatched one (`R18.a.x: hang (killed by signal 14)`) and the
+        # patched one (`EF R19.b.y = no_points (the sequence raised (the bridge catch returns 0))`).
+        "covers": (
+            r"^(EF )?R(1[89]|2[0-6])\.[a-z_]+( inputs .*: | = )"
+            r"(hang \(killed by signal 14\)|\"hang\""
+            r"|no_points \(the sequence raised \(the bridge catch returns 0\)\)|\"no_points\")$",
+        ),
+        "reason": "Same defect and same patch as 766-geom2d-bisector-domain-nonfinite: the "
+                  "unpatched kernel hangs on infinite and 1e200 inputs (rows R18 to R26) and "
+                  "carried patch 0075 (#3496) turns that into a throw that the bridge's catch "
+                  "reports as no_points.",
+    },
+    (PINNED_KEY, "766-gpropcylcone/probe.mm"): {
+        "explained_by": ("0050", "0051"),
+        "covers": (
+            r"^(coneSurfaceArea|coneVolume)\(semiAngle=pi/6, refRadius=5, height=10\): [0-9.]+$",
+            r"^  kernel / closed form = [0-9.]+   cos\(a\) = [0-9.]+$",
+            r"^cone semiAngle=(0\.001|9\.9999999999999995e-07): area=[0-9.]+ volume=[0-9.]+  "
+            r"\(cylinder: area=[0-9.]+ volume=[0-9.]+\)$",
+        ),
+        "reason": "The transcript is the original finding of #2992: GProp_SelGProps::Perform"
+                  "(gp_Cone) returns cos(semiAngle) times the lateral area and GProp_VelGProps::"
+                  "Perform(gp_Cone) does not reduce to the cylinder as the semi-angle goes to "
+                  "zero. Carried patches 0050 and 0051 fix both, so the hardened kernel prints the "
+                  "closed forms. Scripts/repro/2992/ holds the before and after measurement.",
+    },
+    (PINNED_KEY, "766-integration-tests/probe.mm"): {
+        "explained_by": ("0073", "0074"),
+        "covers": (
+            r"^\*\*\* Abort \*\*\* an exception was raised, but no catch was found\.$",
+            r"^\t\.\.\. The exception is: SIGSEGV 'segmentation violation' detected\. Address 8\.$",
+            r"^brep truncated read threw Standard_Failure: TopTools_ShapeSet::Read: "
+            r"Not a shape of the table$",
+        ),
+        "reason": "The transcript records the unpatched kernel aborting with a SIGSEGV on a "
+                  "truncated BREP. Carried patches 0073 and 0074 (#3490) bound the text readers "
+                  "and make them stop at a failed stream, so the hardened kernel throws "
+                  "Standard_Failure. Both were rebased onto OCCT 8.0.2; the output is identical "
+                  "on kernel.9 and kernel-8.0.2-c1.",
+    },
+    (PINNED_KEY, "766-foundation-osd-io/probe.mm"): {
+        "explained_by": ("environment",),
+        "covers": (
+            r'^SystemVersion\(\) = "Darwin [0-9.]+", uname sysname\+release = "Darwin [0-9.]+"$',
+        ),
+        "reason": "The line prints the host's OS release, and the transcript holds the release "
+                  "of the machine that captured it. It is the machine, not the kernel: the output "
+                  "is identical on kernel.9 and kernel-8.0.2-c1 on one host. Tracked as #3551; "
+                  "what the line claims, that SystemVersion() equals uname's sysname and release, "
+                  "is not compared by this row, which only keeps the release number from failing "
+                  "the run.",
+    },
+}
+ACK_VERDICTS = ("DIFF-VALUES", "TRANSCRIPT-EXTRA", "RERUN-EXTRA")
 
 READ_IN = re.compile(r"\[read in [0-9.eE+-]+ ?s\]")
 HEX = re.compile(r"0x[0-9a-fA-F]{6,}")
@@ -751,8 +903,13 @@ def check_pair(p: dict, asset: str, timeout: int, repo_root: str = ROOT) -> dict
         if want_lines == got_lines:
             return {"name": name, "status": "MATCH-DECLARED" if decl else "MATCH",
                     "detail": "\n".join(covered)}
-        diff = "\n".join(list(difflib.unified_diff(
-            want_lines, got_lines, fromfile="transcript.txt", tofile="rerun", lineterm=""))[:40])
+        full_diff = list(difflib.unified_diff(
+            want_lines, got_lines, fromfile="transcript.txt", tofile="rerun", lineterm=""))
+        diff = "\n".join(full_diff[:40])
+        # EVERY changed line, not the 40 printed: an acknowledgement is only allowed to excuse a
+        # probe whose whole difference it covers, and a truncated list would let a row cover the
+        # first forty lines and say nothing about the rest.
+        changed = [d for d in full_diff if d[:1] in "+-" and not d.startswith(("---", "+++"))]
         # A rerun that is a subsequence of the transcript, or the other way round, is a different
         # finding from a line whose VALUE differs. The transcript saying more than the probe prints
         # is either an annotation or a claim nothing produced; a differing value is a divergence.
@@ -764,9 +921,106 @@ def check_pair(p: dict, asset: str, timeout: int, repo_root: str = ROOT) -> dict
             verdict = "RERUN-EXTRA"
         else:
             verdict = "DIFF-VALUES"
-        return {"name": name, "status": verdict, "detail": diff}
+        return {"name": name, "status": verdict, "detail": diff, "changed": changed}
     finally:
         shutil.rmtree(work, ignore_errors=True)
+
+
+def validate_acknowledged(table: dict, labels: set[str],
+                          patches_dir: str | None = None) -> list[str]:
+    """Every defect in the ACKNOWLEDGED table, as sentences. Empty means the table is sound.
+
+    A row that cannot match anything reads as if it excused something, which is the worst of both,
+    so a mistyped label, an `explained_by` naming a patch that is not carried, a `covers` that is
+    not a regex and a missing reason are each refused before any probe is compiled
+    (`check-pinned-asset-patches.py` does the same for its own table).
+    """
+    patches_dir = patches_dir or os.path.join(ROOT, "Scripts", "patches")
+    errors: list[str] = []
+    for (key, label), row in sorted(table.items()):
+        where = f"ACKNOWLEDGED ({key!r}, {label!r})"
+        if label not in labels:
+            errors.append(f"{where}: no such probe/transcript pair, so it can never match")
+        by = row.get("explained_by") or ()
+        if not by:
+            errors.append(f"{where}: explained_by is empty; name the carried patches, or "
+                          "('environment',)")
+        elif tuple(by) != ("environment",):
+            for number in by:
+                if number == "environment":
+                    errors.append(f"{where}: 'environment' cannot be mixed with patch numbers")
+                elif not re.fullmatch(r"[0-9]{4}", str(number)) or not glob.glob(
+                        os.path.join(patches_dir, f"{number}-*.patch")):
+                    errors.append(f"{where}: explained_by {number!r} is not a carried patch "
+                                  f"(no Scripts/patches/{number}-*.patch)")
+        if not str(row.get("reason", "")).strip():
+            errors.append(f"{where}: no reason")
+        covers = row.get("covers") or ()
+        if not covers:
+            errors.append(f"{where}: covers is empty, so the row would speak for nothing")
+        for rx in covers:
+            try:
+                re.compile(rx)
+            except re.error as exc:
+                errors.append(f"{where}: covers {rx!r} does not compile: {exc}")
+    return errors
+
+
+def apply_acknowledgements(results: list[dict], asset_key: str,
+                           table: dict | None = None) -> list[dict]:
+    """`results` with the ACKNOWLEDGED rows for THIS asset applied.
+
+    Three outcomes, and only the first is an excuse:
+
+      * the probe differs from its transcript on lines the row covers, and on nothing else:
+        ACKNOWLEDGED, printed with the patches and the reason every run, not a failure;
+      * the probe differs on something the row does not cover: the verdict is left exactly as it
+        was (still a failure) with the uncovered lines named, so an acknowledgement for one
+        measurement cannot carry a regression in another;
+      * the probe MATCHES its transcript, or is declared NOT-REPRODUCIBLE: STALE-ACK, a failure,
+        because the row describes a divergence that is not there.
+
+    A row for another asset is not consulted, and a probe that did not run (COMPILE-FAIL, TIMEOUT,
+    MISSING, DECL-*) keeps its verdict: there is nothing to excuse and nothing to call stale.
+    """
+    table = ACKNOWLEDGED if table is None else table
+    rows = {label: row for (key, label), row in table.items() if key == asset_key}
+    out: list[dict] = []
+    for r in results:
+        row = rows.get(r["name"])
+        status = r["status"]
+        if row is None:
+            out.append(r)
+        elif status in ("MATCH", "MATCH-DECLARED"):
+            out.append({"name": r["name"], "status": "STALE-ACK",
+                        "detail": f"the probe reproduces its transcript on this asset, so the "
+                                  f"acknowledgement for {', '.join(row['explained_by'])} excuses "
+                                  "nothing. Either a carried patch stopped taking effect, or the "
+                                  "row outlived the difference it described: delete it after "
+                                  "finding out which. Its reason was: " + row["reason"]})
+        elif status == "NOT-REPRODUCIBLE":
+            out.append({"name": r["name"], "status": "STALE-ACK",
+                        "detail": "the pair is declared not-reproducible, so it is never compared "
+                                  "and the acknowledgement excuses nothing. Delete the row."})
+        elif status in ACK_VERDICTS:
+            uncovered = [d for d in r.get("changed", [])
+                         if not any(re.search(rx, d[1:]) for rx in row["covers"])]
+            if uncovered:
+                shown = "\n".join("    " + d for d in uncovered[:10])
+                more = f"\n    ... and {len(uncovered) - 10} more" if len(uncovered) > 10 else ""
+                out.append({**r, "detail": f"an ACKNOWLEDGED row covers this probe on this "
+                                           f"asset, but {len(uncovered)} changed line(s) are "
+                                           f"outside what it covers, so it excuses none of "
+                                           f"them:\n{shown}{more}\n{r['detail']}"})
+            else:
+                n = len(r.get("changed", []))
+                out.append({"name": r["name"], "status": "ACKNOWLEDGED",
+                            "detail": f"explained by {', '.join(row['explained_by'])}; "
+                                      f"{n} changed line(s), every one covered by the row.\n"
+                                      + row["reason"]})
+        else:
+            out.append(r)
+    return out
 
 
 def asset_fingerprint(asset: str) -> str:
@@ -791,6 +1045,17 @@ def probe_dirs(args) -> list[str]:
     return sorted(glob.glob(os.path.join(base, "766-*")))
 
 
+def population_labels(args) -> set[str]:
+    """Every pair label in the WHOLE probe tree, whatever `--dirs` selected.
+
+    The ACKNOWLEDGED table is validated against this, not against the pairs this run examines: a
+    run limited to one directory must not call every other row a typo.
+    """
+    base = args.probes if os.path.isabs(args.probes) else os.path.join(ROOT, args.probes)
+    return {pair_label(p) for d in sorted(glob.glob(os.path.join(base, "766-*")))
+            if os.path.isdir(d) for p in pairs_in(d)}
+
+
 def run(args) -> int:
     # #2818. The asset is resolved rather than assumed: an explicit --asset wins, then
     # Libraries/OCCT.xcframework, then the artifact SwiftPM resolved into .build. The last of those
@@ -809,6 +1074,18 @@ def run(args) -> int:
     # directory holds. Printing only the directory count is what let thirty-nine pairs sit
     # unexamined under a line that said 120 (#2934).
     print(f"  probe/transcript pairs: {len(pairs)}")
+
+    # A mistyped ACKNOWLEDGED row suppresses nothing and reads as if it does. Refuse before any
+    # probe is compiled, and whether or not an asset is present: the table is part of the script.
+    table_errors = validate_acknowledged(ACKNOWLEDGED, population_labels(args))
+    if table_errors:
+        for e in table_errors:
+            print(f"  ERROR: {e}", file=sys.stderr)
+        print("  The ACKNOWLEDGED table in this script is unsound, so no verdict is reported.",
+              file=sys.stderr)
+        return 1
+    mine = sorted(label for (key, label) in ACKNOWLEDGED if key == ident.key)
+    print(f"  acknowledgements keyed to this asset ({ident.key}): {len(mine)}")
 
     refusal = identity_helper.refusal(ident, args.require_pinned_asset)
     if refusal:
@@ -831,19 +1108,24 @@ def run(args) -> int:
         for fut in concurrent.futures.as_completed(futures):
             results.append(fut.result())
     results.sort(key=lambda r: r["name"])
+    # Only the rows keyed to THIS asset are applied, and only after every probe has run, so the
+    # raw verdicts above are what an acknowledgement is measured against and never what it replaces.
+    results = apply_acknowledgements(results, ident.key)
 
     tally: dict[str, int] = {}
     for r in results:
         tally[r["status"]] = tally.get(r["status"], 0) + 1
-    for k in ("MATCH", "MATCH-DECLARED", "NOT-REPRODUCIBLE", "DIFF-VALUES", "TRANSCRIPT-EXTRA",
-              "RERUN-EXTRA", "DECL-UNUSED", "DECL-INVALID", "TIMEOUT", "COMPILE-FAIL", "MISSING"):
+    for k in ("MATCH", "MATCH-DECLARED", "ACKNOWLEDGED", "NOT-REPRODUCIBLE", "STALE-ACK",
+              "DIFF-VALUES", "TRANSCRIPT-EXTRA", "RERUN-EXTRA", "DECL-UNUSED", "DECL-INVALID",
+              "TIMEOUT", "COMPILE-FAIL", "MISSING"):
         if tally.get(k):
             print(f"  {k:16s} {tally[k]}")
 
     # MATCH-DECLARED and NOT-REPRODUCIBLE are printed with their reasons on every run and are not
     # failures. Printing them is the difference between "declared volatile" and "silently stopped
     # matching": an allowance nobody reads is the same thing as no allowance at all.
-    declared = [r for r in results if r["status"] in ("MATCH-DECLARED", "NOT-REPRODUCIBLE")]
+    declared = [r for r in results
+                if r["status"] in ("MATCH-DECLARED", "ACKNOWLEDGED", "NOT-REPRODUCIBLE")]
     for r in declared:
         print()
         print(f"  {r['status']}  {r['name']}")
@@ -851,7 +1133,7 @@ def run(args) -> int:
             print(f"      {line}")
 
     bad = [r for r in results
-           if r["status"] not in ("MATCH", "MATCH-DECLARED", "NOT-REPRODUCIBLE")]
+           if r["status"] not in ("MATCH", "MATCH-DECLARED", "ACKNOWLEDGED", "NOT-REPRODUCIBLE")]
     for r in bad:
         print()
         print(f"  {r['status']}  {r['name']}")
@@ -859,20 +1141,31 @@ def run(args) -> int:
             print(f"      {line}")
     if bad:
         print()
-        print("  A probe that does not reproduce its own transcript means the transcript is not a")
-        print("  record of this kernel.")
-        if ident.verdict == identity_helper.PINNED:
-            # Only sayable because identity was proven above. #2818: the remedy is to withdraw
-            # evidence, and reaching it against a kernel the repo does not pin would delete a sound
-            # record. Adjudicating thirteen non-reproducing transcripts (PRs #2822, #2823) had to
-            # establish that identity by hand to avoid exactly that conclusion.
-            print("  This asset IS the pinned kernel, so re-run the probe and correct the")
-            print("  transcript, or withdraw the records that cite it.")
-        else:
-            print(f"  This asset is {ident.verdict.upper()}, so the kernel is the FIRST thing to")
-            print("  rule out and no record should be withdrawn on this run. Re-run with")
-            print("  --require-pinned-asset against the pinned asset before reaching any verdict")
-            print("  about a transcript.")
+        stale = [r for r in bad if r["status"] == "STALE-ACK"]
+        if stale:
+            print("  A STALE-ACK is an ACKNOWLEDGED row whose probe no longer differs: a carried")
+            print("  patch stopped taking effect, or the row outlived what it described. Find out")
+            print("  which, then delete the row. It is a failure because the next reader would")
+            print("  trust it.")
+        if len(stale) < len(bad):
+            print("  A probe that does not reproduce its own transcript means the transcript is")
+            print("  not a record of this kernel, unless the transcript records the UNPATCHED")
+            print("  kernel on purpose, in which case it is acknowledged rather than re-recorded:")
+            print(f"  an ACKNOWLEDGED row for THIS asset is keyed ({ident.key!r}, <pair label>).")
+            if ident.verdict == identity_helper.PINNED:
+                # Only sayable because identity was proven above. #2818: the remedy is to
+                # withdraw evidence, and reaching it against a kernel the repo does not pin would
+                # delete a sound record. Adjudicating thirteen non-reproducing transcripts (PRs
+                # #2822, #2823) had to establish that identity by hand to avoid exactly that
+                # conclusion.
+                print("  This asset IS the pinned kernel, so re-run the probe and correct the")
+                print("  transcript, or withdraw the records that cite it.")
+            else:
+                print(f"  This asset is {ident.verdict.upper()}, so the kernel is the FIRST thing "
+                      "to")
+                print("  rule out and no record should be withdrawn on this run. Re-run with")
+                print("  --require-pinned-asset against the pinned asset before reaching any")
+                print("  verdict about a transcript.")
         print("  A DECL-UNUSED is the other shape of the same defect: an")
         print("  allowance in reproduce.json that covers nothing is either stale or was wrong.")
         return 1
@@ -1468,6 +1761,167 @@ def self_test() -> int:
         r = check_pair(pairs_in(p)[0], asset, 60)
         cases.append(("an unreadable reproduce.json is DECL-INVALID",
                       r["status"] == "DECL-INVALID"))
+
+    # 12b. The ACKNOWLEDGED table: a transcript that records the unpatched kernel on purpose is
+    #      reported with its reason and is not a failure, a row whose probe now MATCHES is a
+    #      failure, and a probe that differs without a row, or beyond what its row covers, or on an
+    #      asset no row is keyed to, fails exactly as it did before the table existed. Each is run
+    #      through `run()` itself against the stand-in asset, because the exit code is the thing a
+    #      reader acts on and a unit test of the helper would pass over a `run()` that ignored it.
+    global ACKNOWLEDGED
+    saved_table = ACKNOWLEDGED
+    with tempfile.TemporaryDirectory() as d:
+        asset = os.path.join(d, "OCCT.xcframework")
+        os.makedirs(os.path.join(asset, SLICE, "Headers"))
+        dummy_c = os.path.join(d, "dummy.c")
+        dummy_o = os.path.join(d, "dummy.o")
+        write_text(dummy_c, "int occt_probe_self_test_dummy(void) { return 0; }\n")
+        subprocess.run(["clang", "-c", dummy_c, "-o", dummy_o], capture_output=True)
+        subprocess.run(["ar", "rcs", os.path.join(asset, SLICE, "lib" + LIB + ".a"), dummy_o],
+                       capture_output=True)
+        stand_in_key = identity_helper.identify(ROOT, asset, SLICE).key
+        tree = os.path.join(d, "repro")
+        for name, body, want in (
+            ("766-ack", 'printf("x=2\\n");', "x=1\n"),
+            ("766-same", 'printf("x=1\\n");', "x=1\n"),
+            ("766-unack", 'printf("y=2\\n");', "y=1\n"),
+            ("766-partial", 'printf("a=2\\nb=2\\n");', "a=1\nb=1\n"),
+            ("766-nr", 'printf("z=2\\n");', "z=1\n"),
+        ):
+            os.makedirs(os.path.join(tree, name))
+            write_text(os.path.join(tree, name, "probe.mm"),
+                       "#include <stdio.h>\nint main(){" + body + "return 0;}\n")
+            write_text(os.path.join(tree, name, "transcript.txt"), want)
+        write_text(os.path.join(tree, "766-nr", DECL_FILE), json.dumps(
+            {"status": {"value": "not-reproducible", "reason": "fixture"}}))
+
+        def row(covers, by=("environment",)):
+            return {"explained_by": by, "covers": covers, "reason": "the fixture says so"}
+
+        def ack_run(rows, dirs, key=None):
+            """(exit code, stdout, stderr) of `run()` over the fixture tree with `rows` as the table."""
+            global ACKNOWLEDGED
+            ACKNOWLEDGED = {((key or stand_in_key), label): r for label, r in rows.items()}
+            ns = argparse.Namespace(asset=asset, require_pinned_asset=False, probes=tree,
+                                    dirs=dirs, jobs=2, timeout=60, detail_lines=40,
+                                    require_asset=False)
+            out, err = io.StringIO(), io.StringIO()
+            try:
+                with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                    code = run(ns)
+            finally:
+                ACKNOWLEDGED = saved_table
+            return code, out.getvalue(), err.getvalue()
+
+        def tallied(out, status):
+            """How many pairs the run's tally line gives `status`, as the number it printed."""
+            m = re.search(rf"^  {status} +([0-9]+)$", out, re.MULTILINE)
+            return int(m.group(1)) if m else 0
+
+        x_row = {"766-ack/probe.mm": row((r"^x=[12]$",))}
+        # The behaviour that matters most: an acknowledged difference is reported and does not fail.
+        code, out, _ = ack_run(x_row, ["766-ack"])
+        cases.append(("an acknowledged difference exits 0", code == 0))
+        cases.append(("and is reported as ACKNOWLEDGED, not as DIFF-VALUES",
+                      tallied(out, "ACKNOWLEDGED") == 1 and tallied(out, "DIFF-VALUES") == 0))
+        cases.append(("and the row's reason and cause are printed on the run",
+                      "the fixture says so" in out and "explained by environment" in out))
+
+        # A row whose probe now MATCHES its transcript is stale, and stale is a failure.
+        code, out, _ = ack_run({"766-same/probe.mm": row((r"^x=1$",))}, ["766-same"])
+        cases.append(("an acknowledged probe that now matches is STALE-ACK and exits 1",
+                      code == 1 and tallied(out, "STALE-ACK") == 1))
+        code, out, _ = ack_run({"766-nr/probe.mm": row((r"^z=",))}, ["766-nr"])
+        cases.append(("an acknowledged probe declared not-reproducible is STALE-ACK too",
+                      code == 1 and tallied(out, "STALE-ACK") == 1))
+
+        # A probe that differs and is not acknowledged still fails, alone and beside an
+        # acknowledged one.
+        code, out, _ = ack_run({}, ["766-unack"])
+        cases.append(("a differing probe with no row exits 1 as DIFF-VALUES",
+                      code == 1 and tallied(out, "DIFF-VALUES") == 1))
+        code, out, _ = ack_run(x_row, ["766-ack", "766-unack"])
+        cases.append(("an acknowledgement does not excuse the unacknowledged probe beside it",
+                      code == 1 and tallied(out, "ACKNOWLEDGED") == 1
+                      and tallied(out, "DIFF-VALUES") == 1))
+
+        # An acknowledgement excuses what it covers and nothing else.
+        code, out, _ = ack_run({"766-partial/probe.mm": row((r"^a=[12]$",))}, ["766-partial"])
+        cases.append(("a row that covers only some of the changed lines still fails",
+                      code == 1 and tallied(out, "DIFF-VALUES") == 1
+                      and tallied(out, "ACKNOWLEDGED") == 0))
+        cases.append(("and names the changed line it does not cover",
+                      "outside what it covers" in out and "b=2" in out))
+        code, out, _ = ack_run(x_row, ["766-ack"], key="sha256:0000000000000000")
+        cases.append(("a row keyed to a different asset excuses nothing",
+                      code == 1 and tallied(out, "DIFF-VALUES") == 1
+                      and tallied(out, "ACKNOWLEDGED") == 0))
+
+        # A mistyped row is refused rather than left to look as if it excuses something.
+        code, out, err = ack_run({"766-nowhere/probe.mm": row((r"^x=",))}, ["766-ack"])
+        cases.append(("a row naming no pair in the tree is refused before anything runs",
+                      code == 1 and "no such probe/transcript pair" in err))
+
+    # The same rules without compiling anything, so a break is attributable to one of them.
+    differing = [{"name": "p/probe.mm", "status": "DIFF-VALUES", "detail": "d",
+                  "changed": ["-a=1", "+a=2"]}]
+    table = {("K", "p/probe.mm"): {"explained_by": ("environment",), "covers": (r"^a=",),
+                                   "reason": "r"}}
+    cases.append(("apply: a covered difference becomes ACKNOWLEDGED",
+                  [r["status"] for r in apply_acknowledgements(differing, "K", table)]
+                  == ["ACKNOWLEDGED"]))
+    cases.append(("apply: the same difference on another asset key is untouched",
+                  [r["status"] for r in apply_acknowledgements(differing, "other", table)]
+                  == ["DIFF-VALUES"]))
+    cases.append(("apply: MATCH-DECLARED with a row is STALE-ACK",
+                  [r["status"] for r in apply_acknowledgements(
+                      [{"name": "p/probe.mm", "status": "MATCH-DECLARED", "detail": ""}], "K",
+                      table)] == ["STALE-ACK"]))
+    cases.append(("apply: a probe that did not compile keeps its verdict",
+                  [r["status"] for r in apply_acknowledgements(
+                      [{"name": "p/probe.mm", "status": "COMPILE-FAIL", "detail": "x"}], "K",
+                      table)] == ["COMPILE-FAIL"]))
+    cases.append(("apply: an uncovered changed line keeps DIFF-VALUES",
+                  [r["status"] for r in apply_acknowledgements(
+                      [{**differing[0], "changed": ["-a=1", "+a=2", "+b=3"]}], "K", table)]
+                  == ["DIFF-VALUES"]))
+    cases.append(("a TRANSCRIPT-EXTRA is acknowledgeable only where the row covers its lines",
+                  [r["status"] for r in apply_acknowledgements(
+                      [{**differing[0], "status": "TRANSCRIPT-EXTRA", "changed": ["-a=1"]}], "K",
+                      table)] == ["ACKNOWLEDGED"]))
+
+    # The table is validated. A row has to be able to match something, name a real cause, and say
+    # why.
+    good = {("K", "p/probe.mm"): {"explained_by": ("0075",), "covers": (r"^a=",), "reason": "r"}}
+    cases.append(("validate: a sound row passes",
+                  validate_acknowledged(good, {"p/probe.mm"}) == []))
+    cases.append(("validate: a label in no pair is an error",
+                  bool(validate_acknowledged(good, {"q/probe.mm"}))))
+    cases.append(("validate: a patch number that is not carried is an error",
+                  bool(validate_acknowledged(
+                      {("K", "p/probe.mm"): {**good[("K", "p/probe.mm")],
+                                             "explained_by": ("9999",)}}, {"p/probe.mm"}))))
+    cases.append(("validate: an empty cause is an error",
+                  bool(validate_acknowledged(
+                      {("K", "p/probe.mm"): {**good[("K", "p/probe.mm")], "explained_by": ()}},
+                      {"p/probe.mm"}))))
+    cases.append(("validate: a row that covers nothing is an error",
+                  bool(validate_acknowledged(
+                      {("K", "p/probe.mm"): {**good[("K", "p/probe.mm")], "covers": ()}},
+                      {"p/probe.mm"}))))
+    cases.append(("validate: a covers that is not a regex is an error",
+                  bool(validate_acknowledged(
+                      {("K", "p/probe.mm"): {**good[("K", "p/probe.mm")], "covers": ("(",)}},
+                      {"p/probe.mm"}))))
+    cases.append(("validate: a row with no reason is an error",
+                  bool(validate_acknowledged(
+                      {("K", "p/probe.mm"): {**good[("K", "p/probe.mm")], "reason": " "}},
+                      {"p/probe.mm"}))))
+    # The real table, against the real tree: every row names a pair that exists and patches the
+    # repo carries, so a rename of a probe directory or a retirement of a patch turns this red.
+    real_args = argparse.Namespace(probes=DEFAULT_PROBES)
+    cases.append(("the real ACKNOWLEDGED table names real pairs and carried patches",
+                  validate_acknowledged(ACKNOWLEDGED, population_labels(real_args)) == []))
 
     # 13. #2818's asset identity, whose failure mode here is the most expensive in the set: an
     #     unproven kernel reaching the "withdraw the records that cite it" remedy. The helper's own

@@ -1,4 +1,8 @@
-filletSpecificEdges: edges=12 done=true valid=true faces=10 volume=3951.5634099876793
+# Re-recorded against kernel-8.0.2-c1 (OCCT V8_0_2 plus 51 carried patches), #3537. Only the lines that moved were rewritten.
+# Moved: filletSpecificEdges volume by 3.4e-8 (8.7e-12 relative), shellWithOpenFaces by 2.0e-10 and shellWithSpecificFaceOpen by 3.6e-12.
+# Cause: OCCT commit 36d7686389 (V8_0_2, "Coding - Migrate remaining fixes"), AppCont_LeastSquare.cxx, which centres the least-squares equations on the first point so curves far from the origin keep their accuracy.
+# Verified by linking that one translation unit into the v4.0.0-kernel.9 archive: the probe then prints exactly the lines below.
+filletSpecificEdges: edges=12 done=true valid=true faces=10 volume=3951.5634099531976
 filletSingleEdge: edges=12 done=true valid=true faces=7 volume=1997.8539816339744
 filletVariableRadius: edges=12 done=true valid=true faces=7 volume=2990.5237334555886
 edgeHasIndex/faceHasIndex: edges=12 faces=6
@@ -23,5 +27,5 @@ wireCurvePointDerivatives: point=[3.0616169978683831e-16,5,0] curvature=0.200000
 wireOffset3D: start=[5,0,10]
 bsplineSurface: done=true valid=true
 ruledSurfaceBetweenCircles: done=true type="SHELL"
-shellWithOpenFaces: upwardFaces=1 done=true valid=true volume=4519.4099853010057
-shellWithSpecificFaceOpen: upwardFaces=0 done=true valid=true volume=3325.1548397129905
+shellWithOpenFaces: upwardFaces=1 done=true valid=true volume=4519.409985301204
+shellWithSpecificFaceOpen: upwardFaces=0 done=true valid=true volume=3325.1548397129868

@@ -112,9 +112,13 @@ string.
   `FilletMergeWireRemovalTests`): all pass on both. The obstacle model still fillets 20 of 42
   edges at radius 1.0 and 12 of 42 at 1.5.
 - **The 43 cases of [`Scripts/repro/fillet-open-set`](../Scripts/repro/fillet-open-set/README.md)**:
-  42 identical. OCCT#1421's model (#3336) changes from done but invalid (two solids, 139
-  `bopcheck` faults) to not done with one faulty contour, a refusal where the caller used to be
-  handed a broken solid.
+  42 agree on done, valid, `bopcheck` faults, solids and faces. OCCT#1421's model (#3336) changes
+  from done but invalid (two solids, 139 `bopcheck` faults) to not done with one faulty contour, a
+  refusal where the caller used to be handed a broken solid. Four of the 42 print a different
+  volume (OCCT#1570 at r=29, OCCT#1571, OCCT#737 and OCCT#1619), and each already has `bopcheck`
+  faults on both kernels; an independent mesh-sum volume agrees between the kernels to 0.1 percent
+  or better. Swapping only the `ProjLib_CompProjectedCurve` hunk of #1741 into the `kernel.9`
+  archive reproduces all four, and the three fillet units (#1501, #1708, #1710) do not.
 
 ### Behaviour changes to watch
 
@@ -128,6 +132,7 @@ expectation moves against both kernels.
 | #1783, #1784, #1785 | Closed lofts keep the last section's history; an unbounded section is refused; a null auxiliary spine throws `Standard_ConstructionError` | `ThruSections`, `PipeShell` |
 | #1620 (part) | Booleans: section splits limited to common vertices, a 2D intersection length fixed | Boolean, section and mesh-boolean counts |
 | #1634, #1640, #1741 (parts) | HLR sampling and B-spline handling, projection knots, `BRepMesh` and `GCPnts_TangentialDeflection` | exact mesh, HLR and sampling counts |
+| `36d7686389` ("Coding - Migrate remaining fixes", no PR number) | `AppCont_LeastSquare` centres its least-squares equations: volumes and areas of approximated results shift by 1e-16 to 1e-8 relative | fillet, offset, pipe-shell, shape-healing and blend volumes and areas |
 | #1786 | Long reals in BREP text, readers stop on a failed stream | the BREP readers; the bridge's #3487 stream guards stay, since #1786 bounds only `GetReal` |
 | #1470, #1514, #1611, #1647, #1644 (parts) | STEP writer field kinds, cyclic oriented edges, PMI units, tessellated vertex order | STEP read and write |
 

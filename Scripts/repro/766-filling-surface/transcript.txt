@@ -1,8 +1,13 @@
+# Re-recorded against kernel-8.0.2-c1 (OCCT V8_0_2 plus 51 carried patches), #3537. Only the lines that moved were rewritten.
+# Moved: fillingWithPoint area 1038.9910066176521 to 1038.991011958994 (5.1e-9 relative) and its G0Error 0.00010162211044146778 to 0.00010162359571276978 (1.5e-9 absolute).
+# Cause: two upstream changes acting together, OCCT #1512 (2b89267484, BSplCLib.cxx, direct B-spline curve evaluation) and OCCT #1741 (be4e040483, ProjLib_CompProjectedCurve.cxx).
+# Verified by linking exactly those two translation units into the v4.0.0-kernel.9 archive (the second compiled from be4e040483, which is V8_0_1 plus the #1741 hunk of that file): the probe then prints exactly the lines below.
+# BSplCLib.cxx.o alone, or the V8_0_2 ProjLib_CompProjectedCurve.cxx.o alone, prints a third set of values, so neither is sufficient by itself.
 edge[0]: (-5,-5,-5)-(-5,-5,5)
 edge[1]: (-5,-5,5)-(-5,5,5)
 edge[2]: (-5,5,-5)-(-5,5,5)
 edge[3]: (-5,-5,-5)-(-5,5,-5)
 basicFilling / g0Error / g1g2Errors: IsDone=1 area=100.00000000000001 G0Error=1.3322676295501878e-15 G1Error=0 G2Error=0 dist((5,5,3))=10
-fillingWithPoint: IsDone=1 area=1038.9910066176521 G0Error=0.00010162211044146778 G1Error=0 G2Error=0 dist((5,5,3))=10
+fillingWithPoint: IsDone=1 area=1038.991011958994 G0Error=0.00010162359571276978 G1Error=0 G2Error=0 dist((5,5,3))=10
 freeEdgeConstraint: IsDone=1 area=124.99804710385433 G0Error=2.808666774861361e-15 G1Error=0 G2Error=0 dist((5,5,3))=10
 notDoneBeforeBuild: IsDone=0

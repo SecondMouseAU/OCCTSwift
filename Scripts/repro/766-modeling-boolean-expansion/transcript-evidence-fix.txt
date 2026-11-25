@@ -1,6 +1,10 @@
+# Re-recorded against kernel-8.0.2-c1 (OCCT V8_0_2 plus 51 carried patches), #3537. Only the lines that moved were rewritten.
+# Moved: defeature resultVolume 7806.4876960735583 to 7806.4876960736874, and volumeDelta with it (1.3e-10 absolute).
+# Cause: OCCT commit 36d7686389 (V8_0_2, "Coding - Migrate remaining fixes"), AppCont_LeastSquare.cxx, which centres the least-squares equations on the first point so curves far from the origin keep their accuracy.
+# Verified by linking that one translation unit into the v4.0.0-kernel.9 archive: the probe then prints exactly the lines below.
 sectionWithTolerance: done=true edges=4 vertices=4 controlEdges=0 controlVertices=0
 splitMulti: done=true solids=2 volume=7999.9999999999991 smallSolidVolume=124.99999999999997 largeSolidVolume=7875.0000000000018
 cutWithHistory(overlap): done=true valid=true volume=7875.0000000000018 hasDeleted=true hasModified=true hasGenerated=true
 cutWithHistory(clear): done=true valid=true volume=7999.9999999999982 hasDeleted=true hasModified=false hasGenerated=false
 cutWithHistory(buried): done=true valid=true volume=7935.9999999999964 hasDeleted=true hasModified=true hasGenerated=false
-defeature: filletDone=true filletedFaces=26 filletedVolume=7804.6961111275314 done=true valid=true resultFaces=25 resultVolume=7806.4876960735583 volumeDelta=1.7915849460268873
+defeature: filletDone=true filletedFaces=26 filletedVolume=7804.6961111275314 done=true valid=true resultFaces=25 resultVolume=7806.4876960736874 volumeDelta=1.7915849461560356

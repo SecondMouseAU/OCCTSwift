@@ -1,8 +1,12 @@
+# Re-recorded against kernel-8.0.2-c1 (OCCT V8_0_2 plus 51 carried patches), #3537. Only the lines that moved were rewritten.
+# Moved: the two shell volumes 4519.4099853010057 to 4519.409985301204 and -13587.492558290332 to -13587.492558290756 (2.0e-10 and 4.2e-10).
+# Cause: OCCT commit 36d7686389 (V8_0_2, "Coding - Migrate remaining fixes"), AppCont_LeastSquare.cxx, which centres the least-squares equations on the first point so curves far from the origin keep their accuracy.
+# Verified by linking that one translation unit into the v4.0.0-kernel.9 archive: the probe then prints exactly the lines below.
 draftAcceptsOwnFaces: vertical=4 done=1 volume=12024.71917796442
 draftRejectsWhollyForeignFaceList [foreign] -> no face: done=1 volume=12000
 draftRejectsPartiallyForeignFaceList [own, foreign] -> [own]: done=1 volume=12000
-shellAcceptsOwnFaces / shellRejectsPartiallyForeignFaceList [own, foreign] -> [own]: upward=1 done=1 valid=1 volume=4519.4099853010057
-shellRejectsPartiallyForeignFaceList [foreign] -> no open face: done=1 valid=1 volume=-13587.492558290332
+shellAcceptsOwnFaces / shellRejectsPartiallyForeignFaceList [own, foreign] -> [own]: upward=1 done=1 valid=1 volume=4519.409985301204
+shellRejectsPartiallyForeignFaceList [foreign] -> no open face: done=1 valid=1 volume=-13587.492558290756
 historyChamferAcceptsResolvableIndices [0, 1]: done=1 volume=7980.3333333333339
 historyChamferAcceptsResolvableIndices [0]: done=1 volume=7990
 historyChamferRejectsOutOfRangeIndex [0, 99999] -> [0]: done=1 volume=7990

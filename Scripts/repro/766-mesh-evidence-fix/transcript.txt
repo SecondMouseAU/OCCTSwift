@@ -1,6 +1,10 @@
+# Re-recorded against kernel-8.0.2-c1 (OCCT V8_0_2 plus 51 carried patches), #3537. Only the lines that moved were rewritten.
+# Moved: the sphere and box intersection volume 955.41968829692473 to 955.41968829692485, one unit in the 17th digit. Its triangleCount, 332, is unchanged.
+# Cause: OCCT #1741 (be4e040483), BRepMesh_CircleTool.cxx, "compute circumcircles in local coordinates".
+# Verified by linking that one translation unit (BRepMesh_CircleTool.cxx.o) into the v4.0.0-kernel.9 archive: the probe then prints exactly the lines below. BRepMesh_Delaun.cxx.o, GCPnts_TangentialDeflection.cxx.o and ShapeAnalysis_Edge.cxx.o alone do not move it.
 solid Booleans meshed at 0.5 (the reference the three Mesh boolean tests are measured against):
   union: box 10 and the same box moved +5 in x: triangleCount=28 volume=1500
   subtraction: box 10 minus cylinder r3 h15: triangleCount=116 volume=860.00033900599146
-  intersection: box 10 and sphere r7: triangleCount=332 volume=955.41968829692473
+  intersection: box 10 and sphere r7: triangleCount=332 volume=955.41968829692485
 BRepGraph face 0 of a fresh unmeshed box, one graph:
   Effective().Faces().Has(0): before=0 after SetCachedTriangulation=1

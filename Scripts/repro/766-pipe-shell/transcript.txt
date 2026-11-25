@@ -1,3 +1,7 @@
+# Re-recorded against kernel-8.0.2-c1 (OCCT V8_0_2 plus 51 carried patches), #3537. Only the lines that moved were rewritten.
+# Moved: pipeRightCorner and pipeRoundCorner volumes (5.5e-12 at most) and areas (2.8e-11 at most).
+# Cause: OCCT commit 36d7686389 (V8_0_2, "Coding - Migrate remaining fixes"), AppCont_LeastSquare.cxx, which centres the least-squares equations on the first point so curves far from the origin keep their accuracy.
+# Verified by linking that one translation unit into the v4.0.0-kernel.9 archive: the probe then prints exactly the lines below.
 pipeFeatureCallable: IsDone=1 : type=0 valid=1 volume=7748.6725877128156 area=2626.1946710584648
 pipeFeatureCurvedSpine: IsDone=1 : type=0 valid=1 volume=26880 area=5632
 circularSpineCircularProfile: IsReady=1 status=0 simulate(5)=5 Build=1 ErrorOnSurface=0 first=shape last=shape shape(): type=3 valid=1 volume=2664.793188294127 area=1776.5287921960849
@@ -13,5 +17,5 @@ basicPipeShell: IsReady=1 status=0 simulate(5)=5 Build=1 ErrorOnSurface=0 first=
 pipeShellIsReady: IsReady before Add=0
 pipeTransformed: IsDone=1 MakeSolid=1 : type=2 valid=1 volume=0 area=86.85947937118199
 pipeTransformed (profile normal X): IsDone=1 MakeSolid=1 : type=2 valid=1 volume=31.415926535897935 area=109.35485527399277
-pipeRightCorner: IsDone=1 MakeSolid=1 : type=2 valid=1 volume=251.32741228691418 area=276.46015351531958
-pipeRoundCorner: IsDone=1 MakeSolid=1 : type=2 valid=1 volume=249.03832602994237 area=273.02652412968405
+pipeRightCorner: IsDone=1 MakeSolid=1 : type=2 valid=1 volume=251.3274122869197 area=276.46015351534754
+pipeRoundCorner: IsDone=1 MakeSolid=1 : type=2 valid=1 volume=249.03832602994675 area=273.0265241297077

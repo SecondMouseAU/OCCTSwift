@@ -1,3 +1,7 @@
+# Re-recorded against kernel-8.0.2-c1 (OCCT V8_0_2 plus 51 carried patches), #3537. Only the line that moved was rewritten.
+# Moved: customDeflection fine hidden, extent (9.99452306, -0.316756843)..(10.0000001, 9.99999976e-08) to (9.99452306, -1.00000002e-07)..(10.0000001, 0.316756843). Its edge count, 1, is unchanged, as are all 631 visible and 632 outline edges.
+# Cause: OCCT #1741 (be4e040483), BRepMesh_CircleTool.cxx, "compute circumcircles in local coordinates", which the polygonal HLR meshes through.
+# Verified by linking that one translation unit (BRepMesh_CircleTool.cxx.o) into the v4.0.0-kernel.9 archive: the probe then prints exactly the lines below. BRepMesh_Delaun.cxx.o, GCPnts_TangentialDeflection.cxx.o and ShapeAnalysis_Edge.cxx.o alone, and the six HLRBRep and intersection units of #1634, #1640 and #1653 together, do not move it.
 box top face, point (0,0,15): nbPoints=1 nearest=(0, 0, 5) distance=10
 sphere r5 face 0, point (10,0,0): nbPoints=2 nearest=(5, 0, 0) distance=5
 box edge 1 (-5,-5,-5)-(-5,-5,5), midpoint+(1,1,1): distance=1.4142135623730951 (sqrt 2 = 1.4142135623730951)
@@ -21,5 +25,5 @@ customDeflection coarse visible: edges=35 extent=(-9.96194708, -9.96194708)..(10
 customDeflection coarse hidden: nil
 customDeflection coarse outline: edges=35 extent=(-9.96194708, -9.96194708)..(10.0000001, 9.96194708)
 customDeflection fine visible: edges=631 extent=(-9.9998781, -9.9998781)..(10.0000001, 9.9998781)
-customDeflection fine hidden: edges=1 extent=(9.99452306, -0.316756843)..(10.0000001, 9.99999976e-08)
+customDeflection fine hidden: edges=1 extent=(9.99452306, -1.00000002e-07)..(10.0000001, 0.316756843)
 customDeflection fine outline: edges=632 extent=(-9.9998781, -9.9998781)..(10.0000001, 9.9998781)

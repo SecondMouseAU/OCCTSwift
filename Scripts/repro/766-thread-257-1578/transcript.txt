@@ -1,11 +1,16 @@
+# Re-recorded against kernel-8.0.2-c1 (OCCT V8_0_2 plus 51 carried patches), #3537. Only the lines that moved were rewritten: the three startCount mesh(0.02) rows.
+# Moved: n=1 clusters@0 10.872450 to 10.869268, clusters@pi/2 11.272161 to 11.252927; n=2 second cluster@0 11.968648 to 11.977974; n=3 third clusters 13.150966 to 13.156538 and 14.222409 to 14.231193.
+# Cause: OCCT #1741 (be4e040483), BRepMesh_CircleTool.cxx, "compute circumcircles in local coordinates".
+# Verified by linking that one translation unit (BRepMesh_CircleTool.cxx.o) into the v4.0.0-kernel.9 archive: the probe then prints exactly the eight lines it derives itself. BRepMesh_Delaun.cxx.o alone does not move them.
+# The last three lines (BREP from Swift) are from the earlier capture below and are not re-measured; reproduce.json declares why they cannot be.
 # ./probe <257 partial n=2 .brep> <1578 nut .brep> <1578 rod .brep>, each written from the Swift result via Shape.toBREPString().
 # OCCT V8_0_1, v4.0.0-kernel.1 asset.
 257 full n=1: type=2 volume=1693.718374724 faces=7 valid=1 crest(0.03)=5.000005245
-  startCount mesh(0.02): clusters@0=1 10.872450  clusters@pi/2=1 11.272161  offset(pi/2 - 0) mod pitch=0.399711 (lead/4 mod pitch=0.375000)
+  startCount mesh(0.02): clusters@0=1 10.869268  clusters@pi/2=1 11.252927  offset(pi/2 - 0) mod pitch=0.383659 (lead/4 mod pitch=0.375000)
 257 full n=2: type=2 volume=1693.684692337 faces=12 valid=1 crest(0.03)=5.000000954
-  startCount mesh(0.02): clusters@0=2 10.481929 11.968648  clusters@pi/2=2 11.234999 12.729790  offset(pi/2 - 0) mod pitch=0.753070 (lead/4 mod pitch=0.750000)
+  startCount mesh(0.02): clusters@0=2 10.481929 11.977974  clusters@pi/2=2 11.234999 12.729790  offset(pi/2 - 0) mod pitch=0.753070 (lead/4 mod pitch=0.750000)
 257 full n=3: type=2 volume=1693.679586746 faces=17 valid=1 crest(0.03)=5.000000954
-  startCount mesh(0.02): clusters@0=3 10.124656 11.603917 13.150966  clusters@pi/2=3 11.207973 12.754526 14.222409  offset(pi/2 - 0) mod pitch=1.083317 (lead/4 mod pitch=1.125000)
+  startCount mesh(0.02): clusters@0=3 10.124656 11.603917 13.156538  clusters@pi/2=3 11.207973 12.754526 14.231193  offset(pi/2 - 0) mod pitch=1.083317 (lead/4 mod pitch=1.125000)
 257 trap n=2: type=2 volume=3521.663516583 faces=12 valid=1 crest(0.03)=6.000001431
 1266 cylinder r=5 h=10 crest(0.05)=5.000000000
 1578 bolt (probe loft): type=2 volume=1377.154160079 faces=7 valid=1 crest(0.02)=8.000009537
