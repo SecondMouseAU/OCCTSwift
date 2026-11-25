@@ -50,6 +50,45 @@ builder.reset()
 print(builder.simulatedSurfaceCount(contour: 1))   // 0
 ```
 
+### `ChamferBuilder` indices outside their range answer a refusal, and `FilletBuilder` refuses a radius change on a built contour (#3523, #3524)
+
+**`ChamferBuilder` (#3523).** A contour index outside `1...contourCount`, and an edge index outside
+`1...edgeCount(contour:)`, now answer the refusal each method documents instead of faulting the
+process or reading contour 1. It is the defect #3518 fixed for `FilletBuilder`, over eighteen
+accessors: `edgeCount`, `isDistanceAngle`, `isSymmetric`, `isTwoDistances`, `isClosed`,
+`isClosedAndTangent`, `length`, `getDistance`, `getDistances`, `getDistAngle`, `edge`,
+`firstVertex`, `lastVertex`, `abscissa`, `relativeAbscissa` and the three setters. OCCT's
+`ChFi3d_Builder::Value(I)` walks its stripe list `I - 1` times and dereferences the iterator it ends
+on, so an index past the end, or any index on a builder with no contour, was an uncatchable SIGSEGV,
+and `0` and the negatives answered, or rewrote, contour 1. The refusal is the value
+`BRepFilletAPI_MakeChamfer.hxx` documents for each (`0`, `-1`, `false`, `nil`); `setDistance`,
+`setDistances` and `setDistAngle` answer `false` and change nothing, where an index past the end used
+to answer `true` for a write that never happened. The Swift methods convert with `Int32(clamping:)`,
+so an `Int` past 32 bits is an ordinary out-of-range index and not a trap. A valid index answers
+exactly what it did.
+
+**`FilletBuilder` (#3524).** `setRadius(_:contour:vertex:)`, `setTwoRadii(_:_:contour:edgeInContour:)`
+and `addEdge(_:radius:)` / `addEdge(_:radius1:radius2:)` for an edge that already belongs to a
+contour answer `false`, and change nothing, once that contour holds a `build()` or a
+`simulate(contour:)` result. They faulted the process with a valid contour and edge index: OCCT
+replays the radius law on the contour's elementary spines and reads the first of them with no
+emptiness test, and for an analytic blend (a box edge, a cylinder's rim) there are none after a build
+or a simulation. `reset()` lifts the refusal, and is what OCCT's own documentation names for
+changing a built fillet. The refusal is by design and not a kernel patch. A contour whose build was
+declined holds no result, so changing its radii still works, and so does `setRadius(_:contour:edge:)`
+on a built contour.
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let builder = FilletBuilder(shape: box)!
+builder.addEdge(box.edges()[0], radius: 1)
+let vertex = builder.firstVertex(contour: 1)!
+_ = builder.build()
+print(builder.setRadius(2, contour: 1, vertex: vertex))   // false: built, reset() first
+builder.reset()
+print(builder.setRadius(2, contour: 1, vertex: vertex))   // true
+```
+
 ### OCCT 8.0.2 base, the kernel-fix ledger and the `Kernel` probe (#3543, #3535)
 
 The kernel build moves to OCCT 8.0.2: ten carried patches are retired as absorbed upstream, three are rebased, 51 remain, and the pinned kernel is `kernel-8.0.2-c1`. Adds `Kernel` (`flavour`, `occtVersion`, `hasFix(_:)`) to report which kernel flavour a build links against and which ledger fixes it holds. A few results move with 8.0.2 (HLR edge counts, a coarse mesh's triangle count, fillet volumes at the 1e-8 level); see `docs/occt-upgrades.md`, "8.0.1 to 8.0.2".

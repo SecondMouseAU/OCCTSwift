@@ -1043,6 +1043,10 @@ bool OCCTChamferBuilderIsDistAngle(OCCTChamferBuilderRef builder, int32_t contou
     return false;
   try
   {
+    // #3523: IsDistanceAngle(IC) reads Value(IC) with no test of either end (see
+    // occtBlendContourInRange). false is this function's refusal.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return false;
     return builder->chamfer.IsDistanceAngle(contourIndex);
   }
   catch (...)
@@ -1058,6 +1062,10 @@ int32_t OCCTChamferBuilderNbEdges(OCCTChamferBuilderRef builder, int32_t contour
     return 0;
   try
   {
+    // #3523: NbEdges(I) walks the stripe list with no range test; the header documents 0 for an
+    // index outside the table of contours, and that is the refusal.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return 0;
     return builder->chamfer.NbEdges(contourIndex);
   }
   catch (...)
@@ -1073,6 +1081,13 @@ void OCCTChamferBuilderGetDist(OCCTChamferBuilderRef builder, int32_t contourInd
     return;
   try
   {
+    // #3523: GetDist(IC) reads Value(IC) unchecked. -1 is the sentinel the catch below, and the
+    // header for Dists, give for an index outside the table of contours.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+    {
+      *dist = -1.0;
+      return;
+    }
     builder->chamfer.GetDist(contourIndex, *dist);
   }
   catch (...)
@@ -1091,6 +1106,13 @@ void OCCTChamferBuilderGetDists(OCCTChamferBuilderRef builder,
     return;
   try
   {
+    // #3523: as GetDist.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+    {
+      *d1 = -1.0;
+      *d2 = -1.0;
+      return;
+    }
     builder->chamfer.Dists(contourIndex, *d1, *d2);
   }
   catch (...)
@@ -1110,6 +1132,13 @@ void OCCTChamferBuilderGetDistAngle(OCCTChamferBuilderRef builder,
     return;
   try
   {
+    // #3523: as GetDist.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+    {
+      *dist  = -1.0;
+      *angle = -1.0;
+      return;
+    }
     builder->chamfer.GetDistAngle(contourIndex, *dist, *angle);
   }
   catch (...)
@@ -1129,6 +1158,10 @@ bool OCCTChamferBuilderSetDist(OCCTChamferBuilderRef builder,
     return false;
   try
   {
+    // #3523: SetDist tests only IC <= NbElements(), so 0 and the negatives rewrote contour 1 (or
+    // faulted with none), and an IC past the end reported success for a write that never happened.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return false;
     builder->chamfer.SetDist(dist, contourIndex, face->face);
     return true;
   }
@@ -1149,6 +1182,9 @@ bool OCCTChamferBuilderSetDists(OCCTChamferBuilderRef builder,
     return false;
   try
   {
+    // #3523: as SetDist.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return false;
     builder->chamfer.SetDists(d1, d2, contourIndex, face->face);
     return true;
   }
@@ -1169,6 +1205,9 @@ bool OCCTChamferBuilderSetDistAngle(OCCTChamferBuilderRef builder,
     return false;
   try
   {
+    // #3523: as SetDist.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return false;
     builder->chamfer.SetDistAngle(dist, angle, contourIndex, face->face);
     return true;
   }
@@ -1185,6 +1224,10 @@ double OCCTChamferBuilderLength(OCCTChamferBuilderRef builder, int32_t contourIn
     return -1.0;
   try
   {
+    // #3523: -1 is the value the header documents for an index outside the table of contours; 0
+    // and the negatives used to answer contour 1's length, and any index faulted with no contour.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return -1.0;
     return builder->chamfer.Length(contourIndex);
   }
   catch (...)
@@ -1230,6 +1273,9 @@ bool OCCTChamferBuilderClosed(OCCTChamferBuilderRef builder, int32_t contourInde
     return false;
   try
   {
+    // #3523: false, as the header documents for an index outside the table of contours.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return false;
     return builder->chamfer.Closed(contourIndex);
   }
   catch (...)
@@ -1245,6 +1291,9 @@ bool OCCTChamferBuilderClosedAndTangent(OCCTChamferBuilderRef builder, int32_t c
     return false;
   try
   {
+    // #3523: as Closed.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return false;
     return builder->chamfer.ClosedAndTangent(contourIndex);
   }
   catch (...)
@@ -1260,6 +1309,9 @@ bool OCCTChamferBuilderIsSymmetric(OCCTChamferBuilderRef builder, int32_t contou
     return false;
   try
   {
+    // #3523: as IsDistanceAngle.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return false;
     return builder->chamfer.IsSymetric(contourIndex);
   }
   catch (...)
@@ -1275,6 +1327,9 @@ bool OCCTChamferBuilderIsTwoDists(OCCTChamferBuilderRef builder, int32_t contour
     return false;
   try
   {
+    // #3523: as IsDistanceAngle.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return false;
     return builder->chamfer.IsTwoDistances(contourIndex);
   }
   catch (...)
@@ -1292,6 +1347,11 @@ OCCTShapeRef OCCTChamferBuilderEdge(OCCTChamferBuilderRef builder,
     return nullptr;
   try
   {
+    // #3523: Edge(I, J) checks neither index. I walks the stripe list unchecked, and J indexes the
+    // spine's edge sequence unchecked: 0 faults, and past the end it answers a stale node. The
+    // header documents a null shape for either index outside its table.
+    if (!occtBlendEdgeInContourInRange(builder->chamfer, contourIndex, edgeIndex))
+      return nullptr;
     const TopoDS_Edge& e = builder->chamfer.Edge(contourIndex, edgeIndex);
     if (e.IsNull())
       return nullptr;
@@ -1310,6 +1370,9 @@ OCCTShapeRef OCCTChamferBuilderFirstVertex(OCCTChamferBuilderRef builder, int32_
     return nullptr;
   try
   {
+    // #3523: nullptr, as the header documents for an index outside the table of contours.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return nullptr;
     TopoDS_Vertex v = builder->chamfer.FirstVertex(contourIndex);
     if (v.IsNull())
       return nullptr;
@@ -1328,6 +1391,9 @@ OCCTShapeRef OCCTChamferBuilderLastVertex(OCCTChamferBuilderRef builder, int32_t
     return nullptr;
   try
   {
+    // #3523: as FirstVertex.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return nullptr;
     TopoDS_Vertex v = builder->chamfer.LastVertex(contourIndex);
     if (v.IsNull())
       return nullptr;
@@ -1363,6 +1429,9 @@ double OCCTChamferBuilderAbscissa(OCCTChamferBuilderRef builder,
     return -1.0;
   try
   {
+    // #3523: -1, as the header documents for an index outside the table of contours.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return -1.0;
     return builder->chamfer.Abscissa(contourIndex, TopoDS::Vertex(vertex->shape));
   }
   catch (...)
@@ -1380,6 +1449,9 @@ double OCCTChamferBuilderRelativeAbscissa(OCCTChamferBuilderRef builder,
     return -1.0;
   try
   {
+    // #3523: as Abscissa.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return -1.0;
     return builder->chamfer.RelativeAbscissa(contourIndex, TopoDS::Vertex(vertex->shape));
   }
   catch (...)

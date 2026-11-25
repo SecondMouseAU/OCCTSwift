@@ -588,10 +588,13 @@ int32_t OCCTSurfaceExtrema(OCCTSurfaceRef            s1,
     // no way to report a distance with no points. OCCTSurfaceMinDistanceToSurface below reports it
     // instead, reading LowerDistance() alone (#2876); do not relax this gate to do it here.
     //
-    // Carried patch 0044 fixes the kernel half, bounding Extrema_ExtSS::Points against myPOnS1
-    // rather than NbExt(), but it is NOT in the pinned asset and THIS GATE IS NOT RETIRED WHEN IT
-    // IS. Patched, the kernel raises Standard_OutOfRange for the same input, which the catch below
-    // turns into the same 0; the gate says so up front, costs nothing, and covers an older pin.
+    // OCCT 8.0.2 holds the kernel half (OCCT#1596, our former carried patch 0044):
+    // Extrema_ExtSS::Points checks IsDone() and bounds against myPOnS1 rather than NbExt(), so on
+    // both kernel flavours the same input raises Standard_OutOfRange, which the catch below turns
+    // into the same 0. THIS GATE IS NOT RETIRED BY THAT: it says so up front, costs nothing, and
+    // keeps the refusal an API decision, not an exception. Measured on the pinned kernel in 2026-11
+    // (#3536): Points(1) on the parallel pair throws Standard_OutOfRange, and on an ExtSS that is
+    // not done StdFail_NotDone.
     if (extrema.IsParallel())
       return 0;
     int32_t nb = extrema.NbExtrema();

@@ -1,0 +1,187 @@
+=== BRepFilletAPI_MakeFillet setters at a valid contour and edge index ===
+
+##### fixture: box
+
+## SetRadius(5, IC, vertex)
+  added, nothing run                       [nc=1 done=0]  IC=1:ok
+  Simulate(1)                              [nc=1 done=0]  IC=1:SEGV
+  Simulate(1), Reset()                     [nc=1 done=0]  IC=1:ok
+  Build() completed                        [nc=1 done=1]  IC=1:SEGV
+  Build() completed, Reset()               [nc=1 done=0]  IC=1:ok
+  Build() completed, SetRadius(R,1,edge)   [nc=1 done=1]  IC=1:ok
+  declined (R 20)                          [nc=1 done=0]  IC=1:ok
+  two contours, Build() completed          [nc=2 done=1]  IC=1:SEGV  IC=2:SEGV
+  two contours, only Simulate(1)           [nc=2 done=0]  IC=1:SEGV  IC=2:ok
+  two contours, 2nd declined (R 20)        [nc=2 done=0]  IC=1:SEGV  IC=2:ok
+
+## SetRadius(5, 9, IC, 1)
+  added, nothing run                       [nc=1 done=0]  IC=1:ok
+  Simulate(1)                              [nc=1 done=0]  IC=1:SEGV
+  Simulate(1), Reset()                     [nc=1 done=0]  IC=1:ok
+  Build() completed                        [nc=1 done=1]  IC=1:SEGV
+  Build() completed, Reset()               [nc=1 done=0]  IC=1:ok
+  Build() completed, SetRadius(R,1,edge)   [nc=1 done=1]  IC=1:ok
+  declined (R 20)                          [nc=1 done=0]  IC=1:ok
+  two contours, Build() completed          [nc=2 done=1]  IC=1:SEGV  IC=2:SEGV
+  two contours, only Simulate(1)           [nc=2 done=0]  IC=1:SEGV  IC=2:ok
+  two contours, 2nd declined (R 20)        [nc=2 done=0]  IC=1:SEGV  IC=2:ok
+
+## Add(5, edge already in the contour)
+  added, nothing run                       [nc=1 done=0]  IC=1:ok
+  Simulate(1)                              [nc=1 done=0]  IC=1:SEGV
+  Simulate(1), Reset()                     [nc=1 done=0]  IC=1:ok
+  Build() completed                        [nc=1 done=1]  IC=1:SEGV
+  Build() completed, Reset()               [nc=1 done=0]  IC=1:ok
+  Build() completed, SetRadius(R,1,edge)   [nc=1 done=1]  IC=1:ok
+  declined (R 20)                          [nc=1 done=0]  IC=1:ok
+  two contours, Build() completed          [nc=2 done=1]  IC=1:SEGV  IC=2:SEGV
+  two contours, only Simulate(1)           [nc=2 done=0]  IC=1:SEGV  IC=2:ok
+  two contours, 2nd declined (R 20)        [nc=2 done=0]  IC=1:SEGV  IC=2:ok
+
+## Add(5, 9, edge already in the contour)
+  added, nothing run                       [nc=1 done=0]  IC=1:ok
+  Simulate(1)                              [nc=1 done=0]  IC=1:SEGV
+  Simulate(1), Reset()                     [nc=1 done=0]  IC=1:ok
+  Build() completed                        [nc=1 done=1]  IC=1:SEGV
+  Build() completed, Reset()               [nc=1 done=0]  IC=1:ok
+  Build() completed, SetRadius(R,1,edge)   [nc=1 done=1]  IC=1:ok
+  declined (R 20)                          [nc=1 done=0]  IC=1:ok
+  two contours, Build() completed          [nc=2 done=1]  IC=1:SEGV  IC=2:SEGV
+  two contours, only Simulate(1)           [nc=2 done=0]  IC=1:SEGV  IC=2:ok
+  two contours, 2nd declined (R 20)        [nc=2 done=0]  IC=1:SEGV  IC=2:ok
+
+## SetRadius(5, IC, edge) [control]
+  added, nothing run                       [nc=1 done=0]  IC=1:ok
+  Simulate(1)                              [nc=1 done=0]  IC=1:ok
+  Simulate(1), Reset()                     [nc=1 done=0]  IC=1:ok
+  Build() completed                        [nc=1 done=1]  IC=1:ok
+  Build() completed, Reset()               [nc=1 done=0]  IC=1:ok
+  Build() completed, SetRadius(R,1,edge)   [nc=1 done=1]  IC=1:ok
+  declined (R 20)                          [nc=1 done=0]  IC=1:ok
+  two contours, Build() completed          [nc=2 done=1]  IC=1:ok  IC=2:ok
+  two contours, only Simulate(1)           [nc=2 done=0]  IC=1:ok  IC=2:ok
+  two contours, 2nd declined (R 20)        [nc=2 done=0]  IC=1:ok  IC=2:ok
+
+##### fixture: cyl
+
+## SetRadius(5, IC, vertex)
+  added, nothing run                       [nc=1 done=0]  IC=1:ok
+  Simulate(1)                              [nc=1 done=0]  IC=1:SEGV
+  Simulate(1), Reset()                     [nc=1 done=0]  IC=1:ok
+  Build() completed                        [nc=1 done=1]  IC=1:SEGV
+  Build() completed, Reset()               [nc=1 done=0]  IC=1:ok
+  Build() completed, SetRadius(R,1,edge)   [nc=1 done=1]  IC=1:ok
+  declined (R 20)                          [nc=1 done=0]  IC=1:ok
+  two contours, Build() completed          [n/a: the fixture has no second contour]
+  two contours, only Simulate(1)           [n/a: the fixture has no second contour]
+  two contours, 2nd declined (R 20)        [n/a: the fixture has no second contour]
+
+## SetRadius(5, 9, IC, 1)
+  added, nothing run                       [nc=1 done=0]  IC=1:ok
+  Simulate(1)                              [nc=1 done=0]  IC=1:SEGV
+  Simulate(1), Reset()                     [nc=1 done=0]  IC=1:ok
+  Build() completed                        [nc=1 done=1]  IC=1:SEGV
+  Build() completed, Reset()               [nc=1 done=0]  IC=1:ok
+  Build() completed, SetRadius(R,1,edge)   [nc=1 done=1]  IC=1:ok
+  declined (R 20)                          [nc=1 done=0]  IC=1:ok
+  two contours, Build() completed          [n/a: the fixture has no second contour]
+  two contours, only Simulate(1)           [n/a: the fixture has no second contour]
+  two contours, 2nd declined (R 20)        [n/a: the fixture has no second contour]
+
+## Add(5, edge already in the contour)
+  added, nothing run                       [nc=1 done=0]  IC=1:ok
+  Simulate(1)                              [nc=1 done=0]  IC=1:SEGV
+  Simulate(1), Reset()                     [nc=1 done=0]  IC=1:ok
+  Build() completed                        [nc=1 done=1]  IC=1:SEGV
+  Build() completed, Reset()               [nc=1 done=0]  IC=1:ok
+  Build() completed, SetRadius(R,1,edge)   [nc=1 done=1]  IC=1:ok
+  declined (R 20)                          [nc=1 done=0]  IC=1:ok
+  two contours, Build() completed          [n/a: the fixture has no second contour]
+  two contours, only Simulate(1)           [n/a: the fixture has no second contour]
+  two contours, 2nd declined (R 20)        [n/a: the fixture has no second contour]
+
+## Add(5, 9, edge already in the contour)
+  added, nothing run                       [nc=1 done=0]  IC=1:ok
+  Simulate(1)                              [nc=1 done=0]  IC=1:SEGV
+  Simulate(1), Reset()                     [nc=1 done=0]  IC=1:ok
+  Build() completed                        [nc=1 done=1]  IC=1:SEGV
+  Build() completed, Reset()               [nc=1 done=0]  IC=1:ok
+  Build() completed, SetRadius(R,1,edge)   [nc=1 done=1]  IC=1:ok
+  declined (R 20)                          [nc=1 done=0]  IC=1:ok
+  two contours, Build() completed          [n/a: the fixture has no second contour]
+  two contours, only Simulate(1)           [n/a: the fixture has no second contour]
+  two contours, 2nd declined (R 20)        [n/a: the fixture has no second contour]
+
+## SetRadius(5, IC, edge) [control]
+  added, nothing run                       [nc=1 done=0]  IC=1:ok
+  Simulate(1)                              [nc=1 done=0]  IC=1:ok
+  Simulate(1), Reset()                     [nc=1 done=0]  IC=1:ok
+  Build() completed                        [nc=1 done=1]  IC=1:ok
+  Build() completed, Reset()               [nc=1 done=0]  IC=1:ok
+  Build() completed, SetRadius(R,1,edge)   [nc=1 done=1]  IC=1:ok
+  declined (R 20)                          [nc=1 done=0]  IC=1:ok
+  two contours, Build() completed          [n/a: the fixture has no second contour]
+  two contours, only Simulate(1)           [n/a: the fixture has no second contour]
+  two contours, 2nd declined (R 20)        [n/a: the fixture has no second contour]
+
+##### fixture: spline
+
+## SetRadius(5, IC, vertex)
+  added, nothing run                       [nc=1 done=0]  IC=1:ok
+  Simulate(1)                              [nc=1 done=0]  IC=1:ok
+  Simulate(1), Reset()                     [nc=1 done=0]  IC=1:ok
+  Build() completed                        [nc=1 done=1]  IC=1:ok
+  Build() completed, Reset()               [nc=1 done=0]  IC=1:ok
+  Build() completed, SetRadius(R,1,edge)   [nc=1 done=1]  IC=1:ok
+  declined (R 20)                          [nc=1 done=0]  IC=1:ok
+  two contours, Build() completed          [n/a: the fixture has no second contour]
+  two contours, only Simulate(1)           [n/a: the fixture has no second contour]
+  two contours, 2nd declined (R 20)        [n/a: the fixture has no second contour]
+
+## SetRadius(5, 9, IC, 1)
+  added, nothing run                       [nc=1 done=0]  IC=1:ok
+  Simulate(1)                              [nc=1 done=0]  IC=1:ok
+  Simulate(1), Reset()                     [nc=1 done=0]  IC=1:ok
+  Build() completed                        [nc=1 done=1]  IC=1:ok
+  Build() completed, Reset()               [nc=1 done=0]  IC=1:ok
+  Build() completed, SetRadius(R,1,edge)   [nc=1 done=1]  IC=1:ok
+  declined (R 20)                          [nc=1 done=0]  IC=1:ok
+  two contours, Build() completed          [n/a: the fixture has no second contour]
+  two contours, only Simulate(1)           [n/a: the fixture has no second contour]
+  two contours, 2nd declined (R 20)        [n/a: the fixture has no second contour]
+
+## Add(5, edge already in the contour)
+  added, nothing run                       [nc=1 done=0]  IC=1:ok
+  Simulate(1)                              [nc=1 done=0]  IC=1:ok
+  Simulate(1), Reset()                     [nc=1 done=0]  IC=1:ok
+  Build() completed                        [nc=1 done=1]  IC=1:ok
+  Build() completed, Reset()               [nc=1 done=0]  IC=1:ok
+  Build() completed, SetRadius(R,1,edge)   [nc=1 done=1]  IC=1:ok
+  declined (R 20)                          [nc=1 done=0]  IC=1:ok
+  two contours, Build() completed          [n/a: the fixture has no second contour]
+  two contours, only Simulate(1)           [n/a: the fixture has no second contour]
+  two contours, 2nd declined (R 20)        [n/a: the fixture has no second contour]
+
+## Add(5, 9, edge already in the contour)
+  added, nothing run                       [nc=1 done=0]  IC=1:ok
+  Simulate(1)                              [nc=1 done=0]  IC=1:ok
+  Simulate(1), Reset()                     [nc=1 done=0]  IC=1:ok
+  Build() completed                        [nc=1 done=1]  IC=1:ok
+  Build() completed, Reset()               [nc=1 done=0]  IC=1:ok
+  Build() completed, SetRadius(R,1,edge)   [nc=1 done=1]  IC=1:ok
+  declined (R 20)                          [nc=1 done=0]  IC=1:ok
+  two contours, Build() completed          [n/a: the fixture has no second contour]
+  two contours, only Simulate(1)           [n/a: the fixture has no second contour]
+  two contours, 2nd declined (R 20)        [n/a: the fixture has no second contour]
+
+## SetRadius(5, IC, edge) [control]
+  added, nothing run                       [nc=1 done=0]  IC=1:ok
+  Simulate(1)                              [nc=1 done=0]  IC=1:ok
+  Simulate(1), Reset()                     [nc=1 done=0]  IC=1:ok
+  Build() completed                        [nc=1 done=1]  IC=1:ok
+  Build() completed, Reset()               [nc=1 done=0]  IC=1:ok
+  Build() completed, SetRadius(R,1,edge)   [nc=1 done=1]  IC=1:ok
+  declined (R 20)                          [nc=1 done=0]  IC=1:ok
+  two contours, Build() completed          [n/a: the fixture has no second contour]
+  two contours, only Simulate(1)           [n/a: the fixture has no second contour]
+  two contours, 2nd declined (R 20)        [n/a: the fixture has no second contour]
