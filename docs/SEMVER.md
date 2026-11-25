@@ -618,8 +618,9 @@ request graded, since #3547 defers it to this assembly, and the result of a mech
 API against `v4.0.0-beta.6` and against `v3.0.0` (#3539), which found breaks the register above did
 not list. Those are in
 [their own table](#found-by-the-mechanical-api-comparison-3539-breaks-the-register-did-not-list)
-below, each with a migration. The only public Swift declaration added since `v4.0.0-beta.6` is
-`Kernel`; none is removed or changed since then.
+below, each with a migration. The public Swift declarations added since `v4.0.0-beta.6` are
+`Kernel` and two methods that return a history, `Shape.splitWithFullHistory(atPlane:normal:)` (#3561)
+and `Shape.fuseAllWithFullHistory(_:)` (#3562); none is removed or changed since then.
 
 **Additive API, MINOR.**
 
@@ -627,9 +628,15 @@ below, each with a migration. The only public Swift declaration added since `v4.
   `Kernel.occtVersion` and `Kernel.hasFix(_:)`: which OCCT kernel the build links against, which
   OCCT version it was built from, and whether it holds the fix for a row of the kernel-fix ledger
   (#3547). `hasFix(_:)` answers `nil` for an id the kernel cannot speak to, which is not `false`.
+- `Shape.splitWithFullHistory(atPlane:normal:) -> (pieces: [Shape], history: ShapeHistoryRef, cuttingFace: Shape)?`
+  (#3561): `split(atPlane:normal:)`'s pieces in the same order, with the splitter's history and the
+  bounded plane face it cut with, the one input the caller did not build.
+- `Shape.fuseAllWithFullHistory(_:) -> (result: Shape, history: ShapeHistoryRef)?` (#3562): `fuseAll(_:)`'s
+  result with the General Fuse history of every argument.
 - In the C bridge, `OCCTKernelFlavour`, `OCCTKernelOCCTVersion` and `OCCTKernelHasFix` (#3547),
   and `OCCTShapeGetEdges` and `OCCTFreeEdgeArrayOnly` (#3528), the last two with no Swift declaration
-  of their own. `OCCTBridge` is not a product.
+  of their own, and `OCCTShapeSplitByPlaneWithHistory` (#3561) and `OCCTShapeFuseMultiWithHistory` (#3562),
+  the bridge halves of the two methods above. `OCCTBridge` is not a product.
 
 **The move to OCCT 8.0.2, MINOR at most: no signature moves, and results do.** `docs/occt-upgrades.md`
 ("8.0.1 to 8.0.2") records no public OCCT header added, removed or renamed and no deprecation added.
@@ -688,9 +695,10 @@ superseded by the repin to `kernel-8.0.2-c1` (#3532, #3547), and the plan, the u
 policy pages under `okf/` record the move to 8.0.2 and the state of the upstream pull requests (#3513,
 #3515, #3542, #3546). None of it changes anything a consumer compiles against.
 
-**Merged after this section was first assembled, on 2026-11-26.** Each was read here against its diff
-before it merged, and the code that merged is the code that was read (compared by patch id over `Sources`
-and `Tests`); anything that merges before the tag is assessed at that point.
+**Merged after this section was first assembled, on 2026-11-26.** #3550, #3552, #3553, #3556 and #3557
+were read here against their diffs before they merged, and the code that merged is the code that was
+read (compared by patch id over `Sources` and `Tests`). #3561 and #3562 merged without that read and were
+read afterwards, against what merged. Anything that merges before the tag is assessed at that point.
 
 - #3550 states NONE. Its diff touches no declaration: doc comments on `FilletBuilder.simulate(contour:)`,
   `simulatedSurfaceCount(contour:)` and `Surface.extrema`, a bridge comment and a new test. What it
@@ -713,6 +721,19 @@ and `Tests`); anything that merges before the tag is assessed at that point.
 - #3557 (#3529) states PATCH. No declaration changes: its Swift edits are doc comments and it touches
   no header. Fifteen STEP reader entry points skip a leading UTF-8 byte order mark, so a file that was
   refused is read. It is in the break table below.
+- #3561 (#3559) states MINOR. Read against its diff, the statement holds, and it names the one behaviour
+  change. One method is new, `Shape.splitWithFullHistory(atPlane:normal:)`. `split(atPlane:normal:)`
+  keeps its declaration and its piece gathering (solids, else shells, else the result, as before), but
+  its cutting face is now centred on the projection of the shape's bounding-box centre onto the plane,
+  where it was centred on the point passed in. A shape whose projection lay farther from that point than
+  twice its bounding-box diagonal came back whole and is now cut. The PR measured 23 inputs, every
+  existing caller's fixture among them: 21 identical, and the two that change are the two the old face
+  could not reach. Recorded MINOR for the method, and as a PATCH-grade behaviour row for the answer it
+  changes, in the break table below.
+- #3562 (#3560) states MINOR. Read against its diff, the statement holds: one new static method,
+  `Shape.fuseAllWithFullHistory(_:)`. `fuseAll(_:)` now calls the helper the new method calls, with the
+  same builder, arguments and options, so it answers as before; the diff moves that code and changes a
+  sentence dash in a comment. No behaviour row.
 
 **How the rc.1 set was checked.** Every `## SemVer impact` statement was read, and every statement
 of anything above NONE was read against its diff. Then the public API was compared mechanically, in
@@ -731,7 +752,8 @@ of default value under an unchanged signature, in five functions (`Shape.distanc
 `Shape.encodingRegularity`, `Shape.isBooleanValidWith`, `EdgeAnalysis.checkVerticesWithCurve3d` and
 `checkVerticesWithPCurve`), two tuple labels that moved (already registered under #2901), and 672
 symbols added; against `v4.0.0-beta.6` it found none gone, none changed and 14 added, all of them
-`Kernel`. This is a screen over declarations and cannot see a
+`Kernel`. (That run was taken before #3561 and #3562 merged; each adds one method and changes no
+signature, and the run is repeated on the tagged tree.) This is a screen over declarations and cannot see a
 changed value behind an unchanged signature: those are the pull requests' own statements, read
 against their diffs.
 
@@ -1319,6 +1341,7 @@ paragraph above that records it.
 | `FilletBuilder.setRadius(_:contour:vertex:)`, `setTwoRadii` and `addEdge` for an edge already in a contour answer `false` once the fillet is done or the contour holds surfaces, where they faulted or, for a non-analytic blend, succeeded (#3553) | different result, no signature change | [#3524](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-3553-3556-3557) |
 | `ChamferBuilder.simulatedSurfaceCount(contour:)` answers `0` for an index past `contourCount`, where it read a corner stripe as a contour (#3556) | different result, no signature change | [#3522](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-3553-3556-3557) |
 | A STEP file that starts with a UTF-8 byte order mark loads in every STEP reader, where it was refused (#3557) | different result, no signature change | [#3529](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-3553-3556-3557) |
+| `Shape.split(atPlane:normal:)` cuts a shape whose projection onto the plane lies farther than twice its bounding-box diagonal from the point passed in, where it returned the shape whole (#3561) | different result, no signature change | [#3559](#v400-splitatplanenormal-cuts-a-shape-far-from-the-planes-point-3559) |
 
 ##### v4.0.0: `FilletBuilder` answers a refusal for an index or a state it used to misread (#3518, #3516)
 
@@ -1440,6 +1463,24 @@ behaviour row and not a compile error.
 the index range. A caller that strips a byte order mark before loading a STEP file can stop, and
 nothing breaks if it does not; a caller that relied on a thrown `ImportError` as the sign of a
 marked file will see it load.
+
+##### v4.0.0: `split(atPlane:normal:)` cuts a shape far from the plane's point (#3559)
+
+`Shape.split(atPlane:normal:)` trimmed its cutting face to a square reaching twice the shape's bounding-box
+diagonal each way around the point passed in. The point only fixes the plane, so a shape whose projection
+onto it lay farther than that reach from the point was never touched by the face and came back whole: a
+4 x 4 x 4 box at X = 100 against the plane z = 0.5 through the origin returned one piece. The face is now
+centred on the projection of the bounding-box centre onto the plane, with the same reach, so the same call
+returns two. The plane keeps the caller's point as its origin, so a cap face's surface and UV
+parametrisation are unchanged. A shape the old face already reached splits as before: on the PR's 23
+measured inputs, 21 are identical in every face's bounds, UV range and normal, in order.
+
+The signature is unchanged and the result is not, for a shape in that far region only. It is a defect
+fix, graded PATCH-grade in a major release, so it does not move the version number.
+
+**Migration.** None is needed. A caller that passed a point near the shape to work around the old reach
+gets the same pieces. A caller that relied on a far plane point returning the shape whole is relying on
+the defect.
 
 ##### Found by the mechanical API comparison (#3539): breaks the register did not list
 

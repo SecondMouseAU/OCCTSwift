@@ -21,6 +21,39 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.fuseAllWithFullHistory(_:)`: `fuseAll` with the history of every argument (#3560)
+
+New `static func fuseAllWithFullHistory(_ shapes: [Shape]) -> (result: Shape, history: ShapeHistoryRef)?`. The result is `fuseAll(_:)`'s, because both run one bridge implementation (General Fuse, `BRepAlgoAPI_BuilderAlgo`), and the history answers for a sub-shape of any of the arguments, so it can be read after a split's history to carry a sub-shape through both. Where two arguments touch, the faces they share become one face of the result, held by both solids, and each argument's copy is `modified` into it. A face the fuse leaves alone has an empty record and is in the result unchanged. Absorbed into a `BRepGraph`, the history carries every argument's sub-shapes, not only the first's.
+
+```swift
+let a = Shape.box(origin: SIMD3(-10, 0, 0), width: 10, height: 10, depth: 10)!
+let b = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
+if let (result, history) = Shape.fuseAllWithFullHistory([a, b]) {
+    // The face of `a` on x = 0 is now the one face the two solids share.
+    let onBoundary = a.subShapes(ofType: .face).first { face in
+        guard let box = face.bounds else { return false }
+        return abs(box.min.x) < 1e-6 && abs(box.max.x) < 1e-6
+    }!
+    print(result.solids.count, history.record(of: onBoundary).modified.count)  // 2 1
+}
+```
+
+### `Shape.splitWithFullHistory(atPlane:normal:)`, and `split(atPlane:normal:)` cuts a shape far from the plane's point (#3559)
+
+**`split(atPlane:normal:)` cuts wherever the plane crosses the shape.** The cutting face was a square reaching twice the shape's bounding-box diagonal each way from the point passed in. The point only fixes the plane, so a shape whose projection lay farther than that from it came back whole: a 4 x 4 x 4 box at X = 100 split by the plane z = 0.5 through the origin returned one piece, and now returns two. The square is now centred on the projection of the shape's bounding-box centre onto the plane. The plane keeps the caller's point as its origin, so a cap face's surface and UV parametrisation are what they were. A shape the old face already covered splits exactly as before: on 23 inputs, the fixtures of every existing caller among them, 21 come back identical (every face's bounds, UV range and normal, in order) and the two that change are the two the old face could not reach.
+
+**New: `splitWithFullHistory(atPlane:normal:) -> (pieces: [Shape], history: ShapeHistoryRef, cuttingFace: Shape)?`.** The pieces are `split(atPlane:normal:)`'s, in the same order, because both run one bridge implementation. A solid the plane misses comes back as itself, not as its shells. `cuttingFace` is the bounded plane face the splitter cut with, returned because it is the one input the caller did not build. Its record's `modified` is the cap face, shared by the pieces on either side, and its `generated` is the section edges and vertices. A face the plane crosses is `modified` into its pieces and `generated` its section edge. A face the plane misses has an empty record and is in a piece unchanged.
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+if let (pieces, history, cuttingFace) = box.splitWithFullHistory(
+    atPlane: SIMD3(0, 0, 1), normal: SIMD3(0, 0, 1))
+{
+    let cap = history.record(of: cuttingFace).modified
+    print(pieces.count, cap.count)  // 2 1
+}
+```
+
 ### STEP files that start with a UTF-8 byte order mark load (#3529)
 
 `Document.load(from:)` and every other STEP loader (`Document.loadSTEP` in each spelling,

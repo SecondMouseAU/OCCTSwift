@@ -506,7 +506,7 @@ a map of the major areas, and the `Total` as the count.
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
 | **Bridge Diagnostics** (#1161, see [Diagnostics](reference/Diagnostics.md)) | 8 | OCCTDiagnostics: capturing, records, clear, isCaptureEnabled, isLoggingEnabled, stackTraceDepth, droppedRecordCount; Record: description |
 | **Kernel flavour** (#3543, see [Kernel](reference/Kernel.md)) | 3 | Kernel: flavour, occtVersion, hasFix |
-| **Total** | **4,407** | |
+| **Total** | **4,408** | |
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
 
