@@ -155,7 +155,7 @@ kernel refuses or serialises.
 | Wrong-answer fixes | 11 | The answer is right | The answer is upstream's, which can be wrong where the patch says so |
 | Behaviour ahead of upstream (`0059`) | 1 | Fillets that meet exactly are built | Upstream's behaviour |
 
-An upstream release shrinks the difference: a fix 8.0.3 or 8.1 contains retires its patch from the
+An upstream release shrinks the difference: a fix in 8.0.3 or 8.1 retires its patch from the
 hardened flavour and its guard from LTS, and the generated table loses the row.
 
 ---
