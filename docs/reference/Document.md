@@ -26,6 +26,12 @@ public static func load(from url: URL, progress: ImportProgress? = nil) throws -
 ```
 
 - **Parameters:** `url`, URL to the STEP file; `progress`, optional progress/cancellation channel.
+- **Byte order mark:** a file that starts with a UTF-8 byte order mark (`EF BB BF`) is read from the
+  byte after it (#3529). OCCT's scanner has no rule for the mark and refused such a file with
+  `Incorrect syntax: unexpected QUID, expecting STEP`; some Windows editors add one on save, and a
+  producer that writes one would have every file refused. Only one UTF-8 mark is skipped: a UTF-16
+  mark, or a second UTF-8 one, is still refused. Every STEP loader (`Document.loadSTEP`,
+  `Shape.load`, `Shape.loadSTEP`) reads a marked file.
 - **Returns:** `Document` containing the assembly structure.
 - **Throws:** `DocumentError.exchangeFailed(url:status:)` if loading fails, carrying OCCT's own
   `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644); `ImportError.cancelled` if

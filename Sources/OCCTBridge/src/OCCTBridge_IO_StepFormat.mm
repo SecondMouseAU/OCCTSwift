@@ -426,7 +426,7 @@ OCCTShapeRef OCCTImportSTEPProgress(const char*               path,
   try
   {
     STEPControl_Reader reader;
-    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
+    if (!occtRecordReturnStatus(occtStepReadFile(reader, path), outStatus))
       return nullptr;
 
     indicator                   = new BridgeProgressIndicator(ctx);
@@ -472,7 +472,7 @@ OCCTShapeRef OCCTImportSTEPRobustProgress(const char*               path,
     Interface_Static::SetIVal("read.surfacecurve.mode", 3);
     Interface_Static::SetIVal("read.step.product.mode", 1);
 
-    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
+    if (!occtRecordReturnStatus(occtStepReadFile(reader, path), outStatus))
       return nullptr;
 
     indicator = new BridgeProgressIndicator(ctx);
@@ -579,7 +579,7 @@ OCCTShapeRef OCCTImportSTEPWithUnitProgress(const char*               path,
   try
   {
     STEPControl_Reader reader;
-    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
+    if (!occtRecordReturnStatus(occtStepReadFile(reader, path), outStatus))
       return nullptr;
     // SetSystemLengthUnit() is a guarded no-op until ReadFile() has populated StepModel() (#1548),
     // so it must run after ReadFile() and before the transfer below that consumes it. Its own
@@ -642,7 +642,7 @@ OCCTDocumentRef OCCTDocumentLoadSTEPProgress(const char*               path,
     reader.SetPropsMode(Standard_True);
     reader.SetMatMode(Standard_True);
 
-    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
+    if (!occtRecordReturnStatus(occtStepReadFile(reader, path), outStatus))
     {
       delete document;
       return nullptr;
@@ -842,7 +842,7 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModesProgress(const char*               
     reader.SetGDTMode(gdtMode);
     reader.SetMatMode(matMode);
 
-    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
+    if (!occtRecordReturnStatus(occtStepReadFile(reader, path), outStatus))
     {
       delete document;
       return nullptr;
@@ -886,7 +886,7 @@ OCCTShapeRef OCCTImportSTEP(const char* path, OCCTReturnStatus* _Nullable outSta
   try
   {
     STEPControl_Reader reader;
-    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
+    if (!occtRecordReturnStatus(occtStepReadFile(reader, path), outStatus))
       return nullptr;
 
     // Transfer all roots
@@ -924,7 +924,7 @@ OCCTShapeRef OCCTImportSTEPRobust(const char* path, OCCTReturnStatus* _Nullable 
     Interface_Static::SetIVal("read.surfacecurve.mode", 3);
     Interface_Static::SetIVal("read.step.product.mode", 1);
 
-    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
+    if (!occtRecordReturnStatus(occtStepReadFile(reader, path), outStatus))
       return nullptr;
 
     if (reader.TransferRoots() == 0)
@@ -1006,7 +1006,7 @@ OCCTSTEPImportResult OCCTImportSTEPWithDiagnostics(const char* path,
     Interface_Static::SetIVal("read.surfacecurve.mode", 3);
     Interface_Static::SetIVal("read.step.product.mode", 1);
 
-    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
+    if (!occtRecordReturnStatus(occtStepReadFile(reader, path), outStatus))
       return result;
     if (reader.TransferRoots() == 0)
       return result;
@@ -1079,7 +1079,7 @@ bool OCCTStepTidyOptimize(const char* inputPath,
   try
   {
     STEPControl_Reader reader;
-    if (!occtRecordReturnStatus(reader.ReadFile(inputPath), outStatus))
+    if (!occtRecordReturnStatus(occtStepReadFile(reader, inputPath), outStatus))
       return false;
 
     // Run tidy on the work session before transferring
@@ -1195,7 +1195,7 @@ int32_t OCCTSTEPReaderNbRoots(const char* path, OCCTReturnStatus* _Nullable outS
   try
   {
     STEPControl_Reader reader;
-    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
+    if (!occtRecordReturnStatus(occtStepReadFile(reader, path), outStatus))
       return 0;
     return reader.NbRootsForTransfer();
   }
@@ -1218,7 +1218,7 @@ OCCTShapeRef OCCTImportSTEPRoot(const char* path,
   try
   {
     STEPControl_Reader reader;
-    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
+    if (!occtRecordReturnStatus(occtStepReadFile(reader, path), outStatus))
       return nullptr;
     int nbRoots = reader.NbRootsForTransfer();
     if (rootIndex > nbRoots)
@@ -1249,7 +1249,7 @@ OCCTShapeRef OCCTImportSTEPWithUnit(const char* path,
   try
   {
     STEPControl_Reader reader;
-    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
+    if (!occtRecordReturnStatus(occtStepReadFile(reader, path), outStatus))
       return nullptr;
     // See OCCTImportSTEPWithUnitProgress above: SetSystemLengthUnit() must follow ReadFile()
     // (#1548), and its own scale is millimeter-based, so unitInMeters is converted before use.
@@ -1277,7 +1277,7 @@ int32_t OCCTSTEPReaderNbShapes(const char* path, OCCTReturnStatus* _Nullable out
   try
   {
     STEPControl_Reader reader;
-    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
+    if (!occtRecordReturnStatus(occtStepReadFile(reader, path), outStatus))
       return 0;
     reader.TransferRoots();
     return reader.NbShapes();
@@ -1323,7 +1323,7 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModes(const char* path,
     reader.SetGDTMode(gdtMode);
     reader.SetMatMode(matMode);
 
-    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
+    if (!occtRecordReturnStatus(occtStepReadFile(reader, path), outStatus))
     {
       delete document;
       return nullptr;
