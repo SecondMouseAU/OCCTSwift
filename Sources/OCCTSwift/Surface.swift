@@ -1968,8 +1968,9 @@ extension Surface {
     /// `Scripts/repro/2831/probe.mm`, so this refuses instead. ``SurfaceExtremaResult`` has every
     /// stored property non-optional and so has no shape for a distance without points, which is
     /// why the distance has its own entry point rather than a hole in this one. The kernel half is
-    /// carried patch `0044` (#2840), which makes the same read raise rather than fault; this still
-    /// refuses, because the refusal is the API decision and not the crash workaround.
+    /// upstream's (OCCT#1596, in OCCT 8.0.2 and formerly our carried patch `0044`), which makes the
+    /// same read raise rather than fault; this still refuses, because the refusal is the API
+    /// decision and not the crash workaround.
     ///
     /// - Parameters:
     ///   - other: The other surface

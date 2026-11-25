@@ -2059,6 +2059,11 @@ public func simulate(contour: Int)
 
 - **Parameters:** `contour`, 1-based contour index, `1...contourCount`. An index outside that range
   does nothing: OCCT walks its stripe list for the index and finds none.
+- **Declined simulations:** the call returns normally whether or not the simulation completes, so
+  `stripeStatus(contour:)` is how to tell. A simulation OCCT declines partway keeps the surfaces it
+  had computed and sets the status to `3`, which since OCCT 8.0.2 is what a blend reports when it
+  reaches a vertex whose neighbour face holds no edge to follow. `build()` reports the same contour
+  through `faultyContourCount`.
 - **OCCT:** `BRepFilletAPI_MakeFillet::Simulate` (via `OCCTFilletBuilderSimulate`).
 
 ---
@@ -2072,7 +2077,9 @@ public func simulatedSurfaceCount(contour: Int) -> Int
 ```
 
 Answers `0` while the contour holds no surface data: the builder was never built or simulated,
-`reset()` has been called since, the simulation was declined, or `contour` names no contour. OCCT
+`reset()` has been called since, the simulation was declined before it computed anything, or
+`contour` names no contour. A simulation that fails partway keeps the surfaces it had computed and
+counts them, so read `stripeStatus(contour:)` first (see `simulate(contour:)`). OCCT
 reads this count from a sequence that only `build()` or `simulate(contour:)` creates for a contour,
 and reading it before either had run, or after a reset, used to fault the process uncatchably
 (#3519). A contour that `build()` has run on keeps the surface count that build left.
