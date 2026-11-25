@@ -60,6 +60,7 @@ and the [injection sweep mechanics](references/injection-sweep-mechanics.md).
 - [Upstream PR volume, and the three-step process](policies/upstream-pr-volume.md): cap, one defect per PR, occt-intake / occt-fix-pr / occt-review
 - [OCCT's AI development instructions](references/occt-ai-instructions.md): the maintainers' rule file for AI-assisted contributions
 - [Pinned kernel patch check](policies/pinned-kernel-patch-check.md)
+- [The kernel-fix ledger](policies/kernel-fix-ledger.md): one row per kernel defect, guards name their row, a gate retires dead ones
 - [WASI patches are authored against the carried-patch tree](policies/wasi-patch-base.md)
 - [Null handle and null shape guards in the bridge](policies/null-handle-guards.md)
 - [Static gates and censuses](policies/static-gates.md)

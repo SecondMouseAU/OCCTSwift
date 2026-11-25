@@ -984,6 +984,23 @@ extern "C"
   /// `OCCTTObjApplicationRefCount` precisely because that object survives.
   int32_t OCCTBridgeRefusedReleaseCount(void);
 
+  // MARK: - Kernel flavour and the fixes it holds (#3543)
+
+  /// Which kernel this is: "carry" (OCCT plus the patches in `Scripts/patches`, the hardened
+  /// default), "vanilla" (OCCT exactly as tagged, the LTS kernel), or "unlabelled" for a kernel
+  /// built before the kernel-fix ledger existed, which states nothing about itself.
+  const char* OCCTKernelFlavour(void);
+
+  /// The OCCT version the kernel was built from, such as "8.0.2", or "unknown" for an unlabelled
+  /// kernel.
+  const char* OCCTKernelOCCTVersion(void);
+
+  /// Whether the kernel holds the fix for the ledger row `fixId` (such as "F0080"): 1 when it does,
+  /// 0 when it does not, and -1 when the kernel's ledger has no such row, which includes every id
+  /// asked of an unlabelled kernel and a NULL id. -1 is not 0: "this kernel is known to lack the
+  /// fix" and "this kernel cannot say" are different answers.
+  int32_t OCCTKernelHasFix(const char* fixId);
+
   // MARK: - Opaque Handle Types
 
   typedef struct OCCTShape* OCCTShapeRef;

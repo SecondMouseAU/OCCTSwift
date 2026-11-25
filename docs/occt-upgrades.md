@@ -59,8 +59,8 @@ Two existing calls now behave differently:
 `adm/cmake/version.cmake` moves to maintenance version 2. The static-link licence warning moved
 into a new `adm/cmake/OpenCASCADELicense.cmake` with new text. Install destinations became relative,
 which is equivalent here because `CMakeLists.txt` forces `CMAKE_INSTALL_PREFIX` to `INSTALL_DIR`.
-Neither build script reads any of these. `OCCT_VERSION` is set separately in `build-occt.sh` and
-`build-occt-wasm.sh`, and both must move.
+Neither build script reads any of these. `OCCT_VERSION` lives in `build-occt.sh`, and
+`build-occt-wasm.sh` reads it from there, so the two cannot disagree.
 
 ### Carried patches: ten retire, three rebase, 48 unchanged
 

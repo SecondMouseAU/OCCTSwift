@@ -7,7 +7,7 @@ nav_order: 1
 
 A comprehensive Swift wrapper for [OpenCASCADE Technology](https://dev.opencascade.org) (OCCT 8.0.1),
 B-Rep solid modeling, CAD data exchange, meshing and geometry for **macOS and iOS**. visionOS and tvOS are declared and buildable but untested, and need a local kernel rebuild (#978).
-Three-layer architecture: Swift public API → Objective-C++ bridge → OCCT C++. **4,403 wrapped operations.**
+Three-layer architecture: Swift public API → Objective-C++ bridge → OCCT C++. **4,406 wrapped operations.**
 ```swift
 import OCCTSwift
 
@@ -52,7 +52,7 @@ figure (interactive 3D where it helps). The **[Cookbook index](guides/cookbook/)
 - [Adding Features](guides/adding-features.md), bridge header → impl → Swift → test.
 - [Building OCCT](guides/building-occt.md), rebuild the `OCCT.xcframework` from source.
 - [Sharing the xcframework](guides/sharing-the-xcframework.md), one shared local copy across repos + the `Package.resolved` pin footgun (#260).
-- [Thread Safety](thread-safety.md) · [Bridge Diagnostics](reference/Diagnostics.md) · [Naming Conventions](naming-conventions.md) ·
+- [Thread Safety](thread-safety.md) · [Bridge Diagnostics](reference/Diagnostics.md) · [Kernel flavour](reference/Kernel.md) · [Naming Conventions](naming-conventions.md) ·
   [Versioning (SemVer)](SEMVER.md) · [Ecosystem](ecosystem.md)
 - [Building a SwiftWasm app against OCCTSwift](guides/wasm-consumer-setup.md), the three commands a
   CONSUMER needs, what is ready and what is not, and the three papercuts that cost an afternoon

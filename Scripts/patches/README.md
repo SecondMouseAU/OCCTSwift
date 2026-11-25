@@ -21,7 +21,10 @@ retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), a
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry), and
 `0031` retired 2026-10-10 at the `v4.0.0-kernel.6` repin (#3065: the supported pattern is one
 adaptor per worker, so the lock it added is not needed).
-The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0066, 0068–0080.
+Re-pinning to OCCT `V8_0_2` on 2026-11-24 retired ten more (0019, 0029, 0034, 0043, 0044, 0045, 0048, 0052,
+0054, 0064; seven absorbed unchanged, two replaced by upstream's own form, one doc-only), and rebased three
+(0053, 0073, 0074).
+The carried sequence now reads 0010–0012, 0014–0018, 0020–0028, 0030, 0033, 0036–0042, 0046–0047, 0050–0051, 0053, 0055–0059, 0065–0066, 0068–0080.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -283,35 +286,6 @@ verdicts unchanged from the numbers below.
 See [`Scripts/repro/555-gcpnts-count-contract/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/555-gcpnts-count-contract) for the reproducers and full writeup, and
 [`Scripts/repro/555-gcpnts-count-contract/upstream/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/555-gcpnts-count-contract/upstream)
 for the post-review commit and the reply, both of which went out on 2026-08-10. Filed upstream as [Open-Cascade-SAS/OCCT#1417](https://github.com/Open-Cascade-SAS/OCCT/pull/1417), a fix PR with no companion repro issue, per upstream's own guidance on [OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409#issuecomment-5124395058). Based on `b8f597c6`; the two touched files are byte-identical between upstream `master` and our `V8_0_0_p1` pin, so the patch is the same change on both. **The live PR is now [OCCT#1457](https://github.com/Open-Cascade-SAS/OCCT/pull/1457)**, same head branch and same fix: #1417 was closed on 2026-08-10 by a `git commit --amend` against a shallow clone, which GitHub reads as unrelated history, and reopening is not possible once that happens.
-
-**Retire** once the bundled OCCT includes this fix.
-
-## 0019-AdvApp2Var-jacobi-max-wrong-workspace-slot-522.patch
-
-**Fixes the upstream OCCT defect behind [#522](https://github.com/SecondMouseAU/OCCTSwift/issues/522)**, found while building [#491](https://github.com/SecondMouseAU/OCCTSwift/issues/491)'s surface-approximation parity tests: `GeomConvert_ApproxSurface` asked for `GeomAbs_C0` returned a surface nowhere near its input while reporting `IsDone()` and a `MaxError()` five orders of magnitude too small.
-
-`AdvApp2Var_ApproxF2var::mma2ce1_` requests one scratch allocation and partitions it into seven consecutive buffers, of which `ipt4` holds `XMAXJU` (the maxima of the U Jacobi polynomials) and `ipt5` holds `XMAXJV` (the V ones). Both `mma2jmx_` calls that fill them target `ipt5`:
-
-```c
-AdvApp2Var_ApproxF2var::mma2jmx_(ndjacu, iordru, &wrkar_off[ipt5]);   /* -> should be ipt4 */
-AdvApp2Var_ApproxF2var::mma2jmx_(ndjacv, iordrv, &wrkar_off[ipt5]);
-```
-
-So `XMAXJU` is never written. `mma2ce2_` still reads it at `ipt4`, where the allocation left whatever was there, in practice zeros, and passes it to `mma2er1_`/`mma2er2_`, whose entire error model is `|PATJAC(i,j)| * XMAXJU(i - 2*(IORDRU+1)) * XMAXJV(j - 2*(IORDRV+1))`. A zero `XMAXJU` zeroes every term, with two silent consequences: (1) the interior approximation error of a patch is reported as exactly 0 whatever the discarded coefficients are, so `mma2ce2_`'s tolerance test can never fire on it and `MaxError()` only ever reflects the boundary-iso errors `AdvApp2Var_Patch::AddErrors` adds afterwards; (2) `mma2er2_`, asked for the lowest degree whose truncation error still fits the tolerance, always answers `NDMINU`, the floor derived from the constraint order and the neighbouring isos, because every candidate scores 0.
-
-Where that floor is low the fit collapses onto it. C0 gives `IORDRU = 0`, and a full sphere's V-boundary isos degenerate to its two poles, one coefficient each, so `NDMINU` is 1: a radius-10 sphere at tolerance 1e-3 came back as a degree-1, 2-pole-in-U B-spline, a straight line across the full `2*pi` of longitude, deviating by the sphere's own diameter of 20, reporting `MaxError()` 1.07e-4. A bicubic Bezier at C0/C0 collapsed to a 2x2 bilinear patch reporting 4.08e-15, unchanged from tolerance 1e-1 down to 1e-7, because the requested tolerance was compared against a number that was always zero. C1 and C2 hid the collapse (their floor is already high) but not the misreported error.
-
-The write also overruns: `mma2jmx_` writes `ndjacu + 1 - 2*(IORDRU+1)` doubles and the `ipt5` slot is sized for the `ndjacv` equivalent, so a request with `MaxDegU` well above `MaxDegV` runs past `XMAXJV` into the `VECERR` slot behind it. Benign in practice, `VECERR` is re-zeroed on entry to `mma2ce2_` and the run stays inside the single allocation, but out of bounds for the buffer it was given.
-
-**Fix:** target `ipt4` from the U call. One character; the two lines then read symmetrically. `AdvApp2Var_Context`'s own two `mma2jmx_` calls (the only others in the tree) already write to separate per-direction arrays and were correct.
-
-**Validation** (fast path first, then the real binary, see the `#0001` entry above for the override-link technique, compiled with `-DNDEBUG -DNo_Exception` to match the production build): dumping `&wrkar_off[ipt4]` shows `xmaxju[8] = 0 0 0 0 0 0 0 0` on stock and `0.9682 0.986 1.078 1.173 1.265 1.352 1.434 1.513` after. Across a 98-case sweep (7 surface families x all 9 `(uCont, vCont)` combinations of C0/C1/C2, plus C0/C0 at five tolerances) the results whose real deviation exceeds the reported `MaxError` by more than 10x go from **12 to 0**, and those that exceed it at all from 17 to 1, the survivor being a Bezier reproduced exactly, reporting 9.95221e-15 against a measured 9.96978e-15. Reported errors rise slightly everywhere, which is the interior contribution being counted for the first time. Confirmed against the rebuilt xcframework with no override-linked TUs, matching the override-linked prediction line for line. Full `swift test` (4842 tests / 1346 suites) clean.
-
-`GeomConvert_ApproxSurface` is not a leaf. `GeomFill_Sweep`, `BRepOffset_Offset`, `GeomLib`, `ShapeCustom_BSplineRestriction`, `ShapeConstruct`, `ShapeUpgrade_UnifySameDomain` and `GeomConvert_1` (twice) all construct it, `ShapeCustom_ConvertToBSpline` reaches it through `ShapeConstruct`, and `GeomPlate_MakeApprox` drives `AdvApp2Var_ApproxAFunc2Var` directly. Most pass C1 or C2, where the collapse cannot happen, but the always-zero interior error affected all of them; and the healing paths reach C0 deliberately: `ShapeConstruct::ConvertSurfaceToBSpline` and `ShapeCustom_BSplineRestriction` both loop the requested continuity down to 0 on failure and then accept the result on `MaxError() <= tol`, and `ShapeCustom_ConvertToBSpline` *starts* at C0 for any offset surface (`ShapeCustom_ConvertToBSpline.cxx:148`) before handing off to the first of those. (`BRepFill_Sweep.cxx:1162` and `BRepFill_Filling.cxx:712` also name the class but are both inside comment blocks, so neither is a live caller; see #573.)
-
-See [`Scripts/repro/522-approx-c0-collapse/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/522-approx-c0-collapse) for the reproducers and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1418](https://github.com/Open-Cascade-SAS/OCCT/pull/1418), a fix PR with no companion repro issue, per upstream's own guidance on [OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409#issuecomment-5124395058). Based on `b8f597c6`; the touched file is byte-identical between upstream `master` and our `V8_0_0_p1` pin, so the patch is the same change on both. **Merged upstream 2026-08-10**, one file, 1 insertion and 1 deletion, and it is on `upstream/master` as `07e6d8d40`. It is not in any OCCT release yet, so this patch stays carried; retire it at the release that contains it, per the rule below.
-
-**Provenance (#756):** this is a regression, not an original defect. `3016a390713d2e893f4bfa797882b9f0266840e1` (2021, a UBSan coding-rules cleanup) renumbered every workspace offset in `mma2ce1_` down by one position and missed exactly one of the two `mma2jmx_` call sites; confirmed at the release-tag level, not just the commit diff, `V7_5_0` writes the U and V Jacobi maxima to two distinct slots and `V7_6_0` (the first release after the commit) already collapses them to one. Full mechanism is in [`Scripts/repro/522-approx-c0-collapse/README.md`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/522-approx-c0-collapse#upstream-provenance-756). The reply drafted to carry it upstream was never sent, and #1418 merged without it; that directory's `upstream/` files each say so at the top (#803).
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -1022,104 +996,6 @@ Filed upstream as [OCCT#1481](https://github.com/Open-Cascade-SAS/OCCT/pull/1481
 
 **Retire** once the bundled OCCT includes this fix.
 
-## 0029-XCAFDoc_Datum-point-read-from-plane-array-1022.patch
-
-**Fixes the upstream OCCT defect behind
-[#1022](https://github.com/SecondMouseAU/OCCTSwift/issues/1022)**: `XCAFDoc_Datum::GetObject` builds
-the datum's point from `aLoc`, the array the `ChildLab_PlaneLoc` block above it fills, instead of
-`aPnt`, the point's own.
-
-```cpp
-gp_Pnt aP(aLoc->Value(aPnt->Lower()),        // aLoc, not aPnt
-          aPnt->Value(aPnt->Lower() + 1),
-          aPnt->Value(aPnt->Lower() + 2));
-```
-
-`XCAFDoc_GeomTolerance::GetObject`'s block is otherwise identical and reads
-`aPnt->Value(aPnt->Lower())`, so this is a one-character divergence rather than a shared idiom.
-
-**Two faces, and they are separate defects with separate triggers**, which is why the fix carries a
-test for each rather than one for the crash.
-
-1. **A wrong answer when the datum has both.** Measured: plane location `(6,6,6)` and point
-   `(7,7,7)` written, `point=(6,7,7)` read back. The stored point is not recoverable. A guard that
-   only stopped the crash would leave this in place, which is the reason it is tested on its own.
-2. **An uncatchable SIGSEGV when the datum has a point and no plane.** `aLoc` is declared before the
-   plane block and assigned only by a successful `FindAttribute` there, so it is null when the point
-   block dereferences it. An OS signal, not a `Standard_Failure`, so the bridge's `catch (...)`
-   cannot absorb it.
-
-**Reachability, measured rather than inherited from the report.** Both crashing sections of the
-reproducer read the datum with exactly the three calls `occtDocumentDatumObjectAt` makes
-(`GetDatumLabels`, `FindAttribute`, `GetObject`). **Seven** bridge functions route through that
-shared helper since #1004 (PR #1025) hoisted it, and five of them are write paths, so the exposure is not
-read-side only: `OCCTDocumentGetDatumInfo`, `OCCTDocumentGetDatumModifier`,
-`OCCTDocumentSetDatumPosition`, `OCCTDocumentSetDatumModifiers`,
-`OCCTDocumentSetDatumModifierWithValue`, `OCCTDocumentSetDatumTarget`,
-`OCCTDocumentSetDatumTargetPlacement`. The helper calls `GetObject()` before any caller can look at
-what it returned, so a write that never touches the point still takes the crash. Being one helper is
-also why a guard is one site rather than seven.
-
-- **A STEP import alone cannot produce the crashing shape.** `STEPCAFControl_Reader` sets a datum
-  plane and never a datum point: its only `SetPoint` calls are on an
-  `XCAFDimTolObjects_DimensionObject`, a different class, and the datum object's enumerated
-  mutations are `SetName`, `SetPosition`, `SetModifiers`, `SetModifierWithValue` and the datum
-  target ones. A STEP-imported datum is the safe shape.
-- **An OCAF load can, and the reproducer's section D proves it** rather than arguing it: the same
-  point-only datum is saved to BinXCAF, reloaded into a fresh `TDocStd_Application`, and crashes on
-  the reload. `HasPlane()` and `HasPoint()` are independent flags and `SetObject` writes the two
-  blocks independently, so this is what the public OCCT API produces, not a hand-forged label tree.
-- **Nothing in this repo authors it today.** `OCCTDocumentCreateDatum` sets a name, a position and
-  a `DatumModifWithValue_None` pair, and nothing that reaches either branch (#1004's own comment
-  explains why those two are needed and why the datum-target setters are deliberately left alone).
-  So every datum this package writes takes neither branch. That is a property of the current write
-  surface, not of the read path, and it is the only reason the existing suite does not crash.
-- **The STEP writer is a second reader of the same accessor.** `STEPCAFControl_Writer` calls
-  `GetObject()` on every datum in three places, so exporting a document holding such a datum takes
-  the same crash.
-
-**A bridge-side guard is possible and is reported rather than shipped.** The reason is an
-ownership boundary rather than a judgement that the guard is wrong: `OCCTBridge_Document.mm` is held
-by a concurrent agent in this lane, so a guard written here would race their edits in the one file
-the guard belongs in. It is tracked as
-[#1030](https://github.com/SecondMouseAU/OCCTSwift/issues/1030) rather than left in prose, because
-this patch is in no built kernel and the crash is uncatchable, so nothing protects a consumer
-meanwhile. The check has to precede `GetObject()`, and
-`XCAFDoc_Datum` exposes no `HasPlane()`, so the only way to ask is the label's children:
-`ChildLab_PlaneLoc` and `ChildLab_Pnt` are values of a **file-local anonymous enum**, tags `14` and
-`17` at this pin, invisible from the header. A guard would skip the datum when `FindChild(17,
-false)` holds a length-3 `TDataStd_RealArray` and `FindChild(14, false)` holds no
-`TDataStd_RealArray` (only `ChildLab_PlaneLoc` matters, since the kernel's `&&` chain assigns
-`aLoc` before testing `ChildLab_PlaneN`). Cheap and precise, at the cost of hard-coding two private
-tags that upstream can renumber with no compile-time signal here. `XCAFDoc_Datum::GetName()` is not
-an alternative: it returns the legacy `myName` that `SetObject` never writes, so swapping it in
-would return an empty name for every datum this package or the STEP reader creates.
-
-**Validation.** `run.sh` builds the reproducer against the pinned archive and against the patched
-translation unit override-linked ahead of it: section A goes from `(6,7,7)` to `(7,7,7)`, sections C
-and D go from SIGSEGV to `point=(7,7,7)`, and section B's plane-only control is identical either
-way. Three GTests in the existing `XCAFDoc_GDT_Test.cxx`
-(`GdtDatum_PointIsReadFromItsOwnArray`, `GdtDatum_PointWithoutPlane`, `GdtDatum_PlaneWithoutPoint`)
-are run both ways by `run-gtest.sh`, so the file's eight pre-existing cases are exercised on both
-sides. Unpatched the run is split in two, because `GdtDatum_PointWithoutPlane` takes the whole
-process down with a SIGSEGV and gtest cannot catch one: ten cases in the first invocation, of which
-the value case fails and the plane-only control plus all eight pre-existing ones pass, and the crash
-case alone in a second, exiting 139. Patched, **all eleven pass in one unfiltered run**.
-`clang-format --dry-run --Werror` against OCCT's own `.clang-format` reports zero violations on both
-changed files. `XCAFDoc_Datum.cxx` is byte-identical between the pinned `V8_0_1` tree and current
-upstream `master` (`7d2efad9c`), checked rather than assumed.
-
-**Not in the pinned asset**, same as `0028`: `ci.yml`'s `build-and-test` resolves the pinned
-kernel and never sees it. `kernel-integration.yml` does build this patch on the PR that carries it,
-which proves it applies, compiles and regresses nothing, but the suite cannot exercise the fix:
-`OCCTDocumentCreateDatum` cannot author a datum that reaches either branch, so no Swift test can
-reach the defect without a new write path. Unlike `0028`, that gap matters, because this one is an
-uncatchable crash a consumer can reach through an OCAF load. That is what #1030 is for.
-
-Filed upstream as [OCCT#1483](https://github.com/Open-Cascade-SAS/OCCT/pull/1483).
-
-**Retire** once the bundled OCCT includes this fix.
-
 ## 0030-TopoDS_TShape-myState-atomic-1154.patch
 
 **Fixes the upstream OCCT data race behind
@@ -1298,55 +1174,6 @@ for the reproducer, full TSan transcripts and the complete writeup.
 Filed upstream as [OCCT#1553](https://github.com/Open-Cascade-SAS/OCCT/pull/1553) against `master`, a fix PR (override-link validated, not yet in a rebuilt xcframework when written).
 
 **Retire** once the bundled OCCT includes this fix.
-
-## 0034-GeomFill-CoonsAlgPatch-Value-U-parameter-1515.patch
-
-**`GeomFill_CoonsAlgPatch::Value(U, V)` sampled all four boundaries at `V`.** `bound[0]` and
-`bound[2]` are the U-direction sides, per the constructor's own corner-point derivation, and the
-class's derivative functions already know it: `D1U` calls `bound[0]->D1(U, ...)` and
-`bound[2]->D1(U, ...)`, and `DUV` does the same. Only the plain `Value()` used `V` for those two.
-
-The effect is not a small error. For any boundary set whose V-direction sides are straight,
-`Value(U, V)` is **completely independent of `U`**, and the whole surface collapses onto the
-diagonal `U == V` locus. Every sample with `U == V` is coincidentally right, which is what let it
-survive.
-
-**The fix is two lines, and OCCTSwift#1515 said it could not be.** That issue reported that a naive
-swap "produces a third, different, still-wrong set of values ... because the correction-term
-coefficients (`a0..a3`, and the four corner blends) would need re-deriving consistently too", and
-concluded the defect needed a real re-derivation. That is wrong, and both the algebra and a
-measurement say so.
-
-Differentiating a `Value()` with `bound[0]`/`bound[2]` at `U` gives `D1U` **exactly**, every corner
-coefficient included: `d/dU [a0*bound0(U)] = a0*bound0'(U)` matches `D1U`'s `bound[0]->D1(U)`
-scaled by `a0`; `d/dU [a1(U)*bound1(V)] = a1'(U)*bound1(V)` matches its `bound[1]->Value(V)` scaled
-by the derivative `a1`; and each of the four corner terms matches under `a3 = 1 - a1`, `a3' = -a1'`.
-Since `D1U` is already correct in the shipped kernel, the `Value()` it is the derivative of is the
-one this patch writes.
-
-Confirmed numerically on a planar square
-(`Scripts/repro/1515-coons-value-u-parameter/occt_1515_coons_probe.mm`), re-implementing `Value()`
-with the kernel's own coefficients and only the two sampling parameters changed:
-
-```
-   u     v  |      kernel Value()     |   one-line-fixed Value()
- 0.00  0.50 | (  0.500,  0.500)       | (  0.000,  0.500)
- 0.50  0.00 | (  0.000,  0.000)       | (  0.500,  0.000)
- 1.00  0.50 | (  0.500,  0.500)       | (  1.000,  0.500)
- 0.25  0.75 | (  0.750,  0.750)       | (  0.250,  0.750)
-```
-
-The fixed column is the exact bilinear surface. No coefficient was touched.
-
-**Blast radius.** `GeomFill_ConstrainedFilling` builds a `GeomFill_CoonsAlgPatch` but never calls
-`Value()`; it evaluates through `Eval()` and fits an approximated B-spline, so its output was never
-affected. The one consumer that calls `Value()` directly is OCCTSwift's own
-`OCCTGeomFillCoonsAlgPatchEval`, backing `Shape.coonsAlgPatch`, which samples it across an eval
-grid.
-
-**Upstream-bound.** Filed as [OCCT#1550](https://github.com/Open-Cascade-SAS/OCCT/pull/1550) against `master`; see the note in `okf/references/carried-occt-patches.md` about
-the seven OCCTSwift thread-safety PRs still open on Release 8.1.
-
 
 ## 0037-STEPControl-ActorRead-non-manifold-flag-per-instance-2061.patch
 
@@ -1713,390 +1540,6 @@ in `TKShHealing`.
 
 **Retire** once the bundled OCCT includes this fix.
 
-## 0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827.patch
-
-**The by-plane mass is computed and then discarded**
-([#2827](https://github.com/SecondMouseAU/OCCTSwift/issues/2827)),
-`src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Gauss.cxx:494-528` in the pinned tree:
-
-```cpp
-  convert(theInertia, theOutGravityCenter, theOutMatrixOfInertia, theOutMass);  // sets the mass
-  if (std::abs(theInertia.Mass) >= EPS_DIM && theIsByPoint)
-  {
-    ...
-    theOutMass = theInertia.Mass;
-  }
-  else
-  {
-    theOutMass = 0.0;                    // every by-plane call lands here
-    theOutGravityCenter.SetCoord(0.0, 0.0, 0.0);
-  }
-```
-
-The four-argument `convert` on the first line has already written the correct mass. The
-`&& theIsByPoint` then sends every by-plane call into an `else` written for the vanishing-mass case,
-which overwrites it with `0.0` and the gravity centre with `(0, 0, 0)`. The fix is to drop
-`&& theIsByPoint` from the outer condition, which is also what makes the inner
-`if (theIsByPoint) ... else ...` live: that `else` is unreachable today, and it exists, so the outer
-condition was meant to test `EPS_DIM` alone.
-
-**Why the inner `else` is the right formula and not just the reachable one.** For a by-point
-computation `theCoeff` is a three-element translation, `theOrigin - loc`
-(`BRepGProp_Vinert.cxx:238`), so the gravity centre is `theCoeff[i] + I*/mass`. For a by-plane
-computation `theCoeff` is the four plane coefficients `a, b, c, d` with `d` re-based on `loc`
-(`BRepGProp_Vinert.cxx:279`). Those are not a translation and must not be added to a coordinate. The
-by-plane gravity centre is `I*/mass` relative to `loc`, which is what the inner `else` computes and
-what the four-argument `convert` on the first line had already written. The matrix of inertia is
-assigned unconditionally after the branch and does not move.
-
-### The population, derived rather than grepped
-
-`BRepGProp_Gauss::Compute` reaches this overload only when `myType == Vinert`, and calls the
-four-argument `convert` otherwise, so `BRepGProp_Sinert` and `BRepGProp_Cinert` are untouched. Inside
-`BRepGProp_Vinert` the flag is `false` at exactly three `Compute` call sites,
-`BRepGProp_Vinert.cxx:285`, `:300` and `:317`, which are the bodies of the four by-plane `Perform`
-overloads (`:263` forwards to `:273`, whose body is `:285`) and therefore of the four `gp_Pln`
-constructors that delegate to them. Both `Compute` paths, the adaptive one at
-`BRepGProp_Gauss.cxx:1101` and the plain one at `:1388`, reach this `convert`.
-
-**OCCT has no callers of that path at all**, per
-[`okf/policies/follow-occt-callers.md`](../../okf/policies/follow-occt-callers.md)'s "when OCCT does
-not answer" clause. `BRepGProp.cxx:311` is the kernel's only `BRepGProp_Vinert` call site and it
-passes a point. The by-plane public entry point, `BRepGProp::VolumePropertiesGK(S, Props, thePln,
-...)`, goes through `BRepGProp_VinertGK` and `math_KronrodSingleIntegration`, a separate integrator
-that never reaches this function. So the kernel never meets the defect itself, and the expected value
-had to be measured rather than read off a call site.
-
-### Measured, macOS arm64, before and after
-
-`Scripts/repro/2827/probe.mm`, per face with the `BRepGProp_Domain` loaded so the integral is over
-the trimmed region, alongside `VolumePropertiesGK` over the same shape as the independent
-construction. The transcript against the patched kernel is committed as
-`Scripts/repro/2827/patched-kernel-transcript.txt`:
-
-| fixture and plane | `Vinert` by plane, before | after `0043` | `VolumePropertiesGK` |
-|---|---|---|---|
-| 10-cube, plane z = 0 | 0 | 1000 | 999.9999999999999 |
-| 10-cube, plane z = -100 | 0 | 1000 | 1000.000000000002 |
-| 10-cube, oblique plane | 0 | 999.9999999999999 | 1000 |
-| 20x20x2 plate, radius-3 hole, z = 0 | 0 | 743.4513322353836 | 743.4513322353838 |
-| cylinder r = 5 h = 10, plane z = 0 | 0 | 785.3981633974481 | 785.3981633974456 |
-
-The by-point `Vinert` sums over the same faces are 999.9999999999998, 743.4513322353837 and
-785.3981633974482, and `BRepGProp::VolumeProperties` reports 999.9999999999998, 743.4513322353836 and
-785.3981633974482. So the zero was not the integrand vanishing, and not a plane placed where the
-answer happens to be zero: the same three shapes through OCCT's own by-plane entry point give the
-volume to the last few digits, and the patched `Vinert` now does too.
-
-### What the by-plane mass IS, which had to be settled before anything could assert it
-
-A value that reads as a measurement and is not one is #2827's whole character, so "replace the zero
-with the number we saw" would repeat it one level up. Neither the sum nor any single face's value is
-a snapshot in the regression suite; both are identities derived from the integrand and measured
-against a construction that shares no code with it.
-
-The by-plane integrand is (`BRepGProp_Gauss.cxx:340-348`)
-
-```
-dv = (n_hat . n_face) * d1 * dS,   d1 = n_hat . P - theCoeff[3]
-```
-
-with `theCoeff[3]` the plane's fourth coefficient re-based at `BRepGProp_Vinert.cxx:279`. So `dv` is
-the signed volume of the column between the surface element and the reference plane, and two
-divergence-theorem identities follow, neither depending on which plane was passed:
-
-- `F = d1 * n_hat` has `div F = n_hat . n_hat = 1`, so the **per-face sum over a closed shell is the
-  enclosed volume, for any plane.** The offset moves the per-face split and not the total.
-- `F_x = (x * d1 - n_hat_x * d1 * d1 / 2) * n_hat` has `div F_x = x`, and that bracket is exactly the
-  `Ix` integrand at `BRepGProp_Gauss.cxx:350`, so the **mass-weighted sum of the per-face gravity
-  centres is the solid's own first moment**, again for any plane. This is also why the inner `else`
-  the patch makes live is the right formula: the centre it writes is the column's centroid.
-
-Measured against `BRepGProp::VolumeProperties`, which goes through a different loop and never reaches
-this function. On a 20x20x2 plate with a radius-3 hole translated to (7, -3, 2), so the first moment
-is not a comparison against the origin, for a plane through the origin, a plane at z = -100 and an
-oblique one, all three give sum 743.45133223538 against volume 743.4513322353836 and first moment
-(12638.672648, 5204.15932565, 2230.35399671) against the same three figures from
-`VolumeProperties`. A 10-cube and a cylinder agree to the same precision.
-
-**A third identity, per face rather than summed.** For a *planar* face the integral reduces to
-`(n_hat . n_face) * area * (n_hat . C - d)` with `C` the face's area centroid and `d` the offset the
-caller asked for, so the by-plane mass is affine in the plane offset with slope minus the face's
-signed projected area. (Written with a `+` here until #2873: see below.) Measured on the plate's
-seven faces with the plane normal along z: the two caps have slope +371.72566611769 and
--371.72566611769, exactly `+-area`, and the four sides and the cylindrical wall have slope 0, as
-faces parallel to the normal must.
-
-**The offset's sign is inverted, so the value is measured about the plane mirrored through the
-origin.** The integrand reads `theCoeff[3]` as the right-hand side of `n_hat . X = theCoeff[3]` and
-subtracts it, while `aCoeff[3] = d - n_hat . loc` fills it from `gp_Pln::Coefficients`' `d`, which
-belongs to the `n_hat . X + d = 0` form. Measured on a flat cap where `mass / area` reads `d1` off
-directly: the cap at z = 2 gives `d1` 2, 3, -98 and 7 for planes at z = 0, 1, -100 and 5, where the
-geometric signed distance is 2, 1, 102 and -3. That is a **separate** defect from this patch, it does
-not disturb either identity above (`d1` is still affine with gradient `n_hat`, which is all they
-need), and it is held as [#2873](https://github.com/SecondMouseAU/OCCTSwift/issues/2873) for the same
-upstream PR rather than patched here days before 8.0.2.
-
-Two corrections to that paragraph as it first stood, both from #2873's own probe
-(`Scripts/repro/2873/`). **`loc` is not a second defect.** `SetLocation` moves `d1` by nothing at the
-origin, at (0, 0, 3) and at the non-axial (-4, 11, 2.5), and that is the behaviour a distance to a
-plane has to have: the `- n_hat . loc` term exists to cancel the `P - loc` the integrand works in,
-and it cancels exactly, before and after the sign is corrected. There is one defect here, not two.
-**And it is three sites, not one:** `BRepGProp_VinertGK.cxx:219` and `:244` make the same conversion
-for the Kronrod path, whose integrand subtracts it at `BRepGProp_UFunction.cxx:99`, so the upstream
-hunk covers `BRepGProp_Vinert.cxx:279` and both of those. The two implementations print identical
-`d1` on every row of the probe, which is what makes this a second construction rather than a re-run.
-
-**The bridge compensated until the repin that pinned `0048`.** `OCCTBRepGPropVinertPlane` was
-handed `(planeNormal, planeDistance)` and built the `gp_Pln` itself, so it built the mirrored one and
-`Face.volumeInertia(planeNormal:planeDistance:)` measured about the plane the caller named. **A
-kernel carrying the upstream hunk while that mirror was still in place measured about the mirrored
-plane again**, so the mirror came out in the change that pinned `0048` (#3015), not in the one that
-retires this patch. `BRepGPropVinertTests`' two sign assertions are what failed on #3014 when it had
-not.
-
-### CI coverage, and the pin
-
-**Built and pinned by `v4.0.0-kernel.3`**, on the same day it was carried. It spent hours, not a
-release window, as the only carried patch in the tree that had never been compiled, and the reason
-it did not stay that way is that what it left exposed is a value a caller reads rather than a latent
-race: `Face.volumeInertia(planeNormal:planeDistance:)` returned a fabricated `0.0` for every face and
-every plane. The standing hold on repinning until OCCT 8.0.2 lands
-(`okf/policies/pinned-kernel-patch-check.md`) was the argument against the rebuild, and it lost to
-that.
-
-- `ci.yml`'s `build-and-test` resolves the pinned asset, which now carries `0043`, so the required
-  status check exercises it on every PR.
-- `kernel-integration.yml` triggers on `Scripts/patches/**` and builds from source, and it is the
-  independent check that the patch is in the binary rather than merely in the tree: building against
-  the new asset locally makes #2827's regression fail at the same lines and values as that job's own
-  build.
-- The wasm kernel is a patch behind until the 8.0.2 rebuild, acknowledged in
-  `Scripts/wasm-kernel-pin.txt` and keyed to thirty-one native patches so it expires at the next
-  repin.
-
-What the repin took: a rebuild from a tree whose only modifications are the carried patches (79
-modified files against 79 patch-touched files, zero unexplained, all thirty-one reverse-applying),
-`python3 Scripts/check-pinned-asset-patches.py --require-asset` against the published asset, the zip
-uploaded as the `v4.0.0-kernel.3` pre-release, **both** `url:` and `checksum:` bumped, `0043` moved
-into `Package.swift`'s enumerated list (taking `patches_pinned` to thirty-one and `patches_unpinned`
-to none), and `Tests/OCCTAnalysisTests/BRepGProp/BRepGPropVinertTests.swift`'s pinned-zero regression replaced
-by the three identities above rather than by the numbers that were observed.
-
-**Retargeting risk at 8.0.2.** `BRepGProp_Gauss.cxx` is unmodified by every other carried patch, and
-upstream `master` was byte-identical on this line as of 2026-09-29 with no issue or PR naming
-`BRepGProp_Gauss`, so the hunk is expected to apply to `V8_0_2` unchanged. Re-run
-`git -C occt-src apply --check` at the repin rather than assuming it.
-
-Filed upstream as [OCCT#1587](https://github.com/Open-Cascade-SAS/OCCT/pull/1587) against `master`; the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07
-(see [`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)). **The submission carries a second
-hunk**, for [#2873](https://github.com/SecondMouseAU/OCCTSwift/issues/2873): `aCoeff[3] = d - n . loc`
-at `BRepGProp_Vinert.cxx:279`, and the same two lines at `BRepGProp_VinertGK.cxx:219` and `:244`, are
-subtracted by the integrand, so the offset reaches it with the opposite sign to a geometric distance
-and the value is measured about the plane mirrored through the origin. `loc` is not part of it: it
-cancels, correctly, both before and after. This patch exposes that rather than causing it, and the
-two belong in one PR because a reviewer reading the first will ask about the second. The upstream submission is where
-the GTest goes; the carried patch is the one-liner alone, as `0042` was.
-
-**Retire** once the bundled OCCT includes this fix.
-
-## 0044-Extrema-ExtSS-ExtCS-Points-bound-against-point-sequence-2840.patch
-
-**`Points()` reads an empty point sequence on a parallel pair**
-([#2840](https://github.com/SecondMouseAU/OCCTSwift/issues/2840)). `Extrema_ExtSS` and
-`Extrema_ExtCS` both count extrema with `NbExt() == mySqDist.Length()` and bound `Points()` against
-that count alone, and both analytic branches append a distance with no matching point pair when the
-pair is parallel (`Extrema_ExtSS.cxx:226-234`, `Extrema_ExtCS.cxx:302-306` in the pinned tree):
-
-```cpp
-  myIsPar = myExtElSS.IsParallel();
-  if (myIsPar)
-  {
-    mySqDist.Append(myExtElSS.SquareDistance(1));   // and nothing to myPOnS1/myPOnS2
-  }
-```
-
-An equidistant family has no unique witness point, so there is nothing to append. `NbExt()` then
-reports 1, `Points(1, ...)` passes its range test, and `myPOnS1.Value(1)` reads an empty
-`NCollection_Sequence`. The fix is the one `Extrema_ExtCC::Points` already carries as `0024`: bound
-against the point sequence. The tighter bound changes nothing for a non-parallel result, since
-`mySqDist` and the point sequences are appended together in every other branch.
-
-**The fault is not in `Points()`' own bound test.** That test is a literal `throw`, live in this
-Release build. What faults is `NCollection_Sequence::Value`'s `Standard_OutOfRange_Raise_if`, which
-is **inline** and therefore compiled out by `BUILD_RELEASE_DISABLE_EXCEPTIONS` in whichever
-translation unit expands it, here `Extrema_ExtSS.cxx`. So the read is an OS fault rather than a
-throw, uncatchable in-process (#345), and
-`Scripts/census-compiled-out-validation.py` has no channel that could have seen it: filed as
-[#2858](https://github.com/SecondMouseAU/OCCTSwift/issues/2858).
-
-### The family is exactly three, and generalising has nothing to generalise over
-
-This patch is the third instance of `0024`'s shape and the question of whether to generalise rather
-than copy was asked before it was written, in #2840 and answered by #2801's sweep. Every `.cxx`
-under `src/ModelingData/TKGeomBase/Extrema` that mentions `myIsPar`, compared for `mySqDist.Append`
-count against point-append count:
-
-| class | sqdist appends | point appends | verdict |
-|---|---|---|---|
-| `Extrema_ExtCC` | 11 | 0 | #636, carried patch `0024` |
-| `Extrema_ExtCS` | 4 | 6 | this patch |
-| `Extrema_ExtSS` | 4 | 3 | this patch |
-| `Extrema_ExtCC2d` | 2 | 0 | clean: `Points` bounds against `mynbext`, which moves in lockstep with `mypoints.Append` in both `Results` overloads |
-| `Extrema_ExtElC2d` | 0 | 0 | clean: fixed-size member array bounded against `myNbExt` |
-| `Extrema_ExtElC`, `Extrema_ExtElCS`, `Extrema_ExtElSS` | 0 | 0 | no appends at all |
-
-**There is no fourth, so the shared fix has three call sites and will not acquire more.** And there
-is no shared thing to put the fix in: the three classes hold their points in three different member
-shapes, `mypoints` interleaved for `Extrema_ExtCC`, `myPOnC`/`myPOnS` for `Extrema_ExtCS`,
-`myPOnS1`/`myPOnS2` for `Extrema_ExtSS`, with no common base and no accessor in common. A helper
-over that is a new base class or a new free function for a one-line predicate, which is a larger
-change to propose upstream than the three one-line bounds it would replace, and which upstream has
-no precedent for in this package. So the shape is copied, deliberately, and the two remaining sites
-land together rather than one at a time.
-
-### Measured, macOS arm64, before and after
-
-`Scripts/repro/2840/probe.mm` against the pinned `v4.0.0-kernel.3` asset with both translation units
-override-linked, per
-[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
-section 3. The transcript is committed as `Scripts/repro/2840/override-link-transcript.txt`.
-
-| mode | before | after |
-|---|---|---|
-| `Extrema_ExtSS`, two `Geom_Plane`s 5 apart, `Points(1, ...)` | exit 139 | `Standard_OutOfRange`, exit 0 |
-| `Extrema_ExtCS`, a `Geom_Line` 5 above a `Geom_Plane`, `Points(1, ...)` | exit 139 | `Standard_OutOfRange`, exit 0 |
-| `Extrema_ExtSS` control, two spheres 20 apart | 2 extrema, points returned | identical |
-| `Extrema_ExtCS` control, a line 40 above a sphere | 2 extrema, points returned | identical |
-
-`IsDone()`, `IsParallel()`, `NbExt()` and `SquareDistance(1)` are unchanged on every mode: the
-parallel pair still reports its one real measurement, 25 as a square distance in both cases. Only
-the point read moves, from a fault to a refusal. The unpatched override-linked run is
-byte-identical to the archive alone, which is how the pinned asset is known to carry no fix of its
-own here.
-
-### CI coverage, and the pin
-
-**Pinned by `v4.0.0-kernel.4`, the first asset to hold it.** It was carried without a rebuild on
-2026-09-30, when the pinned `v4.0.0-kernel.3` asset lacked it, and until the repin it was in **no**
-required check: `ci.yml`'s `build-and-test` resolves the asset. Now that the asset holds it,
-`build-and-test` exercises it. `kernel-integration.yml` triggers on `Scripts/patches/**` and builds
-`V8_0_1` plus every carried patch from source, so the PR that added it got it compiled, which proved
-it applied, compiled and regressed nothing.
-
-It was not rebuilt the day it was carried, because **the bridge already refused the input before the
-kernel saw it**. `0043` was rebuilt the day it was carried because what it left exposed was a value
-a caller reads. This one left nothing exposed: `OCCTSurfaceExtrema` gained an `IsParallel()` gate
-with #2831, and every other bridge entry point that reaches either class through a point read
-already had one (`OCCTExtremaExtSSPoint`, `OCCTExtremaExtCSPoint`, `OCCTCurve3DDistanceToSurface`,
-which reads `LowerDistance()` alone). The standing hold on repinning until OCCT 8.0.2 landed
-therefore won, until `v4.0.0-kernel.4` was cut for other patches and absorbed this one.
-
-**Retargeting risk at 8.0.2.** No other carried patch touches either file, and both `Points()`
-bodies are three lines that have not changed since the class was written, so the hunks are expected
-to apply to `V8_0_2` unchanged. Re-run `git -C occt-src apply --check` at the repin rather than
-assuming it.
-
-Filed upstream as [OCCT#1596](https://github.com/Open-Cascade-SAS/OCCT/pull/1596) against `IR` (the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07). The submission was staged in
-`Scripts/repro/2840/upstream/`: two GTests, `Extrema_ExtSS_Test.cxx` and `Extrema_ExtCS_Test.cxx`,
-compiled and run both ways (each parallel case exits 139 unpatched and passes patched, both controls
-pass on both sides), plus the two `FILES.cmake` lines they need. `0024` is still unfiled too, so one
-PR covering all three classes may read better than two.
-
-**Retire** once the bundled OCCT includes this fix.
-
-## 0045-Geom-Bezier-InsertPoleAfter-pole-bound-2875.patch
-
-**`InsertPoleAfter` refuses two poles short of what the constructors build**
-([#2875](https://github.com/SecondMouseAU/OCCTSwift/issues/2875)). Both Bezier curve classes accept
-up to `MaxDegree() + 1` poles at construction (`Geom2d_BezierCurve.cxx:78` and `:93`,
-`Geom_BezierCurve.cxx:93` and `:109`):
-
-```cpp
-  if (nbpoles < 2 || nbpoles > (Geom2d_BezierCurve::MaxDegree() + 1))
-    throw Standard_ConstructionError();
-```
-
-and `Increase()` tops out at a degree of `MaxDegree()`, the same bound written as a degree.
-`InsertPoleAfter` compares the pole count against the degree bound instead
-(`Geom2d_BezierCurve.cxx:199`, `Geom_BezierCurve.cxx:214`):
-
-```cpp
-  Standard_ConstructionError_Raise_if(nbpoles >= Geom2d_BezierCurve::MaxDegree()
-                                        || Weight <= gp::Resolution(), ...);
-```
-
-so insertion stops at `MaxDegree()` poles. A caller can hold a legally constructed curve longer
-than `InsertPoleAfter` will grow a shorter one to. The fix is one character at each site, `>=` to
-`>`, plus the one-line comment that says which quantity `MaxDegree()` bounds.
-
-**`MaxDegree()` is a degree bound, and the classes' own tables say so.** `BSplCLib::MaxDegree()` is
-25. Both classes size the static tables behind `Multiplicities()` and `KnotSequence()` as
-`MaxDegree() + 1` and index them by `myPoles.Length() - 1`, so a curve of `MaxDegree() + 1` poles
-is in range for every one of them, which is what makes the relaxed bound safe rather than merely
-symmetric. Measured rather than reasoned: at 26 poles the 2d class answers `degree=25`,
-`Multiplicities().Length()=2`, `KnotSequence().Length()=52`.
-
-**Both sites in the tree are changed, which is the whole of the defect.** A grep for a pole count
-compared against `MaxDegree()` with `>=` returns exactly two hits, the 2d class and the 3d one, and
-no more. `Geom_BezierSurface::InsertPoleColAfter` / `InsertPoleRowAfter` carry **no** `MaxDegree`
-bound at all, and `UMultiplicities()` / `UKnotSequence()` index the same fixed 26-element tables by
-pole count, so growing a Bezier surface past 26 poles in one direction reads off the end of a
-`std::array`. That is a different defect with a different fix and it is deliberately not in this
-patch; it is filed separately.
-
-### Half of this patch is inert in the shipped kernel, and that is the reason the bridge guard stays
-
-The two sites are not written the same way. The 3d class throws literally; the 2d class goes
-through `Standard_ConstructionError_Raise_if`, which `No_Exception` empties in a Release build
-(#2801). So in the kernel this repo ships, **the 2d class has no pole bound at all**, patched or
-not, and the only thing enforcing one is `OCCTCurve2DBezierInsertPoleAfter`'s own guard. The probe
-shows it directly: under `-DNo_Exception` the 2d curve grows past 100 poles on both sides of the
-patch, while the 3d curve moves from 25 to 26.
-
-### Measured, macOS arm64, before and after
-
-`Scripts/repro/2875-bezier-insertpole-bound/`, both translation units override-linked ahead of the
-pinned macOS slice, per
-[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
-section 3, in both build configurations. Transcript committed as `transcript.txt`.
-
-| build | class | ctor max poles | insert max, before | insert max, after |
-|---|---|---|---|---|
-| shipped (`No_Exception`) | `Geom2d_BezierCurve` | 26 | 102 (unbounded) | 102 (unbounded) |
-| shipped (`No_Exception`) | `Geom_BezierCurve` | 26 | 25 | **26** |
-| exceptions enabled | `Geom2d_BezierCurve` | 26 | 25 | **26** |
-| exceptions enabled | `Geom_BezierCurve` | 26 | 25 | **26** |
-
-The 102 is the probe's own insertion limit, not a kernel one.
-
-### Compiled, three slices
-
-The two translation units this patch touches were compiled for all three xcframework slices by
-hand rather than through a full kernel rebuild, `-std=c++17 -O3 -DNDEBUG -DNo_Exception -arch
-arm64` against each slice's own SDK and headers: `arm64-apple-macos12`, `arm64-apple-ios15` and the
-iOS simulator. Six compiles, no warnings and no errors. The log is committed as
-`Scripts/repro/2875-bezier-insertpole-bound/compile-log.txt`. The `.pxx` private headers
-(`Geom2dEval_RepUtils.pxx`, `GeomEval_RepUtils.pxx`) are not installed into the xcframework, so the
-compile line adds their package directories from `Libraries/occt-src`.
-
-### CI coverage, and the pin
-
-**Pinned.** It was carried before it was pinned, and `ci.yml`'s `build-and-test` resolves the
-pinned asset, so until the repin the patch was in no required check. Now that the asset holds it,
-`build-and-test` exercises it. `kernel-integration.yml` triggers on `Scripts/patches/**` and builds
-`V8_0_1` plus every carried patch from source, which proves it applies, compiles and regresses
-nothing.
-
-**Retargeting risk at 8.0.2.** No other carried patch touches either file, and neither
-`InsertPoleAfter` has changed shape in years, so the hunks are expected to apply to `V8_0_2`
-unchanged. Re-run the apply check at the repin rather than assuming it.
-
-Filed upstream as [OCCT#1593](https://github.com/Open-Cascade-SAS/OCCT/pull/1593) against `IR` ([#1589](https://github.com/Open-Cascade-SAS/OCCT/pull/1589) closed); the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07.
-
-**Retire** once the bundled OCCT includes this fix, **but keep the bridge guard**: it is the only
-bound the 2d class has in a `No_Exception` build.
-
 ## 0046-math_Uzawa-Errinit-row-dimension-2860.patch
 
 **The initial-error vector is sized by unknowns and written by constraints**
@@ -2330,144 +1773,6 @@ Filed upstream as [OCCT#1598](https://github.com/Open-Cascade-SAS/OCCT/pull/1598
 
 **Retire** once the bundled OCCT includes this fix.
 
-## 0048-BRepGProp-by-plane-offset-sign-2873.patch
-
-**The by-plane overloads measure about the plane mirrored through the origin**
-([#2873](https://github.com/SecondMouseAU/OCCTSwift/issues/2873)). Every by-plane
-`BRepGProp_Vinert` and `BRepGProp_VinertGK` overload stores the plane the same way:
-
-```cpp
-thePlane.Coefficients(aCoeff[0], aCoeff[1], aCoeff[2], aCoeff[3]);
-aCoeff[3] = aCoeff[3] - aCoeff[0] * loc.X() - aCoeff[1] * loc.Y() - aCoeff[2] * loc.Z();
-```
-
-and both integrands then **subtract** that coefficient: `BRepGProp_Gauss.cxx:344 with 0043 applied, :343 without` for the Gauss
-path and `BRepGProp_UFunction.cxx:99` for the Gauss-Kronrod one, in each case against
-`P - loc`. `gp_Pln::Coefficients` gives `a, b, c, d` for `a x + b y + c z + d = 0`, so the signed
-distance from the plane to `P` is `n . P + d`, and substituting the stored coefficient gives
-
-```
-d1 = n . (P - loc) - (d - n . loc) = n . P - d
-```
-
-which is the distance to the plane at `n . X == d`, the reflection of the caller's plane through
-the origin. Both halves of that one line are wrong in the same direction: the offset carries the
-wrong sign, and `loc` cancels out of the result entirely rather than re-basing it, so
-`SetLocation` has no effect on a by-plane computation at all.
-
-Negating the coefficient as it is stored fixes both halves at once. With `aCoeff[3] = -d - n . loc`
-the integrands compute `d1 = n . (P - loc) + d + n . loc = n . P + d`, the signed distance to the
-plane as passed, independent of `loc` as a distance to a plane must be. The integrands are left
-alone: their minus sign is what makes `loc` re-base correctly once the stored offset has the right
-sign, and changing them instead would need the same edit at these five sites anyway.
-
-### All five sites, because they are one convention and not five defects
-
-| file | lines | what reaches them |
-|---|---|---|
-| `BRepGProp_Vinert.cxx` | 280, 297, 314 | the four `Perform(gp_Pln)` overloads, through `BRepGProp_Gauss` |
-| `BRepGProp_VinertGK.cxx` | 219, 244 | the two `Perform(gp_Pln)` overloads, through `BRepGProp_UFunction` |
-
-Fixing one class and not the other would leave `BRepGProp::VolumeProperties` and
-`BRepGProp::VolumePropertiesGK` disagreeing per face about which plane they measured. Those are the
-only five: a grep for the coefficient assignment across `Libraries/occt-src/src` returns exactly
-them.
-
-### Measured
-
-`Scripts/repro/2827/probe.mm`'s `reportSignConvention`, macOS arm64 against the
-`v4.0.0-kernel.3` asset, on a flat cap of area 371.7256661 square to the plane normal, where
-`mass == (n . n_face) * area * d1` exactly, so `mass / area` reads `d1` off directly. The cap is at
-z = 2:
-
-| `loc.z` | plane at z = | `mass` | `d1` | geometric distance |
-|---|---|---|---|---|
-| 0 | 0 | 743.45133223538 | 2 | 2 |
-| 0 | 1 | 1115.1769983531 | 3 | 1 |
-| 0 | -100 | -36429.115279534 | -98 | 102 |
-| 3 | 0 | 743.45133223538 | 2 | 2 |
-| 3 | 1 | 1115.1769983531 | 3 | 1 |
-| 3 | -100 | -36429.115279534 | -98 | 102 |
-
-`d1` tracks `z + planeOffset` where it should track `z - planeOffset`, and `loc` changes nothing.
-Both are what the derivation predicts.
-
-### What does not change
-
-**Aggregates.** `d1` stays an affine function of `P` with gradient `n`, which is the only property
-the divergence-theorem identities need, so the per-face sum over a closed shell is still the
-enclosed volume and the mass-weighted sum of the per-face centres is still the first moment, for
-any plane. `BRepGProp::VolumePropertiesGK(S, Props, thePln, ...)` therefore reports the same volume
-and centre of mass before and after. What changes is a per-face reading, which is the decomposition
-a caller asks for when it passes a plane rather than a point.
-
-**Anything in OCCT.** Nothing in the kernel reads a per-face by-plane value: `BRepGProp.cxx:311` is
-the only `BRepGProp_Vinert` call site and passes a point, and `:809` and `:892` forward a plane to
-`BRepGProp_VinertGK` for an aggregate. And until `0043` the by-plane mass was overwritten with
-`0.0` before any caller could see it, so the value this corrects has never been readable from a
-release build.
-
-### Does `0043` already carry this hunk? No
-
-`0043`'s own `Scripts/patches/README.md` entry and
-[`okf/references/carried-occt-patches.md`](../../okf/references/carried-occt-patches.md) both say
-"the submission carries a second hunk for #2873", which describes the **upstream PR** that is still
-being held, not the carried `.patch` file. The file touches one file,
-`BRepGProp_Gauss.cxx`, and one line in it, the `&& theIsByPoint` in `convert`. It contains no sign
-change and does not mention `BRepGProp_Vinert.cxx` or `BRepGProp_VinertGK.cxx`. So this is its own
-patch. The two still travel upstream in one PR, where they are two hunks of one story: `0043` makes
-the by-plane value readable and `0048` makes it right.
-
-### Compiled, 2026-10-02
-
-Both changed translation units, compiled clean with no diagnostics on all three slices:
-
-| TU | `macos-arm64` | `ios-arm64` | `ios-arm64-simulator` |
-|---|---|---|---|
-| `BRepGProp_Vinert.cxx` | exit 0 | exit 0 | exit 0 |
-| `BRepGProp_VinertGK.cxx` | exit 0 | exit 0 | exit 0 |
-
-`git apply --check` is clean against the patched `Libraries/occt-src`, `0043` included, which is
-the tree `build-occt.sh` hands to cmake.
-
-### The bridge side WAS a compensation, not a guard, and the repin deleted it (#3015)
-
-This was the one carried patch whose bridge-side companion had to come out at the repin rather than
-stay. `OCCTBRepGPropVinertPlane` did not refuse an input, it built the `gp_Pln` **mirrored through
-the origin on purpose**, so that the unpatched kernel answered about the plane the Swift caller asked
-for:
-
-```cpp
-gp_Pln plane(gp_Pnt(normal.XYZ() * -planeDist), normal);   // until v4.0.0-kernel.4
-```
-
-A kernel carrying `0048` with that mirror still in place measures about the mirrored plane again,
-and the two sign assertions in `Tests/OCCTAnalysisTests/BRepGProp/BRepGPropVinertTests.swift` failed on #3014
-for exactly that reason. The change that repinned to an asset carrying `0048` (#3031) therefore:
-
-- deleted the mirror in `OCCTBRepGPropVinertPlane`, so the line now reads
-  `gp_Pln plane(gp_Pnt(normal.XYZ() * planeDist), normal);`, and rewrote the comment block that
-  explains it as history,
-- left the by-plane assertions in `BRepGPropVinertTests` on the corrected convention, which they
-  pass against the pinned kernel,
-- dropped the "pass `-d`" note from `Face.volumeInertia(planeNormal:planeDistance:)` and from
-  `docs/reference/Shape-HLR-Geom.md`.
-
-Until that change the mirror was correct and had to stay, because CI resolves the pinned asset and
-removing it earlier would have turned a correct answer into a sign-flipped one on every consumer.
-
-### Retargeting risk at 8.0.2
-
-`0043` touches `BRepGProp_Gauss.cxx` and this one touches `BRepGProp_Vinert.cxx` and
-`BRepGProp_VinertGK.cxx`, so they do not overlap, and all five target lines are a single assignment
-that has not changed since the classes were written. Re-run `git -C occt-src apply --check` at the
-repin rather than assuming it.
-
-Filed upstream as [OCCT#1601](https://github.com/Open-Cascade-SAS/OCCT/pull/1601) against `IR`, on its own: it is independent of [OCCT#1587](https://github.com/Open-Cascade-SAS/OCCT/pull/1587) (`0043`), whose diff only removes `&& theIsByPoint` in `BRepGProp_Gauss.cxx`.
-
-**Retire** once the bundled OCCT includes this fix, and delete the bridge mirror in the same change.
-
-
 ## 0050-GProp_SelGProps-cone-lateral-area-drops-cos-semiangle-2992.patch
 
 **`GProp_SelGProps::Perform(gp_Cone)` returns `cos(semiAngle)` times the lateral area**
@@ -2687,80 +1992,6 @@ not `0044`'s. Filed upstream with `0050` as one PR,
 
 **Retire** once the bundled OCCT includes this fix.
 
-## 0052-Geom_BezierSurface-rational-axis-prose-matches-example-2991.patch
-
-**`Geom_BezierSurface.hxx`'s `IsURational`/`IsVRational` prose contradicts its own example matrix**
-([#2991](https://github.com/SecondMouseAU/OCCTSwift/issues/2991)). The header says:
-
-```
-  //! Returns False if the weights are identical in the U direction,
-  //! Example :
-  //!               |1.0, 1.0, 1.0|
-  //! if Weights =  |0.5, 0.5, 0.5|   returns False
-  //!               |2.0, 2.0, 2.0|
-  Standard_EXPORT bool IsURational() const;
-```
-
-The weights in that matrix are **not** identical in the U direction, they run `1.0, 0.5, 2.0` down
-a column. They are identical in the V direction. Prose and example contradict each other, and the
-example is the one that matches the code.
-
-**The implementation is the authority.** `Geom_BezierSurface.cxx`'s static `Rational()` sets
-`Urational` from
-
-```cpp
-  Urational = (std::abs(Weights(I, J) - Weights(I, J + 1)) > Epsilon(std::abs(Weights(I, J))));
-```
-
-inside a loop over `I` that walks `J`, so the comparison is between neighbours in the **column**
-index, which is V. `Urational` is therefore false exactly when every **row** is constant, and
-`Vrational` false exactly when every column is. Each flag names the axis opposite the one it
-compares along.
-
-**`Geom_BSplineSurface.hxx` already states this correctly**, with the same two example matrices
-("Returns False if for each row of weights all the weights are identical"), so the two headers
-disagree with one another as well as one of them disagreeing with the implementation. The patch
-gives `Geom_BezierSurface` the wording `Geom_BSplineSurface` already has, leaving the example
-matrices and the tolerance sentence untouched, which is the smallest change that makes all three
-agree.
-
-### Measured
-
-`Scripts/repro/2976-surface-rational-axes/probe.mm`, four explicit weight matrices against the
-pinned kernel:
-
-| weights | `IsURational` | `IsVRational` |
-|---|---|---|
-| rows constant, varies along U | 0 | 1 |
-| columns constant, varies along V | 1 | 0 |
-| all equal | 0 | 0 |
-| varies along both | 1 | 1 |
-
-A `Geom_BSplineSurface` converted from a `r = 5`, `h = 10` cylinder reports `(0, 1)`, and `(1, 0)`
-after `ExchangeUV()`, the same way round.
-
-### Why carry a comment fix at all
-
-It changes no binary, so it leaves nothing exposed and it is in no test. It is carried for two
-reasons. The tree we build and the tree we file upstream from should agree, so that the 8.0.2
-submission is cut from the same source as everything else; and the wrong prose has already cost
-something, having nearly been recorded as a defect by one lift batch reading a converted cylinder's
-`(0, 1)` as an inverted conversion.
-
-`Geom_BezierSurface.cxx` was compiled against the corrected header on all three slices to confirm
-the header still builds, which is the only compile a documentation patch can offer.
-
-### CI coverage, and the pin
-
-Pinned with `0050` and `0051`, and unlike them it left nothing for a caller to
-read wrong: PR #2990 already documents the real behaviour on all four Swift properties with the
-cylinder as the worked example and a test pinning both directions.
-
-Filed upstream alone as [OCCT#1602](https://github.com/Open-Cascade-SAS/OCCT/pull/1602) against `IR`, documentation only, so no GTest. The plan to batch it with #2875's and #2860's
-one-character fixes went with the hold on upstream PRs until 8.0.2, cancelled on 2026-10-07.
-
-**Retire** once the bundled OCCT includes this fix.
-
 ## 0053-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003.patch
 
 **An arc-join offset returns its faces in an order set by allocation addresses**
@@ -2873,75 +2104,6 @@ this patch's own message.
 
 **Retire** once the bundled OCCT includes this fix.
 
-
-## 0054-ChFi3d_Builder-StartSol-drops-an-obstacle-with-no-edge-2881.patch
-
-**A fillet blend that reaches an obstacle with no edge to follow evaluates an empty curve**
-([#2881](https://github.com/SecondMouseAU/OCCTSwift/issues/2881), upstream
-[OCCT#1568](https://github.com/Open-Cascade-SAS/OCCT/issues/1568)),
-`src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_2.cxx:1530-1562` in the pinned tree.
-`ChFi3d_Builder::StartSol`, on reaching an obstacle face, sets `c1obstacle`, replaces `HC` with a
-fresh `BRepAdaptor_Curve2d`, and looks for the arc edge among the obstacle face's edges:
-
-```cpp
-HC = new BRepAdaptor_Curve2d();
-... find newedge among Fv's edges by IsSame(anArcEdge) ...
-if (!newedge.IsNull()) { HC->Initialize(newedge, Fv); ... return true; }
-else                   { prepareDefaultReturn(); return false; }   // HC is still the empty adaptor
-```
-
-When no edge matches, the `else` returns `false` and leaves `HC` as the default-constructed adaptor,
-which holds no curve, with `c1obstacle` still `true`. `PerformSetOfSurfOnElSpine` tests
-`!Ok && HC.IsNull()` for the end of the chain, an empty non-null `HC` passes that test, and
-`obstacleon1`/`obstacleon2` then select the obstacle path, which hands `HC` to
-`ChFi3d_FilBuilder::PerformSurf`. The `SurfRst` walk evaluates it through
-`Adaptor3d_CurveOnSurface::EvalD1` and `Geom2dAdaptor_Curve::D1` falls to its `default:` arm and
-dereferences a null curve. That is a SIGSEGV inside `Build()`, which `OCC_CATCH_SIGNALS` being inert
-in this build means no bridge `catch (...)` can reach, and `BRepFilletAPI_MakeFillet` is named in 96
-bridge sites.
-
-The fix is three lines in that `else`: `HC.Nullify(); c1obstacle = false;` before the existing
-return, which gives the caller the state it already handles for "no obstacle". The sibling failure
-in the same block, returning `false` when `HSref` or `HCref` is null, leaves `HC` null, which the
-caller does handle; it is left alone because no input reaches it.
-
-### How the cause was found, and what was ruled out
-
-`Scripts/repro/occt1568-fillet-opposite-edge/`, against the pinned macOS slice with override-linked
-copies of three kernel files (the unmodified file recompiled with the kernel's flags is the
-control, and each copy differs by a few logging lines):
-
-- **The first hypothesis was wrong.** #2881 guessed an edge with no pcurve on its reference face,
-  which would make `BRepAdaptor_Curve2d::Initialize` leave the adaptor empty. Logging every
-  `Initialize` call (494 calls at radius 1.49, 326 up to the fault at 1.5) shows it never sees a null
-  pcurve on this model.
-- **The faulting adaptor was identified by address.** `Adaptor3d_CurveOnSurface::EvalD1` is called
-  once before the fault, on a `BRepAdaptor_Curve2d` that appears in the log as a default
-  construction and never as an `Initialize`.
-- **The branch fires exactly where the crash is.** Logging it gives two hits at radius 1.5 and none
-  at 1.49 or 1.5000001. What it sees: the blend's face is a plane, the neighbour face found at the
-  vertex is a four-edged B-spline surface, and the arc edge is in the blend's face but in none of the
-  neighbour's edges under any orientation.
-
-### Measured, macOS arm64, before and after
-
-`BRepFilletAPI_MakeFillet` on the model attached to OCCT#1568 (19 faces, 42 edges), one edge at a
-time, `ChFi3d_Rational` with `BRepTest_FilletCommands`' parameters, the patched file override-linked.
-
-| radius | unpatched | patched |
-|---|---|---|
-| 0.3 and 1.0 | 20 done, 22 raise "no suitable edges" | identical |
-| 1.5 | 12 done, **8 SIGSEGV**, 22 raise | 12 done, 8 not done (`NbFaultyContours = 1`), 22 raise |
-
-Across 42 edges and nine radii (0.3, 0.8, 1.0, 1.2, 1.4999999, 1.5, 1.5000001, 1.8, 2.5), 378 cases,
-exactly eight outcomes change, edges 12 to 19 at 1.5, each from SIGSEGV to a normal completion with
-`IsDone() == false`. The other 370 are identical, 170 completed and 200 raising the same exception.
-The eight now behave as radius 1.4999999 already did.
-
-**Filed upstream as [OCCT#1591](https://github.com/Open-Cascade-SAS/OCCT/pull/1591) against `master`**; the report is [OCCT#1568](https://github.com/Open-Cascade-SAS/OCCT/issues/1568). Upstream's GTests are organised per toolkit and every PR is asked for
-one; the reproducer needs the 19-face model, and plain boxes with radii at their face widths (372
-cases) never reach the branch, so a small programmatic input is still to be found. OCCT#1568 carries
-our minimisation and a note that we would report the cause.
 
 ## 0055-GProp_SelGProps-GProp_VelGProps-cone-matrix-of-inertia-3010.patch
 
@@ -3414,7 +2576,7 @@ prism, faces 0 and 2) and the contract above stated in its description.
 
 ## 0059-ChFi3d-Builder-fillets-that-meet-exactly-are-built-not-refused-3207.patch
 
-**Two fillets that meet exactly are built instead of refused** ([#3207](https://github.com/SecondMouseAU/OCCTSwift/issues/3207), upstream [OCCT#1177](https://github.com/Open-Cascade-SAS/OCCT/issues/1177) and `tests/bugs/modalg_7/bug25478_1`), `src/ModelingAlgorithms/TKFillet/ChFi3d/` in the pinned tree. **Candidate: no PR, nothing reported upstream.**
+**Two fillets that meet exactly are built instead of refused** ([#3207](https://github.com/SecondMouseAU/OCCTSwift/issues/3207), upstream [OCCT#1177](https://github.com/Open-Cascade-SAS/OCCT/issues/1177) and `tests/bugs/modalg_7/bug25478_1`), `src/ModelingAlgorithms/TKFillet/ChFi3d/` in the pinned tree. **Upstream `IR` has an equivalent, in a different form** (checked 2026-11-25): `ChFi3d_HasCompleteCoincidence` and `ChFi3d_HasTransversalIntersection` from [OCCT#1293](https://github.com/Open-Cascade-SAS/OCCT/pull/1293) and [OCCT#1449](https://github.com/Open-Cascade-SAS/OCCT/pull/1449), merged 2026-08-09 after `V8_0_2` was cut, with GTests named `Issue1177_*`. Nothing here is to be filed; this patch retires at the first kernel built from a release that holds them.
 
 On a 4 x 10 x 6 box, fillets on the two top edges along Y give `IsDone() == false` at r = 2 (half the 4 wide face) and valid solids up to 1.99999999. The refusal is the OCC119 guard against intersecting fillets, in two places that both throw `StdFail_NotDone("... fillets have too big radiuses")`: `PerformOneCorner` (the end caps on the end face touch at a point) and `ChFi3d_StripeEdgeInter` (the two contact curves on the top face coincide). With both lifted, r = 2 builds, but the top face between the stripes is left with no width and the result is BRepCheck-invalid (8 faces, one of area 0).
 
@@ -3426,23 +2588,9 @@ Known limits: `Modified()`/`Generated()` return the faces from before `FixStripF
 
 Measured against the `v4.0.0-kernel.5` asset with the three changed files override-linked (`Scripts/repro/fillet-exact-meeting-fix/README.md`): 715 box cases before and after, none regressed and none newly invalid; 16 `IsDone` false now valid with the analytic volume.
 
-## 0064-TopOpeBRepBuild-CorrectUnclosedWire-collects-the-edges-before-removing-them-3335.patch
-
-**A fillet whose ends meet in the face merge no longer reads a freed list node** ([#3335](https://github.com/SecondMouseAU/OCCTSwift/issues/3335), upstream [OCCT#1619](https://github.com/Open-Cascade-SAS/OCCT/issues/1619), same site as OCCT#1430).
-
-`CorrectUnclosedWire` in `TopOpeBRepBuild_Merge.cxx`, called from `TopOpeBRepBuild_Builder::MakeFaces` during `ChFi3d_Builder::Compute` -> `MergeSolid`, calls `BRep_Builder::Remove(aWire, ed)` inside a `TopoDS_Iterator` loop over `aWire`. `Remove` frees the list node the iterator stands on and the next `Next()` reads freed memory: an uncatchable SIGSEGV, 20 of 20 runs on OCCT#1619's `fillet_uaf.brep` (r = 1.25 on explode edges 26 and 35) and 3 of 3 on each of OCCT#1430's two cases.
-
-The edges with at most one vertex are collected while iterating and removed after the loop ends. The second loop, over the vertex to edge map, walks a separate map and is unchanged.
-
-Measured by override-link of the patched object into a copy of the `v4.0.0-kernel.6` macOS slice: `FilletMergeWireRemovalTests` dies with signal 11 against the unpatched archive and passes against the patched one (the pair answers `nil`; the r = 1.0 control still answers a valid 32-face shape).
-
-**Upstream checked 2026-10-14:** OCCT#1619 is open with no PR and the loop is unchanged on master. **Not yet filed upstream**; it needs a GTest that fillets the model above.
-
-**Retire** once the bundled OCCT includes this fix.
-
 ## 0065-BRepBlend_Walking-Perform-reports-not-done-for-a-non-finite-range-3350.patch
 
-**A chamfer with parallel spine tangents is declined instead of killing the process, and a chamfer that is not a valid solid is not returned** ([#3350](https://github.com/SecondMouseAU/OCCTSwift/issues/3350), upstream [OCCT#1576](https://github.com/Open-Cascade-SAS/OCCT/issues/1576) and FreeCAD#21369), `src/ModelingAlgorithms/TKFillet/` (`BRepBlend/BRepBlend_Walking.cxx`, `ChFi3d/ChFi3d_ChBuilder.cxx`, `BRepFilletAPI/BRepFilletAPI_MakeChamfer.cxx`). **Candidate: no PR, nothing reported upstream.** The number is 0065: 0060 to 0063 are held by fillet branches that are not merged yet and 0064 is #3335's (#3460).
+**A chamfer with parallel spine tangents is declined instead of killing the process, and a chamfer that is not a valid solid is not returned** ([#3350](https://github.com/SecondMouseAU/OCCTSwift/issues/3350), upstream [OCCT#1576](https://github.com/Open-Cascade-SAS/OCCT/issues/1576) and FreeCAD#21369), `src/ModelingAlgorithms/TKFillet/` (`BRepBlend/BRepBlend_Walking.cxx`, `ChFi3d/ChFi3d_ChBuilder.cxx`, `BRepFilletAPI/BRepFilletAPI_MakeChamfer.cxx`). **Upstream: [OCCT#1576](https://github.com/Open-Cascade-SAS/OCCT/issues/1576) (open) reports the same crash and no PR exists** (checked 2026-11-25). A comment on it with the `ExtentSpineOnCommonFace` cause is drafted. The number is 0065: 0060 to 0063 are held by fillet branches that are not merged yet and 0064 is #3335's (#3460).
 
 On the OCCT#1576 model (36 edges), `BRepFilletAPI_MakeChamfer` at d = 1 on each edge one at a time is a SIGSEGV on 12 of them (edges 14 and 16 to 26) on the pinned kernel. The stack is `Extrema_GGExtPC::Perform` under `BRepBlend_Walking::CorrectExtremityOnOneRst`, with the walk's `Pmax = -inf`, `Fleche = inf` and a NaN point. Override-linking `BRepBlend_Walking`, `ChFi3d_Builder_2` and `ChFi3d_ChBuilder` and printing at each stage gives the origin: `ExtentSpineOnCommonFace` (`ChFi3d_ChBuilder.cxx`, reached from `ExtentTwoCorner`) prints `cos=1 sin=0 dis1=1 dis2=1 d1plus=inf d2plus=inf`. For parallel spine tangents `tga = sinalpha / temp` is 0 and `d1plus = dis1 / tga` is infinity, which passes `if (d1plus > 0.)` into `Spine->SetFirstParameter(-inf)`. The ElSpine range `(-inf, +inf)` is then `wf` and `wl` in `PerformSetOfSurfOnElSpine`, and `Perform(..., Pmax, ..., Fleche)` is called with `Pmax = -inf` and `Fleche = inf`.
 
@@ -3508,7 +2656,7 @@ The check is a literal `throw StdFail_NotDone`, as the two other `StdFail_NotDon
 
 Measured by override-link of the patched `BRepFill_TrimSurfaceTool.cxx` (`-O2 -DNo_Exception`) against the `v4.0.0-kernel.6` macOS slice: the circle-spine probes with the profile through the axis die with signal 11 unpatched and report `StdFail_NotDone: ... incoherent intersection` patched; the off-axis profile `(5,0,0) -> (5,2,3)`, the `axeProf` true case and a start 1 from the axis still build in both.
 
-**Upstream checked 2026-10-15:** no open issue or PR on Open-Cascade-SAS/OCCT names `BRepFill_TrimSurfaceTool`. **Not yet filed upstream**; the same compiled-out `_Raise_if` pattern is catalogued in `okf/policies/occt-validation-is-compiled-out.md`.
+**Upstream checked 2026-11-25:** [OCCT#1739](https://github.com/Open-Cascade-SAS/OCCT/issues/1739) (open, `LocOpe_DPrism`) reports the same failing statement and no PR names `BRepFill_TrimSurfaceTool`. **Not yet filed upstream**; the same compiled-out `_Raise_if` pattern is catalogued in `okf/policies/occt-validation-is-compiled-out.md`.
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -3919,6 +3067,889 @@ this depth; read them as history, not as a description of anything the build sti
 Before each file was deleted its hunks were checked against the as-merged upstream form in the
 pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
 Each section opens with that verdict.
+
+## 0019-AdvApp2Var-jacobi-max-wrong-workspace-slot-522.patch
+
+**RETIRED 2026-11-24, at the `V8_0_2` base move (#3534, #3543). The `.patch` file is deleted and the next kernel does not carry it.** Absorbed by OCCT#1418 (`eb9e347af9`); relation to this patch: identical: the patch reverse-applies to `V8_0_2`. The survey is in [`docs/occt-upgrades.md`](../../docs/occt-upgrades.md) "8.0.1 to 8.0.2".
+
+
+**Fixes the upstream OCCT defect behind [#522](https://github.com/SecondMouseAU/OCCTSwift/issues/522)**, found while building [#491](https://github.com/SecondMouseAU/OCCTSwift/issues/491)'s surface-approximation parity tests: `GeomConvert_ApproxSurface` asked for `GeomAbs_C0` returned a surface nowhere near its input while reporting `IsDone()` and a `MaxError()` five orders of magnitude too small.
+
+`AdvApp2Var_ApproxF2var::mma2ce1_` requests one scratch allocation and partitions it into seven consecutive buffers, of which `ipt4` holds `XMAXJU` (the maxima of the U Jacobi polynomials) and `ipt5` holds `XMAXJV` (the V ones). Both `mma2jmx_` calls that fill them target `ipt5`:
+
+```c
+AdvApp2Var_ApproxF2var::mma2jmx_(ndjacu, iordru, &wrkar_off[ipt5]);   /* -> should be ipt4 */
+AdvApp2Var_ApproxF2var::mma2jmx_(ndjacv, iordrv, &wrkar_off[ipt5]);
+```
+
+So `XMAXJU` is never written. `mma2ce2_` still reads it at `ipt4`, where the allocation left whatever was there, in practice zeros, and passes it to `mma2er1_`/`mma2er2_`, whose entire error model is `|PATJAC(i,j)| * XMAXJU(i - 2*(IORDRU+1)) * XMAXJV(j - 2*(IORDRV+1))`. A zero `XMAXJU` zeroes every term, with two silent consequences: (1) the interior approximation error of a patch is reported as exactly 0 whatever the discarded coefficients are, so `mma2ce2_`'s tolerance test can never fire on it and `MaxError()` only ever reflects the boundary-iso errors `AdvApp2Var_Patch::AddErrors` adds afterwards; (2) `mma2er2_`, asked for the lowest degree whose truncation error still fits the tolerance, always answers `NDMINU`, the floor derived from the constraint order and the neighbouring isos, because every candidate scores 0.
+
+Where that floor is low the fit collapses onto it. C0 gives `IORDRU = 0`, and a full sphere's V-boundary isos degenerate to its two poles, one coefficient each, so `NDMINU` is 1: a radius-10 sphere at tolerance 1e-3 came back as a degree-1, 2-pole-in-U B-spline, a straight line across the full `2*pi` of longitude, deviating by the sphere's own diameter of 20, reporting `MaxError()` 1.07e-4. A bicubic Bezier at C0/C0 collapsed to a 2x2 bilinear patch reporting 4.08e-15, unchanged from tolerance 1e-1 down to 1e-7, because the requested tolerance was compared against a number that was always zero. C1 and C2 hid the collapse (their floor is already high) but not the misreported error.
+
+The write also overruns: `mma2jmx_` writes `ndjacu + 1 - 2*(IORDRU+1)` doubles and the `ipt5` slot is sized for the `ndjacv` equivalent, so a request with `MaxDegU` well above `MaxDegV` runs past `XMAXJV` into the `VECERR` slot behind it. Benign in practice, `VECERR` is re-zeroed on entry to `mma2ce2_` and the run stays inside the single allocation, but out of bounds for the buffer it was given.
+
+**Fix:** target `ipt4` from the U call. One character; the two lines then read symmetrically. `AdvApp2Var_Context`'s own two `mma2jmx_` calls (the only others in the tree) already write to separate per-direction arrays and were correct.
+
+**Validation** (fast path first, then the real binary, see the `#0001` entry above for the override-link technique, compiled with `-DNDEBUG -DNo_Exception` to match the production build): dumping `&wrkar_off[ipt4]` shows `xmaxju[8] = 0 0 0 0 0 0 0 0` on stock and `0.9682 0.986 1.078 1.173 1.265 1.352 1.434 1.513` after. Across a 98-case sweep (7 surface families x all 9 `(uCont, vCont)` combinations of C0/C1/C2, plus C0/C0 at five tolerances) the results whose real deviation exceeds the reported `MaxError` by more than 10x go from **12 to 0**, and those that exceed it at all from 17 to 1, the survivor being a Bezier reproduced exactly, reporting 9.95221e-15 against a measured 9.96978e-15. Reported errors rise slightly everywhere, which is the interior contribution being counted for the first time. Confirmed against the rebuilt xcframework with no override-linked TUs, matching the override-linked prediction line for line. Full `swift test` (4842 tests / 1346 suites) clean.
+
+`GeomConvert_ApproxSurface` is not a leaf. `GeomFill_Sweep`, `BRepOffset_Offset`, `GeomLib`, `ShapeCustom_BSplineRestriction`, `ShapeConstruct`, `ShapeUpgrade_UnifySameDomain` and `GeomConvert_1` (twice) all construct it, `ShapeCustom_ConvertToBSpline` reaches it through `ShapeConstruct`, and `GeomPlate_MakeApprox` drives `AdvApp2Var_ApproxAFunc2Var` directly. Most pass C1 or C2, where the collapse cannot happen, but the always-zero interior error affected all of them; and the healing paths reach C0 deliberately: `ShapeConstruct::ConvertSurfaceToBSpline` and `ShapeCustom_BSplineRestriction` both loop the requested continuity down to 0 on failure and then accept the result on `MaxError() <= tol`, and `ShapeCustom_ConvertToBSpline` *starts* at C0 for any offset surface (`ShapeCustom_ConvertToBSpline.cxx:148`) before handing off to the first of those. (`BRepFill_Sweep.cxx:1162` and `BRepFill_Filling.cxx:712` also name the class but are both inside comment blocks, so neither is a live caller; see #573.)
+
+See [`Scripts/repro/522-approx-c0-collapse/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/522-approx-c0-collapse) for the reproducers and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1418](https://github.com/Open-Cascade-SAS/OCCT/pull/1418), a fix PR with no companion repro issue, per upstream's own guidance on [OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409#issuecomment-5124395058). Based on `b8f597c6`; the touched file is byte-identical between upstream `master` and our `V8_0_0_p1` pin, so the patch is the same change on both. **Merged upstream 2026-08-10**, one file, 1 insertion and 1 deletion, and it is on `upstream/master` as `07e6d8d40`. It is not in any OCCT release yet, so this patch stays carried; retire it at the release that contains it, per the rule below.
+
+**Provenance (#756):** this is a regression, not an original defect. `3016a390713d2e893f4bfa797882b9f0266840e1` (2021, a UBSan coding-rules cleanup) renumbered every workspace offset in `mma2ce1_` down by one position and missed exactly one of the two `mma2jmx_` call sites; confirmed at the release-tag level, not just the commit diff, `V7_5_0` writes the U and V Jacobi maxima to two distinct slots and `V7_6_0` (the first release after the commit) already collapses them to one. Full mechanism is in [`Scripts/repro/522-approx-c0-collapse/README.md`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/522-approx-c0-collapse#upstream-provenance-756). The reply drafted to carry it upstream was never sent, and #1418 merged without it; that directory's `upstream/` files each say so at the top (#803).
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0029-XCAFDoc_Datum-point-read-from-plane-array-1022.patch
+
+**RETIRED 2026-11-24, at the `V8_0_2` base move (#3534, #3543). The `.patch` file is deleted and the next kernel does not carry it.** Absorbed by OCCT#1483 (`784c1ad96d`); relation to this patch: identical: the patch reverse-applies to `V8_0_2`. The survey is in [`docs/occt-upgrades.md`](../../docs/occt-upgrades.md) "8.0.1 to 8.0.2".
+
+
+**Fixes the upstream OCCT defect behind
+[#1022](https://github.com/SecondMouseAU/OCCTSwift/issues/1022)**: `XCAFDoc_Datum::GetObject` builds
+the datum's point from `aLoc`, the array the `ChildLab_PlaneLoc` block above it fills, instead of
+`aPnt`, the point's own.
+
+```cpp
+gp_Pnt aP(aLoc->Value(aPnt->Lower()),        // aLoc, not aPnt
+          aPnt->Value(aPnt->Lower() + 1),
+          aPnt->Value(aPnt->Lower() + 2));
+```
+
+`XCAFDoc_GeomTolerance::GetObject`'s block is otherwise identical and reads
+`aPnt->Value(aPnt->Lower())`, so this is a one-character divergence rather than a shared idiom.
+
+**Two faces, and they are separate defects with separate triggers**, which is why the fix carries a
+test for each rather than one for the crash.
+
+1. **A wrong answer when the datum has both.** Measured: plane location `(6,6,6)` and point
+   `(7,7,7)` written, `point=(6,7,7)` read back. The stored point is not recoverable. A guard that
+   only stopped the crash would leave this in place, which is the reason it is tested on its own.
+2. **An uncatchable SIGSEGV when the datum has a point and no plane.** `aLoc` is declared before the
+   plane block and assigned only by a successful `FindAttribute` there, so it is null when the point
+   block dereferences it. An OS signal, not a `Standard_Failure`, so the bridge's `catch (...)`
+   cannot absorb it.
+
+**Reachability, measured rather than inherited from the report.** Both crashing sections of the
+reproducer read the datum with exactly the three calls `occtDocumentDatumObjectAt` makes
+(`GetDatumLabels`, `FindAttribute`, `GetObject`). **Seven** bridge functions route through that
+shared helper since #1004 (PR #1025) hoisted it, and five of them are write paths, so the exposure is not
+read-side only: `OCCTDocumentGetDatumInfo`, `OCCTDocumentGetDatumModifier`,
+`OCCTDocumentSetDatumPosition`, `OCCTDocumentSetDatumModifiers`,
+`OCCTDocumentSetDatumModifierWithValue`, `OCCTDocumentSetDatumTarget`,
+`OCCTDocumentSetDatumTargetPlacement`. The helper calls `GetObject()` before any caller can look at
+what it returned, so a write that never touches the point still takes the crash. Being one helper is
+also why a guard is one site rather than seven.
+
+- **A STEP import alone cannot produce the crashing shape.** `STEPCAFControl_Reader` sets a datum
+  plane and never a datum point: its only `SetPoint` calls are on an
+  `XCAFDimTolObjects_DimensionObject`, a different class, and the datum object's enumerated
+  mutations are `SetName`, `SetPosition`, `SetModifiers`, `SetModifierWithValue` and the datum
+  target ones. A STEP-imported datum is the safe shape.
+- **An OCAF load can, and the reproducer's section D proves it** rather than arguing it: the same
+  point-only datum is saved to BinXCAF, reloaded into a fresh `TDocStd_Application`, and crashes on
+  the reload. `HasPlane()` and `HasPoint()` are independent flags and `SetObject` writes the two
+  blocks independently, so this is what the public OCCT API produces, not a hand-forged label tree.
+- **Nothing in this repo authors it today.** `OCCTDocumentCreateDatum` sets a name, a position and
+  a `DatumModifWithValue_None` pair, and nothing that reaches either branch (#1004's own comment
+  explains why those two are needed and why the datum-target setters are deliberately left alone).
+  So every datum this package writes takes neither branch. That is a property of the current write
+  surface, not of the read path, and it is the only reason the existing suite does not crash.
+- **The STEP writer is a second reader of the same accessor.** `STEPCAFControl_Writer` calls
+  `GetObject()` on every datum in three places, so exporting a document holding such a datum takes
+  the same crash.
+
+**A bridge-side guard is possible and is reported rather than shipped.** The reason is an
+ownership boundary rather than a judgement that the guard is wrong: `OCCTBridge_Document.mm` is held
+by a concurrent agent in this lane, so a guard written here would race their edits in the one file
+the guard belongs in. It is tracked as
+[#1030](https://github.com/SecondMouseAU/OCCTSwift/issues/1030) rather than left in prose, because
+this patch is in no built kernel and the crash is uncatchable, so nothing protects a consumer
+meanwhile. The check has to precede `GetObject()`, and
+`XCAFDoc_Datum` exposes no `HasPlane()`, so the only way to ask is the label's children:
+`ChildLab_PlaneLoc` and `ChildLab_Pnt` are values of a **file-local anonymous enum**, tags `14` and
+`17` at this pin, invisible from the header. A guard would skip the datum when `FindChild(17,
+false)` holds a length-3 `TDataStd_RealArray` and `FindChild(14, false)` holds no
+`TDataStd_RealArray` (only `ChildLab_PlaneLoc` matters, since the kernel's `&&` chain assigns
+`aLoc` before testing `ChildLab_PlaneN`). Cheap and precise, at the cost of hard-coding two private
+tags that upstream can renumber with no compile-time signal here. `XCAFDoc_Datum::GetName()` is not
+an alternative: it returns the legacy `myName` that `SetObject` never writes, so swapping it in
+would return an empty name for every datum this package or the STEP reader creates.
+
+**Validation.** `run.sh` builds the reproducer against the pinned archive and against the patched
+translation unit override-linked ahead of it: section A goes from `(6,7,7)` to `(7,7,7)`, sections C
+and D go from SIGSEGV to `point=(7,7,7)`, and section B's plane-only control is identical either
+way. Three GTests in the existing `XCAFDoc_GDT_Test.cxx`
+(`GdtDatum_PointIsReadFromItsOwnArray`, `GdtDatum_PointWithoutPlane`, `GdtDatum_PlaneWithoutPoint`)
+are run both ways by `run-gtest.sh`, so the file's eight pre-existing cases are exercised on both
+sides. Unpatched the run is split in two, because `GdtDatum_PointWithoutPlane` takes the whole
+process down with a SIGSEGV and gtest cannot catch one: ten cases in the first invocation, of which
+the value case fails and the plane-only control plus all eight pre-existing ones pass, and the crash
+case alone in a second, exiting 139. Patched, **all eleven pass in one unfiltered run**.
+`clang-format --dry-run --Werror` against OCCT's own `.clang-format` reports zero violations on both
+changed files. `XCAFDoc_Datum.cxx` is byte-identical between the pinned `V8_0_1` tree and current
+upstream `master` (`7d2efad9c`), checked rather than assumed.
+
+**Not in the pinned asset**, same as `0028`: `ci.yml`'s `build-and-test` resolves the pinned
+kernel and never sees it. `kernel-integration.yml` does build this patch on the PR that carries it,
+which proves it applies, compiles and regresses nothing, but the suite cannot exercise the fix:
+`OCCTDocumentCreateDatum` cannot author a datum that reaches either branch, so no Swift test can
+reach the defect without a new write path. Unlike `0028`, that gap matters, because this one is an
+uncatchable crash a consumer can reach through an OCAF load. That is what #1030 is for.
+
+Filed upstream as [OCCT#1483](https://github.com/Open-Cascade-SAS/OCCT/pull/1483).
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0034-GeomFill-CoonsAlgPatch-Value-U-parameter-1515.patch
+
+**RETIRED 2026-11-24, at the `V8_0_2` base move (#3534, #3543). The `.patch` file is deleted and the next kernel does not carry it.** Absorbed by OCCT#1550 (`d241c9fa88`); relation to this patch: same code: the patched source equals `V8_0_2` with comments and blank lines removed. The survey is in [`docs/occt-upgrades.md`](../../docs/occt-upgrades.md) "8.0.1 to 8.0.2".
+
+
+**`GeomFill_CoonsAlgPatch::Value(U, V)` sampled all four boundaries at `V`.** `bound[0]` and
+`bound[2]` are the U-direction sides, per the constructor's own corner-point derivation, and the
+class's derivative functions already know it: `D1U` calls `bound[0]->D1(U, ...)` and
+`bound[2]->D1(U, ...)`, and `DUV` does the same. Only the plain `Value()` used `V` for those two.
+
+The effect is not a small error. For any boundary set whose V-direction sides are straight,
+`Value(U, V)` is **completely independent of `U`**, and the whole surface collapses onto the
+diagonal `U == V` locus. Every sample with `U == V` is coincidentally right, which is what let it
+survive.
+
+**The fix is two lines, and OCCTSwift#1515 said it could not be.** That issue reported that a naive
+swap "produces a third, different, still-wrong set of values ... because the correction-term
+coefficients (`a0..a3`, and the four corner blends) would need re-deriving consistently too", and
+concluded the defect needed a real re-derivation. That is wrong, and both the algebra and a
+measurement say so.
+
+Differentiating a `Value()` with `bound[0]`/`bound[2]` at `U` gives `D1U` **exactly**, every corner
+coefficient included: `d/dU [a0*bound0(U)] = a0*bound0'(U)` matches `D1U`'s `bound[0]->D1(U)`
+scaled by `a0`; `d/dU [a1(U)*bound1(V)] = a1'(U)*bound1(V)` matches its `bound[1]->Value(V)` scaled
+by the derivative `a1`; and each of the four corner terms matches under `a3 = 1 - a1`, `a3' = -a1'`.
+Since `D1U` is already correct in the shipped kernel, the `Value()` it is the derivative of is the
+one this patch writes.
+
+Confirmed numerically on a planar square
+(`Scripts/repro/1515-coons-value-u-parameter/occt_1515_coons_probe.mm`), re-implementing `Value()`
+with the kernel's own coefficients and only the two sampling parameters changed:
+
+```
+   u     v  |      kernel Value()     |   one-line-fixed Value()
+ 0.00  0.50 | (  0.500,  0.500)       | (  0.000,  0.500)
+ 0.50  0.00 | (  0.000,  0.000)       | (  0.500,  0.000)
+ 1.00  0.50 | (  0.500,  0.500)       | (  1.000,  0.500)
+ 0.25  0.75 | (  0.750,  0.750)       | (  0.250,  0.750)
+```
+
+The fixed column is the exact bilinear surface. No coefficient was touched.
+
+**Blast radius.** `GeomFill_ConstrainedFilling` builds a `GeomFill_CoonsAlgPatch` but never calls
+`Value()`; it evaluates through `Eval()` and fits an approximated B-spline, so its output was never
+affected. The one consumer that calls `Value()` directly is OCCTSwift's own
+`OCCTGeomFillCoonsAlgPatchEval`, backing `Shape.coonsAlgPatch`, which samples it across an eval
+grid.
+
+**Upstream-bound.** Filed as [OCCT#1550](https://github.com/Open-Cascade-SAS/OCCT/pull/1550) against `master`; see the note in `okf/references/carried-occt-patches.md` about
+the seven OCCTSwift thread-safety PRs still open on Release 8.1.
+
+## 0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827.patch
+
+**RETIRED 2026-11-24, at the `V8_0_2` base move (#3534, #3543). The `.patch` file is deleted and the next kernel does not carry it.** Absorbed by OCCT#1587 (`00e6b907ac`); relation to this patch: same code. The survey is in [`docs/occt-upgrades.md`](../../docs/occt-upgrades.md) "8.0.1 to 8.0.2".
+
+
+**The by-plane mass is computed and then discarded**
+([#2827](https://github.com/SecondMouseAU/OCCTSwift/issues/2827)),
+`src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Gauss.cxx:494-528` in the pinned tree:
+
+```cpp
+  convert(theInertia, theOutGravityCenter, theOutMatrixOfInertia, theOutMass);  // sets the mass
+  if (std::abs(theInertia.Mass) >= EPS_DIM && theIsByPoint)
+  {
+    ...
+    theOutMass = theInertia.Mass;
+  }
+  else
+  {
+    theOutMass = 0.0;                    // every by-plane call lands here
+    theOutGravityCenter.SetCoord(0.0, 0.0, 0.0);
+  }
+```
+
+The four-argument `convert` on the first line has already written the correct mass. The
+`&& theIsByPoint` then sends every by-plane call into an `else` written for the vanishing-mass case,
+which overwrites it with `0.0` and the gravity centre with `(0, 0, 0)`. The fix is to drop
+`&& theIsByPoint` from the outer condition, which is also what makes the inner
+`if (theIsByPoint) ... else ...` live: that `else` is unreachable today, and it exists, so the outer
+condition was meant to test `EPS_DIM` alone.
+
+**Why the inner `else` is the right formula and not just the reachable one.** For a by-point
+computation `theCoeff` is a three-element translation, `theOrigin - loc`
+(`BRepGProp_Vinert.cxx:238`), so the gravity centre is `theCoeff[i] + I*/mass`. For a by-plane
+computation `theCoeff` is the four plane coefficients `a, b, c, d` with `d` re-based on `loc`
+(`BRepGProp_Vinert.cxx:279`). Those are not a translation and must not be added to a coordinate. The
+by-plane gravity centre is `I*/mass` relative to `loc`, which is what the inner `else` computes and
+what the four-argument `convert` on the first line had already written. The matrix of inertia is
+assigned unconditionally after the branch and does not move.
+
+### The population, derived rather than grepped
+
+`BRepGProp_Gauss::Compute` reaches this overload only when `myType == Vinert`, and calls the
+four-argument `convert` otherwise, so `BRepGProp_Sinert` and `BRepGProp_Cinert` are untouched. Inside
+`BRepGProp_Vinert` the flag is `false` at exactly three `Compute` call sites,
+`BRepGProp_Vinert.cxx:285`, `:300` and `:317`, which are the bodies of the four by-plane `Perform`
+overloads (`:263` forwards to `:273`, whose body is `:285`) and therefore of the four `gp_Pln`
+constructors that delegate to them. Both `Compute` paths, the adaptive one at
+`BRepGProp_Gauss.cxx:1101` and the plain one at `:1388`, reach this `convert`.
+
+**OCCT has no callers of that path at all**, per
+[`okf/policies/follow-occt-callers.md`](../../okf/policies/follow-occt-callers.md)'s "when OCCT does
+not answer" clause. `BRepGProp.cxx:311` is the kernel's only `BRepGProp_Vinert` call site and it
+passes a point. The by-plane public entry point, `BRepGProp::VolumePropertiesGK(S, Props, thePln,
+...)`, goes through `BRepGProp_VinertGK` and `math_KronrodSingleIntegration`, a separate integrator
+that never reaches this function. So the kernel never meets the defect itself, and the expected value
+had to be measured rather than read off a call site.
+
+### Measured, macOS arm64, before and after
+
+`Scripts/repro/2827/probe.mm`, per face with the `BRepGProp_Domain` loaded so the integral is over
+the trimmed region, alongside `VolumePropertiesGK` over the same shape as the independent
+construction. The transcript against the patched kernel is committed as
+`Scripts/repro/2827/patched-kernel-transcript.txt`:
+
+| fixture and plane | `Vinert` by plane, before | after `0043` | `VolumePropertiesGK` |
+|---|---|---|---|
+| 10-cube, plane z = 0 | 0 | 1000 | 999.9999999999999 |
+| 10-cube, plane z = -100 | 0 | 1000 | 1000.000000000002 |
+| 10-cube, oblique plane | 0 | 999.9999999999999 | 1000 |
+| 20x20x2 plate, radius-3 hole, z = 0 | 0 | 743.4513322353836 | 743.4513322353838 |
+| cylinder r = 5 h = 10, plane z = 0 | 0 | 785.3981633974481 | 785.3981633974456 |
+
+The by-point `Vinert` sums over the same faces are 999.9999999999998, 743.4513322353837 and
+785.3981633974482, and `BRepGProp::VolumeProperties` reports 999.9999999999998, 743.4513322353836 and
+785.3981633974482. So the zero was not the integrand vanishing, and not a plane placed where the
+answer happens to be zero: the same three shapes through OCCT's own by-plane entry point give the
+volume to the last few digits, and the patched `Vinert` now does too.
+
+### What the by-plane mass IS, which had to be settled before anything could assert it
+
+A value that reads as a measurement and is not one is #2827's whole character, so "replace the zero
+with the number we saw" would repeat it one level up. Neither the sum nor any single face's value is
+a snapshot in the regression suite; both are identities derived from the integrand and measured
+against a construction that shares no code with it.
+
+The by-plane integrand is (`BRepGProp_Gauss.cxx:340-348`)
+
+```
+dv = (n_hat . n_face) * d1 * dS,   d1 = n_hat . P - theCoeff[3]
+```
+
+with `theCoeff[3]` the plane's fourth coefficient re-based at `BRepGProp_Vinert.cxx:279`. So `dv` is
+the signed volume of the column between the surface element and the reference plane, and two
+divergence-theorem identities follow, neither depending on which plane was passed:
+
+- `F = d1 * n_hat` has `div F = n_hat . n_hat = 1`, so the **per-face sum over a closed shell is the
+  enclosed volume, for any plane.** The offset moves the per-face split and not the total.
+- `F_x = (x * d1 - n_hat_x * d1 * d1 / 2) * n_hat` has `div F_x = x`, and that bracket is exactly the
+  `Ix` integrand at `BRepGProp_Gauss.cxx:350`, so the **mass-weighted sum of the per-face gravity
+  centres is the solid's own first moment**, again for any plane. This is also why the inner `else`
+  the patch makes live is the right formula: the centre it writes is the column's centroid.
+
+Measured against `BRepGProp::VolumeProperties`, which goes through a different loop and never reaches
+this function. On a 20x20x2 plate with a radius-3 hole translated to (7, -3, 2), so the first moment
+is not a comparison against the origin, for a plane through the origin, a plane at z = -100 and an
+oblique one, all three give sum 743.45133223538 against volume 743.4513322353836 and first moment
+(12638.672648, 5204.15932565, 2230.35399671) against the same three figures from
+`VolumeProperties`. A 10-cube and a cylinder agree to the same precision.
+
+**A third identity, per face rather than summed.** For a *planar* face the integral reduces to
+`(n_hat . n_face) * area * (n_hat . C - d)` with `C` the face's area centroid and `d` the offset the
+caller asked for, so the by-plane mass is affine in the plane offset with slope minus the face's
+signed projected area. (Written with a `+` here until #2873: see below.) Measured on the plate's
+seven faces with the plane normal along z: the two caps have slope +371.72566611769 and
+-371.72566611769, exactly `+-area`, and the four sides and the cylindrical wall have slope 0, as
+faces parallel to the normal must.
+
+**The offset's sign is inverted, so the value is measured about the plane mirrored through the
+origin.** The integrand reads `theCoeff[3]` as the right-hand side of `n_hat . X = theCoeff[3]` and
+subtracts it, while `aCoeff[3] = d - n_hat . loc` fills it from `gp_Pln::Coefficients`' `d`, which
+belongs to the `n_hat . X + d = 0` form. Measured on a flat cap where `mass / area` reads `d1` off
+directly: the cap at z = 2 gives `d1` 2, 3, -98 and 7 for planes at z = 0, 1, -100 and 5, where the
+geometric signed distance is 2, 1, 102 and -3. That is a **separate** defect from this patch, it does
+not disturb either identity above (`d1` is still affine with gradient `n_hat`, which is all they
+need), and it is held as [#2873](https://github.com/SecondMouseAU/OCCTSwift/issues/2873) for the same
+upstream PR rather than patched here days before 8.0.2.
+
+Two corrections to that paragraph as it first stood, both from #2873's own probe
+(`Scripts/repro/2873/`). **`loc` is not a second defect.** `SetLocation` moves `d1` by nothing at the
+origin, at (0, 0, 3) and at the non-axial (-4, 11, 2.5), and that is the behaviour a distance to a
+plane has to have: the `- n_hat . loc` term exists to cancel the `P - loc` the integrand works in,
+and it cancels exactly, before and after the sign is corrected. There is one defect here, not two.
+**And it is three sites, not one:** `BRepGProp_VinertGK.cxx:219` and `:244` make the same conversion
+for the Kronrod path, whose integrand subtracts it at `BRepGProp_UFunction.cxx:99`, so the upstream
+hunk covers `BRepGProp_Vinert.cxx:279` and both of those. The two implementations print identical
+`d1` on every row of the probe, which is what makes this a second construction rather than a re-run.
+
+**The bridge compensated until the repin that pinned `0048`.** `OCCTBRepGPropVinertPlane` was
+handed `(planeNormal, planeDistance)` and built the `gp_Pln` itself, so it built the mirrored one and
+`Face.volumeInertia(planeNormal:planeDistance:)` measured about the plane the caller named. **A
+kernel carrying the upstream hunk while that mirror was still in place measured about the mirrored
+plane again**, so the mirror came out in the change that pinned `0048` (#3015), not in the one that
+retires this patch. `BRepGPropVinertTests`' two sign assertions are what failed on #3014 when it had
+not.
+
+### CI coverage, and the pin
+
+**Built and pinned by `v4.0.0-kernel.3`**, on the same day it was carried. It spent hours, not a
+release window, as the only carried patch in the tree that had never been compiled, and the reason
+it did not stay that way is that what it left exposed is a value a caller reads rather than a latent
+race: `Face.volumeInertia(planeNormal:planeDistance:)` returned a fabricated `0.0` for every face and
+every plane. The standing hold on repinning until OCCT 8.0.2 lands
+(`okf/policies/pinned-kernel-patch-check.md`) was the argument against the rebuild, and it lost to
+that.
+
+- `ci.yml`'s `build-and-test` resolves the pinned asset, which now carries `0043`, so the required
+  status check exercises it on every PR.
+- `kernel-integration.yml` triggers on `Scripts/patches/**` and builds from source, and it is the
+  independent check that the patch is in the binary rather than merely in the tree: building against
+  the new asset locally makes #2827's regression fail at the same lines and values as that job's own
+  build.
+- The wasm kernel is a patch behind until the 8.0.2 rebuild, acknowledged in
+  `Scripts/wasm-kernel-pin.txt` and keyed to thirty-one native patches so it expires at the next
+  repin.
+
+What the repin took: a rebuild from a tree whose only modifications are the carried patches (79
+modified files against 79 patch-touched files, zero unexplained, all thirty-one reverse-applying),
+`python3 Scripts/check-pinned-asset-patches.py --require-asset` against the published asset, the zip
+uploaded as the `v4.0.0-kernel.3` pre-release, **both** `url:` and `checksum:` bumped, `0043` moved
+into `Package.swift`'s enumerated list (taking `patches_pinned` to thirty-one and `patches_unpinned`
+to none), and `Tests/OCCTAnalysisTests/BRepGProp/BRepGPropVinertTests.swift`'s pinned-zero regression replaced
+by the three identities above rather than by the numbers that were observed.
+
+**Retargeting risk at 8.0.2.** `BRepGProp_Gauss.cxx` is unmodified by every other carried patch, and
+upstream `master` was byte-identical on this line as of 2026-09-29 with no issue or PR naming
+`BRepGProp_Gauss`, so the hunk is expected to apply to `V8_0_2` unchanged. Re-run
+`git -C occt-src apply --check` at the repin rather than assuming it.
+
+Filed upstream as [OCCT#1587](https://github.com/Open-Cascade-SAS/OCCT/pull/1587) against `master`; the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07
+(see [`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)). **The submission carries a second
+hunk**, for [#2873](https://github.com/SecondMouseAU/OCCTSwift/issues/2873): `aCoeff[3] = d - n . loc`
+at `BRepGProp_Vinert.cxx:279`, and the same two lines at `BRepGProp_VinertGK.cxx:219` and `:244`, are
+subtracted by the integrand, so the offset reaches it with the opposite sign to a geometric distance
+and the value is measured about the plane mirrored through the origin. `loc` is not part of it: it
+cancels, correctly, both before and after. This patch exposes that rather than causing it, and the
+two belong in one PR because a reviewer reading the first will ask about the second. The upstream submission is where
+the GTest goes; the carried patch is the one-liner alone, as `0042` was.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0044-Extrema-ExtSS-ExtCS-Points-bound-against-point-sequence-2840.patch
+
+**RETIRED 2026-11-24, at the `V8_0_2` base move (#3534, #3543). The `.patch` file is deleted and the next kernel does not carry it.** Absorbed by OCCT#1596 (`55ff78f397`); relation to this patch: same code, plus a `StdFail_NotDone` check ahead of it. The survey is in [`docs/occt-upgrades.md`](../../docs/occt-upgrades.md) "8.0.1 to 8.0.2".
+
+
+**`Points()` reads an empty point sequence on a parallel pair**
+([#2840](https://github.com/SecondMouseAU/OCCTSwift/issues/2840)). `Extrema_ExtSS` and
+`Extrema_ExtCS` both count extrema with `NbExt() == mySqDist.Length()` and bound `Points()` against
+that count alone, and both analytic branches append a distance with no matching point pair when the
+pair is parallel (`Extrema_ExtSS.cxx:226-234`, `Extrema_ExtCS.cxx:302-306` in the pinned tree):
+
+```cpp
+  myIsPar = myExtElSS.IsParallel();
+  if (myIsPar)
+  {
+    mySqDist.Append(myExtElSS.SquareDistance(1));   // and nothing to myPOnS1/myPOnS2
+  }
+```
+
+An equidistant family has no unique witness point, so there is nothing to append. `NbExt()` then
+reports 1, `Points(1, ...)` passes its range test, and `myPOnS1.Value(1)` reads an empty
+`NCollection_Sequence`. The fix is the one `Extrema_ExtCC::Points` already carries as `0024`: bound
+against the point sequence. The tighter bound changes nothing for a non-parallel result, since
+`mySqDist` and the point sequences are appended together in every other branch.
+
+**The fault is not in `Points()`' own bound test.** That test is a literal `throw`, live in this
+Release build. What faults is `NCollection_Sequence::Value`'s `Standard_OutOfRange_Raise_if`, which
+is **inline** and therefore compiled out by `BUILD_RELEASE_DISABLE_EXCEPTIONS` in whichever
+translation unit expands it, here `Extrema_ExtSS.cxx`. So the read is an OS fault rather than a
+throw, uncatchable in-process (#345), and
+`Scripts/census-compiled-out-validation.py` has no channel that could have seen it: filed as
+[#2858](https://github.com/SecondMouseAU/OCCTSwift/issues/2858).
+
+### The family is exactly three, and generalising has nothing to generalise over
+
+This patch is the third instance of `0024`'s shape and the question of whether to generalise rather
+than copy was asked before it was written, in #2840 and answered by #2801's sweep. Every `.cxx`
+under `src/ModelingData/TKGeomBase/Extrema` that mentions `myIsPar`, compared for `mySqDist.Append`
+count against point-append count:
+
+| class | sqdist appends | point appends | verdict |
+|---|---|---|---|
+| `Extrema_ExtCC` | 11 | 0 | #636, carried patch `0024` |
+| `Extrema_ExtCS` | 4 | 6 | this patch |
+| `Extrema_ExtSS` | 4 | 3 | this patch |
+| `Extrema_ExtCC2d` | 2 | 0 | clean: `Points` bounds against `mynbext`, which moves in lockstep with `mypoints.Append` in both `Results` overloads |
+| `Extrema_ExtElC2d` | 0 | 0 | clean: fixed-size member array bounded against `myNbExt` |
+| `Extrema_ExtElC`, `Extrema_ExtElCS`, `Extrema_ExtElSS` | 0 | 0 | no appends at all |
+
+**There is no fourth, so the shared fix has three call sites and will not acquire more.** And there
+is no shared thing to put the fix in: the three classes hold their points in three different member
+shapes, `mypoints` interleaved for `Extrema_ExtCC`, `myPOnC`/`myPOnS` for `Extrema_ExtCS`,
+`myPOnS1`/`myPOnS2` for `Extrema_ExtSS`, with no common base and no accessor in common. A helper
+over that is a new base class or a new free function for a one-line predicate, which is a larger
+change to propose upstream than the three one-line bounds it would replace, and which upstream has
+no precedent for in this package. So the shape is copied, deliberately, and the two remaining sites
+land together rather than one at a time.
+
+### Measured, macOS arm64, before and after
+
+`Scripts/repro/2840/probe.mm` against the pinned `v4.0.0-kernel.3` asset with both translation units
+override-linked, per
+[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
+section 3. The transcript is committed as `Scripts/repro/2840/override-link-transcript.txt`.
+
+| mode | before | after |
+|---|---|---|
+| `Extrema_ExtSS`, two `Geom_Plane`s 5 apart, `Points(1, ...)` | exit 139 | `Standard_OutOfRange`, exit 0 |
+| `Extrema_ExtCS`, a `Geom_Line` 5 above a `Geom_Plane`, `Points(1, ...)` | exit 139 | `Standard_OutOfRange`, exit 0 |
+| `Extrema_ExtSS` control, two spheres 20 apart | 2 extrema, points returned | identical |
+| `Extrema_ExtCS` control, a line 40 above a sphere | 2 extrema, points returned | identical |
+
+`IsDone()`, `IsParallel()`, `NbExt()` and `SquareDistance(1)` are unchanged on every mode: the
+parallel pair still reports its one real measurement, 25 as a square distance in both cases. Only
+the point read moves, from a fault to a refusal. The unpatched override-linked run is
+byte-identical to the archive alone, which is how the pinned asset is known to carry no fix of its
+own here.
+
+### CI coverage, and the pin
+
+**Pinned by `v4.0.0-kernel.4`, the first asset to hold it.** It was carried without a rebuild on
+2026-09-30, when the pinned `v4.0.0-kernel.3` asset lacked it, and until the repin it was in **no**
+required check: `ci.yml`'s `build-and-test` resolves the asset. Now that the asset holds it,
+`build-and-test` exercises it. `kernel-integration.yml` triggers on `Scripts/patches/**` and builds
+`V8_0_1` plus every carried patch from source, so the PR that added it got it compiled, which proved
+it applied, compiled and regressed nothing.
+
+It was not rebuilt the day it was carried, because **the bridge already refused the input before the
+kernel saw it**. `0043` was rebuilt the day it was carried because what it left exposed was a value
+a caller reads. This one left nothing exposed: `OCCTSurfaceExtrema` gained an `IsParallel()` gate
+with #2831, and every other bridge entry point that reaches either class through a point read
+already had one (`OCCTExtremaExtSSPoint`, `OCCTExtremaExtCSPoint`, `OCCTCurve3DDistanceToSurface`,
+which reads `LowerDistance()` alone). The standing hold on repinning until OCCT 8.0.2 landed
+therefore won, until `v4.0.0-kernel.4` was cut for other patches and absorbed this one.
+
+**Retargeting risk at 8.0.2.** No other carried patch touches either file, and both `Points()`
+bodies are three lines that have not changed since the class was written, so the hunks are expected
+to apply to `V8_0_2` unchanged. Re-run `git -C occt-src apply --check` at the repin rather than
+assuming it.
+
+Filed upstream as [OCCT#1596](https://github.com/Open-Cascade-SAS/OCCT/pull/1596) against `IR` (the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07). The submission was staged in
+`Scripts/repro/2840/upstream/`: two GTests, `Extrema_ExtSS_Test.cxx` and `Extrema_ExtCS_Test.cxx`,
+compiled and run both ways (each parallel case exits 139 unpatched and passes patched, both controls
+pass on both sides), plus the two `FILES.cmake` lines they need. `0024` is still unfiled too, so one
+PR covering all three classes may read better than two.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0045-Geom-Bezier-InsertPoleAfter-pole-bound-2875.patch
+
+**RETIRED 2026-11-24, at the `V8_0_2` base move (#3534, #3543). The `.patch` file is deleted and the next kernel does not carry it.** Absorbed by OCCT#1593 (`1fdabe7c7e`); relation to this patch: identical: the patch reverse-applies to `V8_0_2`. The survey is in [`docs/occt-upgrades.md`](../../docs/occt-upgrades.md) "8.0.1 to 8.0.2".
+
+
+**`InsertPoleAfter` refuses two poles short of what the constructors build**
+([#2875](https://github.com/SecondMouseAU/OCCTSwift/issues/2875)). Both Bezier curve classes accept
+up to `MaxDegree() + 1` poles at construction (`Geom2d_BezierCurve.cxx:78` and `:93`,
+`Geom_BezierCurve.cxx:93` and `:109`):
+
+```cpp
+  if (nbpoles < 2 || nbpoles > (Geom2d_BezierCurve::MaxDegree() + 1))
+    throw Standard_ConstructionError();
+```
+
+and `Increase()` tops out at a degree of `MaxDegree()`, the same bound written as a degree.
+`InsertPoleAfter` compares the pole count against the degree bound instead
+(`Geom2d_BezierCurve.cxx:199`, `Geom_BezierCurve.cxx:214`):
+
+```cpp
+  Standard_ConstructionError_Raise_if(nbpoles >= Geom2d_BezierCurve::MaxDegree()
+                                        || Weight <= gp::Resolution(), ...);
+```
+
+so insertion stops at `MaxDegree()` poles. A caller can hold a legally constructed curve longer
+than `InsertPoleAfter` will grow a shorter one to. The fix is one character at each site, `>=` to
+`>`, plus the one-line comment that says which quantity `MaxDegree()` bounds.
+
+**`MaxDegree()` is a degree bound, and the classes' own tables say so.** `BSplCLib::MaxDegree()` is
+25. Both classes size the static tables behind `Multiplicities()` and `KnotSequence()` as
+`MaxDegree() + 1` and index them by `myPoles.Length() - 1`, so a curve of `MaxDegree() + 1` poles
+is in range for every one of them, which is what makes the relaxed bound safe rather than merely
+symmetric. Measured rather than reasoned: at 26 poles the 2d class answers `degree=25`,
+`Multiplicities().Length()=2`, `KnotSequence().Length()=52`.
+
+**Both sites in the tree are changed, which is the whole of the defect.** A grep for a pole count
+compared against `MaxDegree()` with `>=` returns exactly two hits, the 2d class and the 3d one, and
+no more. `Geom_BezierSurface::InsertPoleColAfter` / `InsertPoleRowAfter` carry **no** `MaxDegree`
+bound at all, and `UMultiplicities()` / `UKnotSequence()` index the same fixed 26-element tables by
+pole count, so growing a Bezier surface past 26 poles in one direction reads off the end of a
+`std::array`. That is a different defect with a different fix and it is deliberately not in this
+patch; it is filed separately.
+
+### Half of this patch is inert in the shipped kernel, and that is the reason the bridge guard stays
+
+The two sites are not written the same way. The 3d class throws literally; the 2d class goes
+through `Standard_ConstructionError_Raise_if`, which `No_Exception` empties in a Release build
+(#2801). So in the kernel this repo ships, **the 2d class has no pole bound at all**, patched or
+not, and the only thing enforcing one is `OCCTCurve2DBezierInsertPoleAfter`'s own guard. The probe
+shows it directly: under `-DNo_Exception` the 2d curve grows past 100 poles on both sides of the
+patch, while the 3d curve moves from 25 to 26.
+
+### Measured, macOS arm64, before and after
+
+`Scripts/repro/2875-bezier-insertpole-bound/`, both translation units override-linked ahead of the
+pinned macOS slice, per
+[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
+section 3, in both build configurations. Transcript committed as `transcript.txt`.
+
+| build | class | ctor max poles | insert max, before | insert max, after |
+|---|---|---|---|---|
+| shipped (`No_Exception`) | `Geom2d_BezierCurve` | 26 | 102 (unbounded) | 102 (unbounded) |
+| shipped (`No_Exception`) | `Geom_BezierCurve` | 26 | 25 | **26** |
+| exceptions enabled | `Geom2d_BezierCurve` | 26 | 25 | **26** |
+| exceptions enabled | `Geom_BezierCurve` | 26 | 25 | **26** |
+
+The 102 is the probe's own insertion limit, not a kernel one.
+
+### Compiled, three slices
+
+The two translation units this patch touches were compiled for all three xcframework slices by
+hand rather than through a full kernel rebuild, `-std=c++17 -O3 -DNDEBUG -DNo_Exception -arch
+arm64` against each slice's own SDK and headers: `arm64-apple-macos12`, `arm64-apple-ios15` and the
+iOS simulator. Six compiles, no warnings and no errors. The log is committed as
+`Scripts/repro/2875-bezier-insertpole-bound/compile-log.txt`. The `.pxx` private headers
+(`Geom2dEval_RepUtils.pxx`, `GeomEval_RepUtils.pxx`) are not installed into the xcframework, so the
+compile line adds their package directories from `Libraries/occt-src`.
+
+### CI coverage, and the pin
+
+**Pinned.** It was carried before it was pinned, and `ci.yml`'s `build-and-test` resolves the
+pinned asset, so until the repin the patch was in no required check. Now that the asset holds it,
+`build-and-test` exercises it. `kernel-integration.yml` triggers on `Scripts/patches/**` and builds
+`V8_0_1` plus every carried patch from source, which proves it applies, compiles and regresses
+nothing.
+
+**Retargeting risk at 8.0.2.** No other carried patch touches either file, and neither
+`InsertPoleAfter` has changed shape in years, so the hunks are expected to apply to `V8_0_2`
+unchanged. Re-run the apply check at the repin rather than assuming it.
+
+Filed upstream as [OCCT#1593](https://github.com/Open-Cascade-SAS/OCCT/pull/1593) against `IR` ([#1589](https://github.com/Open-Cascade-SAS/OCCT/pull/1589) closed); the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07.
+
+**Retire** once the bundled OCCT includes this fix, **but keep the bridge guard**: it is the only
+bound the 2d class has in a `No_Exception` build.
+
+## 0048-BRepGProp-by-plane-offset-sign-2873.patch
+
+**RETIRED 2026-11-24, at the `V8_0_2` base move (#3534, #3543). The `.patch` file is deleted and the next kernel does not carry it.** Absorbed by OCCT#1601 (`3958f18267`); relation to this patch: same code, both files. The survey is in [`docs/occt-upgrades.md`](../../docs/occt-upgrades.md) "8.0.1 to 8.0.2".
+
+
+**The by-plane overloads measure about the plane mirrored through the origin**
+([#2873](https://github.com/SecondMouseAU/OCCTSwift/issues/2873)). Every by-plane
+`BRepGProp_Vinert` and `BRepGProp_VinertGK` overload stores the plane the same way:
+
+```cpp
+thePlane.Coefficients(aCoeff[0], aCoeff[1], aCoeff[2], aCoeff[3]);
+aCoeff[3] = aCoeff[3] - aCoeff[0] * loc.X() - aCoeff[1] * loc.Y() - aCoeff[2] * loc.Z();
+```
+
+and both integrands then **subtract** that coefficient: `BRepGProp_Gauss.cxx:344 with 0043 applied, :343 without` for the Gauss
+path and `BRepGProp_UFunction.cxx:99` for the Gauss-Kronrod one, in each case against
+`P - loc`. `gp_Pln::Coefficients` gives `a, b, c, d` for `a x + b y + c z + d = 0`, so the signed
+distance from the plane to `P` is `n . P + d`, and substituting the stored coefficient gives
+
+```
+d1 = n . (P - loc) - (d - n . loc) = n . P - d
+```
+
+which is the distance to the plane at `n . X == d`, the reflection of the caller's plane through
+the origin. Both halves of that one line are wrong in the same direction: the offset carries the
+wrong sign, and `loc` cancels out of the result entirely rather than re-basing it, so
+`SetLocation` has no effect on a by-plane computation at all.
+
+Negating the coefficient as it is stored fixes both halves at once. With `aCoeff[3] = -d - n . loc`
+the integrands compute `d1 = n . (P - loc) + d + n . loc = n . P + d`, the signed distance to the
+plane as passed, independent of `loc` as a distance to a plane must be. The integrands are left
+alone: their minus sign is what makes `loc` re-base correctly once the stored offset has the right
+sign, and changing them instead would need the same edit at these five sites anyway.
+
+### All five sites, because they are one convention and not five defects
+
+| file | lines | what reaches them |
+|---|---|---|
+| `BRepGProp_Vinert.cxx` | 280, 297, 314 | the four `Perform(gp_Pln)` overloads, through `BRepGProp_Gauss` |
+| `BRepGProp_VinertGK.cxx` | 219, 244 | the two `Perform(gp_Pln)` overloads, through `BRepGProp_UFunction` |
+
+Fixing one class and not the other would leave `BRepGProp::VolumeProperties` and
+`BRepGProp::VolumePropertiesGK` disagreeing per face about which plane they measured. Those are the
+only five: a grep for the coefficient assignment across `Libraries/occt-src/src` returns exactly
+them.
+
+### Measured
+
+`Scripts/repro/2827/probe.mm`'s `reportSignConvention`, macOS arm64 against the
+`v4.0.0-kernel.3` asset, on a flat cap of area 371.7256661 square to the plane normal, where
+`mass == (n . n_face) * area * d1` exactly, so `mass / area` reads `d1` off directly. The cap is at
+z = 2:
+
+| `loc.z` | plane at z = | `mass` | `d1` | geometric distance |
+|---|---|---|---|---|
+| 0 | 0 | 743.45133223538 | 2 | 2 |
+| 0 | 1 | 1115.1769983531 | 3 | 1 |
+| 0 | -100 | -36429.115279534 | -98 | 102 |
+| 3 | 0 | 743.45133223538 | 2 | 2 |
+| 3 | 1 | 1115.1769983531 | 3 | 1 |
+| 3 | -100 | -36429.115279534 | -98 | 102 |
+
+`d1` tracks `z + planeOffset` where it should track `z - planeOffset`, and `loc` changes nothing.
+Both are what the derivation predicts.
+
+### What does not change
+
+**Aggregates.** `d1` stays an affine function of `P` with gradient `n`, which is the only property
+the divergence-theorem identities need, so the per-face sum over a closed shell is still the
+enclosed volume and the mass-weighted sum of the per-face centres is still the first moment, for
+any plane. `BRepGProp::VolumePropertiesGK(S, Props, thePln, ...)` therefore reports the same volume
+and centre of mass before and after. What changes is a per-face reading, which is the decomposition
+a caller asks for when it passes a plane rather than a point.
+
+**Anything in OCCT.** Nothing in the kernel reads a per-face by-plane value: `BRepGProp.cxx:311` is
+the only `BRepGProp_Vinert` call site and passes a point, and `:809` and `:892` forward a plane to
+`BRepGProp_VinertGK` for an aggregate. And until `0043` the by-plane mass was overwritten with
+`0.0` before any caller could see it, so the value this corrects has never been readable from a
+release build.
+
+### Does `0043` already carry this hunk? No
+
+`0043`'s own `Scripts/patches/README.md` entry and
+[`okf/references/carried-occt-patches.md`](../../okf/references/carried-occt-patches.md) both say
+"the submission carries a second hunk for #2873", which describes the **upstream PR** that is still
+being held, not the carried `.patch` file. The file touches one file,
+`BRepGProp_Gauss.cxx`, and one line in it, the `&& theIsByPoint` in `convert`. It contains no sign
+change and does not mention `BRepGProp_Vinert.cxx` or `BRepGProp_VinertGK.cxx`. So this is its own
+patch. The two still travel upstream in one PR, where they are two hunks of one story: `0043` makes
+the by-plane value readable and `0048` makes it right.
+
+### Compiled, 2026-10-02
+
+Both changed translation units, compiled clean with no diagnostics on all three slices:
+
+| TU | `macos-arm64` | `ios-arm64` | `ios-arm64-simulator` |
+|---|---|---|---|
+| `BRepGProp_Vinert.cxx` | exit 0 | exit 0 | exit 0 |
+| `BRepGProp_VinertGK.cxx` | exit 0 | exit 0 | exit 0 |
+
+`git apply --check` is clean against the patched `Libraries/occt-src`, `0043` included, which is
+the tree `build-occt.sh` hands to cmake.
+
+### The bridge side WAS a compensation, not a guard, and the repin deleted it (#3015)
+
+This was the one carried patch whose bridge-side companion had to come out at the repin rather than
+stay. `OCCTBRepGPropVinertPlane` did not refuse an input, it built the `gp_Pln` **mirrored through
+the origin on purpose**, so that the unpatched kernel answered about the plane the Swift caller asked
+for:
+
+```cpp
+gp_Pln plane(gp_Pnt(normal.XYZ() * -planeDist), normal);   // until v4.0.0-kernel.4
+```
+
+A kernel carrying `0048` with that mirror still in place measures about the mirrored plane again,
+and the two sign assertions in `Tests/OCCTAnalysisTests/BRepGProp/BRepGPropVinertTests.swift` failed on #3014
+for exactly that reason. The change that repinned to an asset carrying `0048` (#3031) therefore:
+
+- deleted the mirror in `OCCTBRepGPropVinertPlane`, so the line now reads
+  `gp_Pln plane(gp_Pnt(normal.XYZ() * planeDist), normal);`, and rewrote the comment block that
+  explains it as history,
+- left the by-plane assertions in `BRepGPropVinertTests` on the corrected convention, which they
+  pass against the pinned kernel,
+- dropped the "pass `-d`" note from `Face.volumeInertia(planeNormal:planeDistance:)` and from
+  `docs/reference/Shape-HLR-Geom.md`.
+
+Until that change the mirror was correct and had to stay, because CI resolves the pinned asset and
+removing it earlier would have turned a correct answer into a sign-flipped one on every consumer.
+
+### Retargeting risk at 8.0.2
+
+`0043` touches `BRepGProp_Gauss.cxx` and this one touches `BRepGProp_Vinert.cxx` and
+`BRepGProp_VinertGK.cxx`, so they do not overlap, and all five target lines are a single assignment
+that has not changed since the classes were written. Re-run `git -C occt-src apply --check` at the
+repin rather than assuming it.
+
+Filed upstream as [OCCT#1601](https://github.com/Open-Cascade-SAS/OCCT/pull/1601) against `IR`, on its own: it is independent of [OCCT#1587](https://github.com/Open-Cascade-SAS/OCCT/pull/1587) (`0043`), whose diff only removes `&& theIsByPoint` in `BRepGProp_Gauss.cxx`.
+
+**Retire** once the bundled OCCT includes this fix, and delete the bridge mirror in the same change.
+
+## 0052-Geom_BezierSurface-rational-axis-prose-matches-example-2991.patch
+
+**RETIRED 2026-11-24, at the `V8_0_2` base move (#3534, #3543). The `.patch` file is deleted and the next kernel does not carry it.** Absorbed by OCCT#1602 (on `IR`, not in `V8_0_2`); relation to this patch: a doc comment only: it changes no binary, so nothing is lost by dropping it. The survey is in [`docs/occt-upgrades.md`](../../docs/occt-upgrades.md) "8.0.1 to 8.0.2".
+
+
+**`Geom_BezierSurface.hxx`'s `IsURational`/`IsVRational` prose contradicts its own example matrix**
+([#2991](https://github.com/SecondMouseAU/OCCTSwift/issues/2991)). The header says:
+
+```
+  //! Returns False if the weights are identical in the U direction,
+  //! Example :
+  //!               |1.0, 1.0, 1.0|
+  //! if Weights =  |0.5, 0.5, 0.5|   returns False
+  //!               |2.0, 2.0, 2.0|
+  Standard_EXPORT bool IsURational() const;
+```
+
+The weights in that matrix are **not** identical in the U direction, they run `1.0, 0.5, 2.0` down
+a column. They are identical in the V direction. Prose and example contradict each other, and the
+example is the one that matches the code.
+
+**The implementation is the authority.** `Geom_BezierSurface.cxx`'s static `Rational()` sets
+`Urational` from
+
+```cpp
+  Urational = (std::abs(Weights(I, J) - Weights(I, J + 1)) > Epsilon(std::abs(Weights(I, J))));
+```
+
+inside a loop over `I` that walks `J`, so the comparison is between neighbours in the **column**
+index, which is V. `Urational` is therefore false exactly when every **row** is constant, and
+`Vrational` false exactly when every column is. Each flag names the axis opposite the one it
+compares along.
+
+**`Geom_BSplineSurface.hxx` already states this correctly**, with the same two example matrices
+("Returns False if for each row of weights all the weights are identical"), so the two headers
+disagree with one another as well as one of them disagreeing with the implementation. The patch
+gives `Geom_BezierSurface` the wording `Geom_BSplineSurface` already has, leaving the example
+matrices and the tolerance sentence untouched, which is the smallest change that makes all three
+agree.
+
+### Measured
+
+`Scripts/repro/2976-surface-rational-axes/probe.mm`, four explicit weight matrices against the
+pinned kernel:
+
+| weights | `IsURational` | `IsVRational` |
+|---|---|---|
+| rows constant, varies along U | 0 | 1 |
+| columns constant, varies along V | 1 | 0 |
+| all equal | 0 | 0 |
+| varies along both | 1 | 1 |
+
+A `Geom_BSplineSurface` converted from a `r = 5`, `h = 10` cylinder reports `(0, 1)`, and `(1, 0)`
+after `ExchangeUV()`, the same way round.
+
+### Why carry a comment fix at all
+
+It changes no binary, so it leaves nothing exposed and it is in no test. It is carried for two
+reasons. The tree we build and the tree we file upstream from should agree, so that the 8.0.2
+submission is cut from the same source as everything else; and the wrong prose has already cost
+something, having nearly been recorded as a defect by one lift batch reading a converted cylinder's
+`(0, 1)` as an inverted conversion.
+
+`Geom_BezierSurface.cxx` was compiled against the corrected header on all three slices to confirm
+the header still builds, which is the only compile a documentation patch can offer.
+
+### CI coverage, and the pin
+
+Pinned with `0050` and `0051`, and unlike them it left nothing for a caller to
+read wrong: PR #2990 already documents the real behaviour on all four Swift properties with the
+cylinder as the worked example and a test pinning both directions.
+
+Filed upstream alone as [OCCT#1602](https://github.com/Open-Cascade-SAS/OCCT/pull/1602) against `IR`, documentation only, so no GTest. The plan to batch it with #2875's and #2860's
+one-character fixes went with the hold on upstream PRs until 8.0.2, cancelled on 2026-10-07.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0054-ChFi3d_Builder-StartSol-drops-an-obstacle-with-no-edge-2881.patch
+
+**RETIRED 2026-11-24, at the `V8_0_2` base move (#3534, #3543). The `.patch` file is deleted and the next kernel does not carry it.** Absorbed by OCCT#1708 (`406228f881`); relation to this patch: a different behaviour: upstream sets `ChFiDS_StartsolFailure` and throws where this patch dropped the obstacle and returned. Upstream's form is taken; OCCT#1421's model is now refused (#3336). The survey is in [`docs/occt-upgrades.md`](../../docs/occt-upgrades.md) "8.0.1 to 8.0.2".
+
+
+**A fillet blend that reaches an obstacle with no edge to follow evaluates an empty curve**
+([#2881](https://github.com/SecondMouseAU/OCCTSwift/issues/2881), upstream
+[OCCT#1568](https://github.com/Open-Cascade-SAS/OCCT/issues/1568)),
+`src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_2.cxx:1530-1562` in the pinned tree.
+`ChFi3d_Builder::StartSol`, on reaching an obstacle face, sets `c1obstacle`, replaces `HC` with a
+fresh `BRepAdaptor_Curve2d`, and looks for the arc edge among the obstacle face's edges:
+
+```cpp
+HC = new BRepAdaptor_Curve2d();
+... find newedge among Fv's edges by IsSame(anArcEdge) ...
+if (!newedge.IsNull()) { HC->Initialize(newedge, Fv); ... return true; }
+else                   { prepareDefaultReturn(); return false; }   // HC is still the empty adaptor
+```
+
+When no edge matches, the `else` returns `false` and leaves `HC` as the default-constructed adaptor,
+which holds no curve, with `c1obstacle` still `true`. `PerformSetOfSurfOnElSpine` tests
+`!Ok && HC.IsNull()` for the end of the chain, an empty non-null `HC` passes that test, and
+`obstacleon1`/`obstacleon2` then select the obstacle path, which hands `HC` to
+`ChFi3d_FilBuilder::PerformSurf`. The `SurfRst` walk evaluates it through
+`Adaptor3d_CurveOnSurface::EvalD1` and `Geom2dAdaptor_Curve::D1` falls to its `default:` arm and
+dereferences a null curve. That is a SIGSEGV inside `Build()`, which `OCC_CATCH_SIGNALS` being inert
+in this build means no bridge `catch (...)` can reach, and `BRepFilletAPI_MakeFillet` is named in 96
+bridge sites.
+
+The fix is three lines in that `else`: `HC.Nullify(); c1obstacle = false;` before the existing
+return, which gives the caller the state it already handles for "no obstacle". The sibling failure
+in the same block, returning `false` when `HSref` or `HCref` is null, leaves `HC` null, which the
+caller does handle; it is left alone because no input reaches it.
+
+### How the cause was found, and what was ruled out
+
+`Scripts/repro/occt1568-fillet-opposite-edge/`, against the pinned macOS slice with override-linked
+copies of three kernel files (the unmodified file recompiled with the kernel's flags is the
+control, and each copy differs by a few logging lines):
+
+- **The first hypothesis was wrong.** #2881 guessed an edge with no pcurve on its reference face,
+  which would make `BRepAdaptor_Curve2d::Initialize` leave the adaptor empty. Logging every
+  `Initialize` call (494 calls at radius 1.49, 326 up to the fault at 1.5) shows it never sees a null
+  pcurve on this model.
+- **The faulting adaptor was identified by address.** `Adaptor3d_CurveOnSurface::EvalD1` is called
+  once before the fault, on a `BRepAdaptor_Curve2d` that appears in the log as a default
+  construction and never as an `Initialize`.
+- **The branch fires exactly where the crash is.** Logging it gives two hits at radius 1.5 and none
+  at 1.49 or 1.5000001. What it sees: the blend's face is a plane, the neighbour face found at the
+  vertex is a four-edged B-spline surface, and the arc edge is in the blend's face but in none of the
+  neighbour's edges under any orientation.
+
+### Measured, macOS arm64, before and after
+
+`BRepFilletAPI_MakeFillet` on the model attached to OCCT#1568 (19 faces, 42 edges), one edge at a
+time, `ChFi3d_Rational` with `BRepTest_FilletCommands`' parameters, the patched file override-linked.
+
+| radius | unpatched | patched |
+|---|---|---|
+| 0.3 and 1.0 | 20 done, 22 raise "no suitable edges" | identical |
+| 1.5 | 12 done, **8 SIGSEGV**, 22 raise | 12 done, 8 not done (`NbFaultyContours = 1`), 22 raise |
+
+Across 42 edges and nine radii (0.3, 0.8, 1.0, 1.2, 1.4999999, 1.5, 1.5000001, 1.8, 2.5), 378 cases,
+exactly eight outcomes change, edges 12 to 19 at 1.5, each from SIGSEGV to a normal completion with
+`IsDone() == false`. The other 370 are identical, 170 completed and 200 raising the same exception.
+The eight now behave as radius 1.4999999 already did.
+
+**Filed upstream as [OCCT#1591](https://github.com/Open-Cascade-SAS/OCCT/pull/1591) against `master`**; the report is [OCCT#1568](https://github.com/Open-Cascade-SAS/OCCT/issues/1568). Upstream's GTests are organised per toolkit and every PR is asked for
+one; the reproducer needs the 19-face model, and plain boxes with radii at their face widths (372
+cases) never reach the branch, so a small programmatic input is still to be found. OCCT#1568 carries
+our minimisation and a note that we would report the cause.
+
+## 0064-TopOpeBRepBuild-CorrectUnclosedWire-collects-the-edges-before-removing-them-3335.patch
+
+**RETIRED 2026-11-24, at the `V8_0_2` base move (#3534, #3543). The `.patch` file is deleted and the next kernel does not carry it.** Absorbed by OCCT#1787 (`d58691494b`); relation to this patch: a different form: upstream advances the iterator before `Remove`, where this patch collected the edges first. The survey is in [`docs/occt-upgrades.md`](../../docs/occt-upgrades.md) "8.0.1 to 8.0.2".
+
+
+**A fillet whose ends meet in the face merge no longer reads a freed list node** ([#3335](https://github.com/SecondMouseAU/OCCTSwift/issues/3335), upstream [OCCT#1619](https://github.com/Open-Cascade-SAS/OCCT/issues/1619), same site as OCCT#1430).
+
+`CorrectUnclosedWire` in `TopOpeBRepBuild_Merge.cxx`, called from `TopOpeBRepBuild_Builder::MakeFaces` during `ChFi3d_Builder::Compute` -> `MergeSolid`, calls `BRep_Builder::Remove(aWire, ed)` inside a `TopoDS_Iterator` loop over `aWire`. `Remove` frees the list node the iterator stands on and the next `Next()` reads freed memory: an uncatchable SIGSEGV, 20 of 20 runs on OCCT#1619's `fillet_uaf.brep` (r = 1.25 on explode edges 26 and 35) and 3 of 3 on each of OCCT#1430's two cases.
+
+The edges with at most one vertex are collected while iterating and removed after the loop ends. The second loop, over the vertex to edge map, walks a separate map and is unchanged.
+
+Measured by override-link of the patched object into a copy of the `v4.0.0-kernel.6` macOS slice: `FilletMergeWireRemovalTests` dies with signal 11 against the unpatched archive and passes against the patched one (the pair answers `nil`; the r = 1.0 control still answers a valid 32-face shape).
+
+**Upstream checked 2026-10-14:** OCCT#1619 is open with no PR and the loop is unchanged on master. **Not yet filed upstream**; it needs a GTest that fillets the model above.
+
+**Retire** once the bundled OCCT includes this fix.
 
 ## 0031-bspline-adaptor-cache-thread-safety-1153.patch
 

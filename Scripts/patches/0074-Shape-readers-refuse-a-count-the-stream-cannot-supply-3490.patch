@@ -55,6 +55,7 @@ text readers at a failed stream.
 
 ---
 diff --git a/src/FoundationClasses/TKMath/Poly/Poly.cxx b/src/FoundationClasses/TKMath/Poly/Poly.cxx
+index e4ec8d1c79fee3fc2569db1eb87d2aa17c6aa112..cd733ce5eb5e5c7794359569eb480a54c3838abe 100644
 --- a/src/FoundationClasses/TKMath/Poly/Poly.cxx
 +++ b/src/FoundationClasses/TKMath/Poly/Poly.cxx
 @@ -368,6 +368,12 @@ occ::handle<Poly_Triangulation> Poly::ReadTriangulation(Standard_IStream& IS)
@@ -164,6 +165,7 @@ diff --git a/src/FoundationClasses/TKMath/Poly/Poly.cxx b/src/FoundationClasses/
    }
  
 diff --git a/src/FoundationClasses/TKernel/Standard/Standard_IStream.hxx b/src/FoundationClasses/TKernel/Standard/Standard_IStream.hxx
+index 1b6cc7df6ebadd51ce4cc77b7c4b814b4828b7be..fb384252db4e7800f7b9783da93ed2f88cf7dfcb 100644
 --- a/src/FoundationClasses/TKernel/Standard/Standard_IStream.hxx
 +++ b/src/FoundationClasses/TKernel/Standard/Standard_IStream.hxx
 @@ -25,4 +25,45 @@
@@ -213,6 +215,7 @@ diff --git a/src/FoundationClasses/TKernel/Standard/Standard_IStream.hxx b/src/F
 +
  #endif
 diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx
+index 0837615a741496920171e21882015a0bd60377c0..d1fe2fc7463d10445a3e564177471161f36787c7 100644
 --- a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx
 +++ b/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx
 @@ -788,6 +788,25 @@ void BRepTools_ShapeSet::WriteGeometry(const TopoDS_Shape& S, Standard_OStream&
@@ -241,7 +244,7 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
  static GeomAbs_Shape ReadRegularity(Standard_IStream& IS)
  {
    char buffer[255];
-@@ -1121,7 +1140,13 @@ void BRepTools_ShapeSet::ReadGeometry(const TopAbs_ShapeEnum T,
+@@ -1149,7 +1168,13 @@ void BRepTools_ShapeSet::ReadGeometry(const TopAbs_ShapeEnum T,
                if (closed)
                {
                  if (t > 0 && t <= myTriangulations.Extent() && pt > 0 && pt <= myNodes.Extent()
@@ -256,7 +259,7 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
                  {
                    myBuilder.UpdateEdge(E,
                                         occ::down_cast<Poly_PolygonOnTriangulation>(myNodes(pt)),
-@@ -1132,7 +1157,10 @@ void BRepTools_ShapeSet::ReadGeometry(const TopAbs_ShapeEnum T,
+@@ -1160,7 +1185,10 @@ void BRepTools_ShapeSet::ReadGeometry(const TopAbs_ShapeEnum T,
                }
                else
                {
@@ -268,7 +271,7 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
                  {
                    myBuilder.UpdateEdge(E,
                                         occ::down_cast<Poly_PolygonOnTriangulation>(myNodes(pt)),
-@@ -1188,7 +1216,11 @@ void BRepTools_ShapeSet::ReadGeometry(const TopAbs_ShapeEnum T,
+@@ -1220,7 +1248,11 @@ void BRepTools_ShapeSet::ReadGeometry(const TopAbs_ShapeEnum T,
        {
          // only triangulation
          IS >> s;
@@ -281,7 +284,7 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
        }
        //    else pos = IS.tellg();
  
-@@ -1385,11 +1417,22 @@ void BRepTools_ShapeSet::ReadPolygonOnTriangulation(Standard_IStream&
+@@ -1417,11 +1449,22 @@ void BRepTools_ShapeSet::ReadPolygonOnTriangulation(Standard_IStream&
    occ::handle<NCollection_HArray1<double>> Param;
    occ::handle<Poly_PolygonOnTriangulation> Poly;
    IS >> nbpol;
@@ -304,8 +307,8 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
      NCollection_Array1<int> Nodes(1, nbnodes);
      for (j = 1; j <= nbnodes; j++)
      {
-@@ -1410,10 +1453,19 @@ void BRepTools_ShapeSet::ReadPolygonOnTriangulation(Standard_IStream&
-         GeomTools::GetReal(IS, par);
+@@ -1450,10 +1493,19 @@ void BRepTools_ShapeSet::ReadPolygonOnTriangulation(Standard_IStream&
+         }
          Param1(j) = par;
        }
 +      // a record cut short is not added
@@ -324,7 +327,7 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
        Poly = new Poly_PolygonOnTriangulation(Nodes);
      }
      Poly->Deflection(def);
-@@ -1552,12 +1604,23 @@ void BRepTools_ShapeSet::ReadPolygon3D(Standard_IStream&            IS,
+@@ -1592,12 +1644,23 @@ void BRepTools_ShapeSet::ReadPolygon3D(Standard_IStream&            IS,
    }
    occ::handle<Poly_Polygon3D> P;
    IS >> nbpol;
@@ -347,10 +350,10 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
 +    }
      NCollection_Array1<gp_Pnt> Nodes(1, nbnodes);
      GeomTools::GetReal(IS, d);
-     for (j = 1; j <= nbnodes; j++)
-@@ -1574,10 +1637,19 @@ void BRepTools_ShapeSet::ReadPolygon3D(Standard_IStream&            IS,
-       {
-         GeomTools::GetReal(IS, Param(p));
+     if (IS.fail())
+@@ -1626,10 +1689,19 @@ void BRepTools_ShapeSet::ReadPolygon3D(Standard_IStream&            IS,
+           return;
+         }
        }
 +      // a record cut short is not added
 +      if (IS.fail())
@@ -368,7 +371,7 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
        P = new Poly_Polygon3D(Nodes);
      }
      P->Deflection(d);
-@@ -1811,6 +1883,12 @@ void BRepTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
+@@ -1863,6 +1935,12 @@ void BRepTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
    }
  
    IS >> nbtri;
@@ -381,9 +384,9 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
    // OCC19559
    Message_ProgressScope aPS(theProgress, "Triangulations", nbtri);
    for (i = 1; i <= nbtri && aPS.More() && !IS.fail(); i++, aPS.Next())
-@@ -1823,6 +1901,13 @@ void BRepTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
+@@ -1879,6 +1957,13 @@ void BRepTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
+       return;
      }
-     GeomTools::GetReal(IS, d);
  
 +    // a count the stream cannot supply is refused before the triangulation is sized from it
 +    if (!Standard_IStreamHasItems(IS, nbNodes, 6) || !Standard_IStreamHasItems(IS, nbTriangles, 6))
@@ -395,7 +398,7 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
      T = new Poly_Triangulation(nbNodes, nbTriangles, hasUV, hasNormals);
  
      for (j = 1; j <= nbNodes; j++)
-@@ -1848,6 +1933,12 @@ void BRepTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
+@@ -1912,6 +1997,12 @@ void BRepTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
      for (j = 1; j <= nbTriangles; j++)
      {
        IS >> n1 >> n2 >> n3;
@@ -408,7 +411,7 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
        T->SetTriangle(j, Poly_Triangle(n1, n2, n3));
      }
  
-@@ -1863,6 +1954,11 @@ void BRepTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
+@@ -1931,6 +2022,11 @@ void BRepTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
        }
      }
  
@@ -421,6 +424,7 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
      myTriangulations.Add(T, hasNormals);
    }
 diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_Curve2dSet.cxx b/src/ModelingData/TKBRep/BinTools/BinTools_Curve2dSet.cxx
+index 1c6a505aef213e7d6406ac58c709c32d390afd34..86688c63faf0f5cc20c21a7852530405ac3474d4 100644
 --- a/src/ModelingData/TKBRep/BinTools/BinTools_Curve2dSet.cxx
 +++ b/src/ModelingData/TKBRep/BinTools/BinTools_Curve2dSet.cxx
 @@ -74,6 +74,10 @@ int BinTools_Curve2dSet::Add(const occ::handle<Geom2d_Curve>& S)
@@ -448,6 +452,7 @@ diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_Curve2dSet.cxx b/src/Mode
    NCollection_Array1<double>   weights(1, nbpoles);
  
 diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_CurveSet.cxx b/src/ModelingData/TKBRep/BinTools/BinTools_CurveSet.cxx
+index 6582c7b12315aadd8cc256f6e16f3c095e8e5df4..cde4bfbfdb9308087859a5e1b63be592e69ce63c 100644
 --- a/src/ModelingData/TKBRep/BinTools/BinTools_CurveSet.cxx
 +++ b/src/ModelingData/TKBRep/BinTools/BinTools_CurveSet.cxx
 @@ -70,7 +70,7 @@ int BinTools_CurveSet::Add(const occ::handle<Geom_Curve>& C)
@@ -473,6 +478,7 @@ diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_CurveSet.cxx b/src/Modeli
    NCollection_Array1<double> weights(1, nbpoles);
  
 diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_LocationSet.cxx b/src/ModelingData/TKBRep/BinTools/BinTools_LocationSet.cxx
+index 985e9132bc20b1e373f4c2387fda59b0e4885bf0..7d1087f7c21b087df9cdd3784e1c7e1255562bf9 100644
 --- a/src/ModelingData/TKBRep/BinTools/BinTools_LocationSet.cxx
 +++ b/src/ModelingData/TKBRep/BinTools/BinTools_LocationSet.cxx
 @@ -113,7 +113,7 @@ int BinTools_LocationSet::Add(const TopLoc_Location& L)
@@ -505,6 +511,7 @@ diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_LocationSet.cxx b/src/Mod
          }
        }
 diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_ShapeReader.cxx b/src/ModelingData/TKBRep/BinTools/BinTools_ShapeReader.cxx
+index 4237225dd175ba717bc64557e48e1e02dad54b39..9f273c5b76ea4ba2a2fb2f5f21df59353fa35b32 100644
 --- a/src/ModelingData/TKBRep/BinTools/BinTools_ShapeReader.cxx
 +++ b/src/ModelingData/TKBRep/BinTools/BinTools_ShapeReader.cxx
 @@ -23,6 +23,25 @@
@@ -627,6 +634,7 @@ diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_ShapeReader.cxx b/src/Mod
      }
      if (aHasNormals)
 diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.cxx b/src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.cxx
+index 93dcc0043f9cde433cfd17836cf8e7832f4b5d98..0afea2cd3c03ab9b5ff340c770d614af59d8e6f3 100644
 --- a/src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.cxx
 +++ b/src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.cxx
 @@ -49,6 +49,25 @@
@@ -800,6 +808,7 @@ diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.cxx b/src/Modeli
                                      Poly_Triangle(aTriNodes[0], aTriNodes[1], aTriNodes[2]));
        }
 diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_SurfaceSet.cxx b/src/ModelingData/TKBRep/BinTools/BinTools_SurfaceSet.cxx
+index 93c43e838df3bcb8dcdab624111584d0916635a4..66a77831d2cbe3c60250f905f4234522a8566c31 100644
 --- a/src/ModelingData/TKBRep/BinTools/BinTools_SurfaceSet.cxx
 +++ b/src/ModelingData/TKBRep/BinTools/BinTools_SurfaceSet.cxx
 @@ -75,6 +75,10 @@ int BinTools_SurfaceSet::Add(const occ::handle<Geom_Surface>& S)
@@ -842,9 +851,10 @@ diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_SurfaceSet.cxx b/src/Mode
    NCollection_Array2<double> weights(1, nbupoles, 1, nbvpoles);
  
 diff --git a/src/ModelingData/TKBRep/TopTools/TopTools_LocationSet.cxx b/src/ModelingData/TKBRep/TopTools/TopTools_LocationSet.cxx
+index 6e9aaa2a7379e45b8aa814c904870654e85f0140..0c1387a023f744a2e10b32c31f33a98325801569 100644
 --- a/src/ModelingData/TKBRep/TopTools/TopTools_LocationSet.cxx
 +++ b/src/ModelingData/TKBRep/TopTools/TopTools_LocationSet.cxx
-@@ -295,7 +295,12 @@ void TopTools_LocationSet::Read(Standard_IStream& IS, const Message_ProgressRang
+@@ -303,7 +303,12 @@ void TopTools_LocationSet::Read(Standard_IStream& IS, const Message_ProgressRang
            throw Standard_Failure("TopTools_LocationSet::Read: Not a location of the table");
          }
          TopLoc_Location L1 = myMap(l1);
@@ -859,9 +869,10 @@ diff --git a/src/ModelingData/TKBRep/TopTools/TopTools_LocationSet.cxx b/src/Mod
        }
      }
 diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx
+index 9fd6b42a757888d2dda0441eb91863a3c8406ca1..1172905dbed75807bae835d24de295b27cc0beb2 100644
 --- a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx
 +++ b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx
-@@ -738,6 +738,13 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom2d_Bez
+@@ -762,6 +762,13 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom2d_Bez
    int i = 0, degree = 0;
    IS >> degree;
  
@@ -875,7 +886,7 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx b/sr
    NCollection_Array1<gp_Pnt2d> poles(1, degree + 1);
    NCollection_Array1<double>   weights(1, degree + 1);
  
-@@ -750,6 +757,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom2d_Bez
+@@ -778,6 +785,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom2d_Bez
      }
    }
  
@@ -888,7 +899,7 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx b/sr
    if (rational)
    {
      B = new Geom2d_BezierCurve(poles, weights);
-@@ -773,6 +786,13 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom2d_BSp
+@@ -801,6 +814,13 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom2d_BSp
    int i = 0, degree = 0, nbpoles = 0, nbknots = 0;
    IS >> degree >> nbpoles >> nbknots;
  
@@ -902,7 +913,7 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx b/sr
    NCollection_Array1<gp_Pnt2d> poles(1, nbpoles);
    NCollection_Array1<double>   weights(1, nbpoles);
  
-@@ -958,6 +978,12 @@ void GeomTools_Curve2dSet::Read(Standard_IStream& IS, const Message_ProgressRang
+@@ -1013,6 +1033,12 @@ void GeomTools_Curve2dSet::Read(Standard_IStream& IS, const Message_ProgressRang
  
    int i, nbcurve;
    IS >> nbcurve;
@@ -916,9 +927,10 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx b/sr
    for (i = 1; i <= nbcurve && aPS.More() && !IS.fail(); i++, aPS.Next())
    {
 diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx
+index bc83a1695a69ba58c447763a53aa2c2c3832aaf8..fcc4f616fe6adc744a89305186e26b8cbbd99721 100644
 --- a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx
 +++ b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx
-@@ -765,6 +765,13 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Bezie
+@@ -789,6 +789,13 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Bezie
    int i = 0, degree = 0;
    IS >> degree;
  
@@ -932,7 +944,7 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx b/src/
    NCollection_Array1<gp_Pnt> poles(1, degree + 1);
    NCollection_Array1<double> weights(1, degree + 1);
  
-@@ -777,6 +784,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Bezie
+@@ -805,6 +812,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Bezie
      }
    }
  
@@ -945,7 +957,7 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx b/src/
    if (rational)
    {
      B = new Geom_BezierCurve(poles, weights);
-@@ -801,6 +814,13 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_BSpli
+@@ -829,6 +842,13 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_BSpli
    int i = 0, degree = 0, nbpoles = 0, nbknots = 0;
    IS >> degree >> nbpoles >> nbknots;
  
@@ -959,7 +971,7 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx b/src/
    NCollection_Array1<gp_Pnt> poles(1, nbpoles);
    NCollection_Array1<double> weights(1, nbpoles);
  
-@@ -987,6 +1007,12 @@ void GeomTools_CurveSet::Read(Standard_IStream& IS, const Message_ProgressRange&
+@@ -1046,6 +1066,12 @@ void GeomTools_CurveSet::Read(Standard_IStream& IS, const Message_ProgressRange&
  
    int i, nbcurve;
    IS >> nbcurve;
@@ -973,9 +985,10 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx b/src/
    for (i = 1; i <= nbcurve && aPS.More() && !IS.fail(); i++, aPS.Next())
    {
 diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx
+index a06a05eac0f947c5d81b69ef20b42a3b70556227..4b016195e3306a1abbc0aa4856b01c6d629d497c 100644
 --- a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx
 +++ b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx
-@@ -980,6 +980,14 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Bezie
+@@ -1012,6 +1012,14 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Bezie
    IS >> urational >> vrational;
    int udegree = 0, vdegree = 0;
    IS >> udegree >> vdegree;
@@ -990,7 +1003,7 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx b/sr
    NCollection_Array2<gp_Pnt> poles(1, udegree + 1, 1, vdegree + 1);
    NCollection_Array2<double> weights(1, udegree + 1, 1, vdegree + 1);
  
-@@ -996,6 +1004,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Bezie
+@@ -1032,6 +1040,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Bezie
      }
    }
  
@@ -1003,7 +1016,7 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx b/sr
    if (urational || vrational)
    {
      S = new Geom_BezierSurface(poles, weights);
-@@ -1019,6 +1033,15 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_BSpli
+@@ -1055,6 +1069,15 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_BSpli
    IS >> nbupoles >> nbvpoles;
    IS >> nbuknots >> nbvknots;
  
@@ -1019,7 +1032,7 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx b/sr
    NCollection_Array2<gp_Pnt> poles(1, nbupoles, 1, nbvpoles);
    NCollection_Array2<double> weights(1, nbupoles, 1, nbvpoles);
  
-@@ -1248,6 +1271,12 @@ void GeomTools_SurfaceSet::Read(Standard_IStream& IS, const Message_ProgressRang
+@@ -1315,6 +1338,12 @@ void GeomTools_SurfaceSet::Read(Standard_IStream& IS, const Message_ProgressRang
  
    int i, nbsurf;
    IS >> nbsurf;

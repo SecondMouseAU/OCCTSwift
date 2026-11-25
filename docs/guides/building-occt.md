@@ -283,9 +283,41 @@ The actual build script is at `Scripts/build-occt.sh`. It handles:
 To update the OCCT version, edit the variables at the top of the script:
 
 ```bash
-OCCT_VERSION="8.0.1"
-OCCT_RC=""          # Pre-release suffix (rc4, beta2, p1); empty for a GA tag like V8_0_1
+OCCT_VERSION="8.0.2"
+OCCT_RC=""          # Pre-release suffix (rc4, beta2, p1); empty for a GA tag like V8_0_2
 ```
+
+`Scripts/build-occt-wasm.sh` reads `OCCT_VERSION` from this line, so it moves in one place.
+
+### Two flavours
+
+Both build scripts take `--flavour carry|vanilla`:
+
+```bash
+Scripts/build-occt.sh                      # carry (the default): OCCT plus every patch in Scripts/patches
+Scripts/build-occt.sh --flavour vanilla    # OCCT exactly as tagged, no carried patch (the LTS kernel)
+Scripts/build-occt-wasm.sh --flavour vanilla   # the tag plus ONLY the WASI port patches
+```
+
+A vanilla build refuses a tree that has any modified file (apart from the WASI patches' own files on
+wasm), because the scripts never revert a patch and a tree an earlier carry build patched would
+otherwise ship under the vanilla name. Use a fresh `Libraries/occt-src` for each flavour.
+
+Each build writes `OCCTKernelFixes.h` into the kernel's headers, generated from
+`Scripts/kernel-fixes.tsv` (see [`okf/policies/kernel-fix-ledger.md`](../../okf/policies/kernel-fix-ledger.md)).
+It says which flavour the kernel is and which ledger fixes it holds, and the bridge compiles against
+it. `python3 Scripts/emit-kernel-fixes-header.py --help` writes one by hand.
+
+### Surveying a new upstream release
+
+```bash
+Scripts/survey-upstream-release.sh V8_0_3            # which patches retire, rebase or apply unchanged
+Scripts/survey-upstream-release.sh V8_0_3 --wasi     # the WASI patches too
+```
+
+It works in a throwaway copy of the tag, so it never touches `Libraries/occt-src`. Run it before any
+build: a rebuild that starts first turns a patch conflict into a compile error several hundred files
+deep. What each verdict asks of the ledger is in the script's header.
 
 Then **delete `Libraries/occt-src`**. The script reuses an existing tree only when its `HEAD` is at
 the tag these variables name, and aborts otherwise. Editing the version without removing the tree
@@ -427,6 +459,15 @@ Then, in the release commit:
 Between the rebuild and the release the two consumer paths diverge on purpose: this checkout and
 every sibling repo path-depending on its `Libraries/OCCT.xcframework` get the new kernel
 immediately, while anything resolving the remote `url:` stays on the previously released one.
+
+### Kernel asset tags
+
+From the 8.0.2 base move (#3543) a kernel asset is published on a **non-semver** tag, so it never
+enters the version list SwiftPM and the Swift Package Index read: `kernel-8.0.2-c1` for the carry
+kernel (the `c` counts carry revisions of the same OCCT base) and `kernel-8.0.2` for the vanilla one.
+A binary target's `url:` does not depend on a tag, so nothing else changes. The `v4.0.0-kernel.N`
+tags that exist stay, and the scripts and gates accept both shapes. The mid-release recipe below
+applies unchanged apart from the tag name.
 
 ### Mid-release: publish a `vX.Y.Z-kernel.N` pre-release
 

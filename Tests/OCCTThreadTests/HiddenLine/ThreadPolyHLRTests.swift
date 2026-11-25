@@ -50,13 +50,18 @@ struct Issue196PolyHLRTests {
     // what this shape gives in-process:
     //
     //     deflection   visibleSharp   visibleOutline
-    //     0.05         1873           17041
-    //     0.8          2089            3578
+    //     0.05         1851            9597
+    //     0.8          2170            3656
     //
-    // The silhouette count does what the old name claimed: the coarse mesh draws about a fifth of
-    // the fine one's outline edges. The sharp count goes the other way, 11% MORE on the coarse
-    // mesh, and is not monotonic in the deflection at all (1741 at 0.1, 1873 at 0.05, 1912 at
-    // 0.4), so it is not a measure of detail and the outline count is. The kernel, driven with
+    // OCCT 8.0.2 moved all four (HLR changes #1634 and #1640): on 8.0.1 they were 1873 and 17041 at
+    // 0.05 and 2089 and 3578 at 0.8. The fine outline count fell by 44 percent and the other three
+    // moved by 1 to 4 percent. The two relations below held on both versions. It was not bisected to
+    // one of the two commits.
+    //
+    // The silhouette count does what the old name claimed: the coarse mesh draws fewer of the fine
+    // one's outline edges (now about 38 percent of them). The sharp count goes the other way, 17%
+    // MORE on the coarse mesh, and was not monotonic in the deflection on 8.0.1 (1741 at 0.1, 1873
+    // at 0.05, 1912 at 0.4), so it is not a measure of detail and the outline count is. The kernel, driven with
     // BRepMesh_IncrementalMesh and HLRBRep_PolyAlgo directly on the same BREP, gives the bridge's
     // counts exactly, so this is the kernel's behaviour and not the bridge's; both directions are
     // pinned as it reports them, not as a rule about deflection. The counts are checked to 1%
@@ -88,9 +93,9 @@ struct Issue196PolyHLRTests {
             "outline: coarse \(coarse.outline), fine \(fine.outline)")
         #expect(
             coarse.sharp > fine.sharp, "sharp: coarse \(coarse.sharp), fine \(fine.sharp)")
-        #expect(within1Percent(fine.outline, of: 17041), "fine outline \(fine.outline)")
-        #expect(within1Percent(coarse.outline, of: 3578), "coarse outline \(coarse.outline)")
-        #expect(within1Percent(fine.sharp, of: 1873), "fine sharp \(fine.sharp)")
-        #expect(within1Percent(coarse.sharp, of: 2089), "coarse sharp \(coarse.sharp)")
+        #expect(within1Percent(fine.outline, of: 9597), "fine outline \(fine.outline)")
+        #expect(within1Percent(coarse.outline, of: 3656), "coarse outline \(coarse.outline)")
+        #expect(within1Percent(fine.sharp, of: 1851), "fine sharp \(fine.sharp)")
+        #expect(within1Percent(coarse.sharp, of: 2170), "coarse sharp \(coarse.sharp)")
     }
 }
