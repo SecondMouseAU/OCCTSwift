@@ -688,8 +688,9 @@ superseded by the repin to `kernel-8.0.2-c1` (#3532, #3547), and the plan, the u
 policy pages under `okf/` record the move to 8.0.2 and the state of the upstream pull requests (#3513,
 #3515, #3542, #3546). None of it changes anything a consumer compiles against.
 
-**Pending, not merged when this section was assembled.** Each is read here against its diff, and
-anything that merges before the tag is assessed at that point.
+**Merged after this section was first assembled, on 2026-11-26.** Each was read here against its diff
+before it merged, and the code that merged is the code that was read (compared by patch id over `Sources`
+and `Tests`); anything that merges before the tag is assessed at that point.
 
 - #3550 states NONE. Its diff touches no declaration: doc comments on `FilletBuilder.simulate(contour:)`,
   `simulatedSurfaceCount(contour:)` and `Surface.extrema`, a bridge comment and a new test. What it
@@ -744,8 +745,8 @@ against their diffs.
   an easy mistake the old code answered with contour 1's value.
 - #3517 states PATCH and names its one behaviour change beyond the fault: after a completed build and
   a `reset()`, `surfaceCount` answered the stale count and now answers `0`. It is in the same row.
-- #3553 and #3556 (pending) state PATCH. They are recorded PATCH for the crashes they stop and as
-  behaviour rows for the answers they change, as #3521 is. #3557 (pending) states PATCH and is a
+- #3553 and #3556 state PATCH. They are recorded PATCH for the crashes they stop and as
+  behaviour rows for the answers they change, as #3521 is. #3557 states PATCH and is a
   behaviour row, since a refusal becomes a success, with no signature change.
 - #3520 and #3528 state PATCH and stay PATCH. #3547 states MINOR, which holds for `Kernel`; the kernel
   move it mentions is the table above.
@@ -1314,10 +1315,10 @@ paragraph above that records it.
 | `FilletBuilder`'s contour accessors answer a refusal for an index of `0` or below, where they read or wrote contour 1; its three radius setters answer `false` for a write that did not happen; `surfaceCount` answers `0` after a completed build and `reset()` | different result, no signature change | [#3518, #3516](#v400-filletbuilder-answers-a-refusal-for-an-index-or-a-state-it-used-to-misread-3518-3516) |
 | `FilletBuilder.simulate(contour:)` for a simulation OCCT declines partway keeps the surfaces it computed and sets `stripeStatus(contour:)` to `3`, where it read `0` | different result, no signature change | [#3550](#v400-a-simulation-occt-declines-partway-keeps-its-surfaces-3550-occt1708) |
 | Mesh triangle counts, HLR edge counts and volumes that depend on an approximated curve move with OCCT 8.0.2 | different result, no signature change | "The move to OCCT 8.0.2" above, measured in #3552 |
-| `ChamferBuilder`'s eighteen contour accessors and setters refuse an index outside their range, where they faulted or read contour 1, and `setDistance`, `setDistances` and `setDistAngle` answer `false` for a write that never happened (pending, #3553) | different result, no signature change | [#3523](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-pending-3553-3556-3557) |
-| `FilletBuilder.setRadius(_:contour:vertex:)`, `setTwoRadii` and `addEdge` for an edge already in a contour answer `false` once the fillet is done or the contour holds surfaces, where they faulted or, for a non-analytic blend, succeeded (pending, #3553) | different result, no signature change | [#3524](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-pending-3553-3556-3557) |
-| `ChamferBuilder.simulatedSurfaceCount(contour:)` answers `0` for an index past `contourCount`, where it read a corner stripe as a contour (pending, #3556) | different result, no signature change | [#3522](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-pending-3553-3556-3557) |
-| A STEP file that starts with a UTF-8 byte order mark loads in every STEP reader, where it was refused (pending, #3557) | different result, no signature change | [#3529](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-pending-3553-3556-3557) |
+| `ChamferBuilder`'s eighteen contour accessors and setters refuse an index outside their range, where they faulted or read contour 1, and `setDistance`, `setDistances` and `setDistAngle` answer `false` for a write that never happened (#3553) | different result, no signature change | [#3523](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-3553-3556-3557) |
+| `FilletBuilder.setRadius(_:contour:vertex:)`, `setTwoRadii` and `addEdge` for an edge already in a contour answer `false` once the fillet is done or the contour holds surfaces, where they faulted or, for a non-analytic blend, succeeded (#3553) | different result, no signature change | [#3524](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-3553-3556-3557) |
+| `ChamferBuilder.simulatedSurfaceCount(contour:)` answers `0` for an index past `contourCount`, where it read a corner stripe as a contour (#3556) | different result, no signature change | [#3522](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-3553-3556-3557) |
+| A STEP file that starts with a UTF-8 byte order mark loads in every STEP reader, where it was refused (#3557) | different result, no signature change | [#3529](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-3553-3556-3557) |
 
 ##### v4.0.0: `FilletBuilder` answers a refusal for an index or a state it used to misread (#3518, #3516)
 
@@ -1353,7 +1354,7 @@ for a declined edge answered contour 1's radius and now answers `-1`. v4.0.0 is 
 does not move the version number, and a reader who disagrees can downgrade the row to a note without
 touching a signature.
 
-**Pending.** The same refusal reaches `ChamferBuilder` and the radius setters (#3553), and the chamfer's
+**See also.** The same refusal reaches `ChamferBuilder` and the radius setters (#3553), and the chamfer's
 simulated-surface count (#3556): see the section after #3550's, below.
 
 **Migration.** Pass a 1-based contour index within `1...contourCount`, and an edge index within
@@ -1381,13 +1382,14 @@ probed.
 means the simulation was declined and the count is partial. A caller that treated a nonzero
 `simulatedSurfaceCount(contour:)` as a completed simulation should test the status as well.
 
-##### v4.0.0: blend-builder indices, radii on a built contour and a STEP byte order mark (pending #3553, #3556, #3557)
+##### v4.0.0: blend-builder indices, radii on a built contour and a STEP byte order mark (#3553, #3556, #3557)
 
-Three open pull requests carry behaviour changes under a PATCH statement. None changes a Swift or C
+Three pull requests carry behaviour changes under a PATCH statement. None changes a Swift or C
 declaration: their Swift edits are doc comments, `Int32(clamping:)` conversions and one reformatted
 `guard`, and their header edits are comments. Read here from their diffs at the heads of 2026-11-26
-(#3553 at `90a9e8f6`, #3556 at `168a3eb9`, #3557 at `96979464`), and to be read again if they change
-before they merge.
+(#3553 at `90a9e8f6`, #3556 at `168a3eb9`, #3557 at `96979464`). They merged as `e4bcd4ea8`, `5a7ef3c21`
+and `42b93b55e`, and the code each carried at merge is the code read here (compared by patch id over
+`Sources` and `Tests`).
 
 **`ChamferBuilder`, #3553 (#3523).** Eighteen bridge functions are gated on `1 <= IC <= NbContours()`,
 and `Edge` also on `1 <= J <= NbEdges(IC)`, and answer the value the header documents for each: `0`
