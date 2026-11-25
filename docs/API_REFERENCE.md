@@ -506,7 +506,7 @@ a map of the major areas, and the `Total` as the count.
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
 | **Bridge Diagnostics** (#1161, see [Diagnostics](reference/Diagnostics.md)) | 8 | OCCTDiagnostics: capturing, records, clear, isCaptureEnabled, isLoggingEnabled, stackTraceDepth, droppedRecordCount; Record: description |
 | **Kernel flavour** (#3543, see [Kernel](reference/Kernel.md)) | 3 | Kernel: flavour, occtVersion, hasFix |
-| **Total** | **4,406** | |
+| **Total** | **4,407** | |
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
 
@@ -1080,6 +1080,7 @@ Swift-side from the request array rather than from OCCT. See `Shape.FilletResult
 | Swift API | OCCT Class |
 |-----------|------------|
 | `shape.fuseWithHistory(_:)` → `BooleanResult` | `BRepAlgoAPI_Fuse.Modified()` |
+| `shape.splitWithFullHistory(atPlane:normal:)` → pieces, `ShapeHistoryRef`, cutting face | `BRepBuilderAPI_MakeFace` + `BRepAlgoAPI_Splitter` (`Modified` / `Generated` / `IsDeleted`) |
 
 #### Multi-Offset Wire (v0.35.0)
 | Swift API | OCCT Class |

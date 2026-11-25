@@ -196,6 +196,7 @@
 #include <TColStd_HArray1OfBoolean.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepAlgoAPI_Splitter.hxx>
+#include <ElSLib.hxx>
 #include <ShapeFix_Solid.hxx>
 #include <GeomAPI_Interpolate.hxx>
 #include <TColgp_HArray1OfPnt.hxx>
@@ -568,6 +569,97 @@ private:
   bool                                  myTripped = false;
 };
 
+// #3559: the one implementation behind OCCTShapeSplitByPlane and
+// OCCTShapeSplitByPlaneWithHistory, so the two return the same pieces in the same order by
+// construction. Throws whatever OCCT throws; both callers catch.
+//
+// The cutting face is the plane trimmed to a square reaching twice the shape's bounding-box
+// diagonal each way from the projection of the box centre onto the plane. It used to be centred on
+// the caller's point, which only fixes the plane, so a shape whose projection lay farther than
+// that reach from the point was never touched by the face and came back whole (a 4x4x4 box at
+// X = 100 against a plane through the origin). Every point of the shape projects within half the
+// diagonal of the projected centre, so the square covers the shape wherever the point is. The
+// plane keeps the caller's point as its origin, so a cap face's surface and UV parametrisation are
+// what they were before; only the trim moved.
+//
+// The pieces are the solids of the splitter's result, else its shells, else the result itself,
+// gathered with TopExp_Explorer rather than taken as the result's children: the splitter returns a
+// single item unwrapped, so for a solid the plane misses the result is that solid, and its
+// children would be its shells.
+static bool occtSplitByPlane(const TopoDS_Shape&                    theShape,
+                             const gp_Pln&                          thePlane,
+                             std::unique_ptr<BRepAlgoAPI_Splitter>& theSplitter,
+                             TopoDS_Shape&                          theFace,
+                             std::vector<TopoDS_Shape>&             thePieces)
+{
+  Bnd_Box bounds;
+  BRepBndLib::Add(theShape, bounds);
+  if (bounds.IsVoid())
+    return false;
+  double xmin, ymin, zmin, xmax, ymax, zmax;
+  bounds.Get(xmin, ymin, zmin, xmax, ymax, zmax);
+  const double size = std::sqrt((xmax - xmin) * (xmax - xmin) + (ymax - ymin) * (ymax - ymin)
+                                + (zmax - zmin) * (zmax - zmin))
+                      * 2;
+  double       u0   = 0.0;
+  double       v0   = 0.0;
+  ElSLib::Parameters(thePlane,
+                     gp_Pnt((xmin + xmax) / 2, (ymin + ymax) / 2, (zmin + zmax) / 2),
+                     u0,
+                     v0);
+
+  BRepBuilderAPI_MakeFace makeFace(thePlane, u0 - size, u0 + size, v0 - size, v0 + size);
+  if (!makeFace.IsDone())
+    return false;
+  theFace = makeFace.Face();
+
+  theSplitter.reset(new BRepAlgoAPI_Splitter());
+  TopTools_ListOfShape arguments;
+  arguments.Append(theShape);
+  theSplitter->SetArguments(arguments);
+  TopTools_ListOfShape tools;
+  tools.Append(theFace);
+  theSplitter->SetTools(tools);
+  theSplitter->Build();
+  if (!theSplitter->IsDone())
+    return false;
+
+  const TopoDS_Shape& result = theSplitter->Shape();
+  if (result.IsNull())
+    return false;
+
+  for (TopExp_Explorer exp(result, TopAbs_SOLID); exp.More(); exp.Next())
+  {
+    thePieces.push_back(exp.Current());
+  }
+  if (thePieces.empty())
+  {
+    for (TopExp_Explorer exp(result, TopAbs_SHELL); exp.More(); exp.Next())
+    {
+      thePieces.push_back(exp.Current());
+    }
+  }
+  if (thePieces.empty())
+  {
+    thePieces.push_back(result);
+  }
+  return true;
+}
+
+// The pieces as an array the caller owns, freed with OCCTFreeShapeArrayOnly once each piece is
+// wrapped.
+static OCCTShapeRef* occtNewShapeArray(const std::vector<TopoDS_Shape>& thePieces,
+                                       int32_t*                         theCount)
+{
+  OCCTShapeRef* shapes = new OCCTShapeRef[thePieces.size()];
+  for (size_t i = 0; i < thePieces.size(); i++)
+  {
+    shapes[i] = new OCCTShape(thePieces[i]);
+  }
+  *theCount = static_cast<int32_t>(thePieces.size());
+  return shapes;
+}
+
 OCCTShapeRef* OCCTShapeSplitByPlane(OCCTShapeRef shape,
                                     double       planeX,
                                     double       planeY,
@@ -583,78 +675,66 @@ OCCTShapeRef* OCCTShapeSplitByPlane(OCCTShapeRef shape,
 
   try
   {
-    // Create plane
-    gp_Pnt pnt(planeX, planeY, planeZ);
-    gp_Dir normal(normalX, normalY, normalZ);
-    gp_Pln plane(pnt, normal);
-
-    // Create a large face from the plane for cutting
-    // Get shape bounds to size the cutting plane
-    Bnd_Box bounds;
-    BRepBndLib::Add(shape->shape, bounds);
-    double xmin, ymin, zmin, xmax, ymax, zmax;
-    bounds.Get(xmin, ymin, zmin, xmax, ymax, zmax);
-    double size = std::sqrt((xmax - xmin) * (xmax - xmin) + (ymax - ymin) * (ymax - ymin)
-                            + (zmax - zmin) * (zmax - zmin))
-                  * 2;
-
-    BRepBuilderAPI_MakeFace makeFace(plane, -size, size, -size, size);
-    if (!makeFace.IsDone())
+    const gp_Pln plane(gp_Pnt(planeX, planeY, planeZ), gp_Dir(normalX, normalY, normalZ));
+    std::unique_ptr<BRepAlgoAPI_Splitter> splitter;
+    TopoDS_Shape                          face;
+    std::vector<TopoDS_Shape>             pieces;
+    if (!occtSplitByPlane(shape->shape, plane, splitter, face, pieces))
       return nullptr;
-    TopoDS_Shape planeFace = makeFace.Face();
-
-    // Use splitter
-    BRepAlgoAPI_Splitter splitter;
-
-    TopTools_ListOfShape arguments;
-    arguments.Append(shape->shape);
-    splitter.SetArguments(arguments);
-
-    TopTools_ListOfShape tools;
-    tools.Append(planeFace);
-    splitter.SetTools(tools);
-
-    splitter.Build();
-    if (!splitter.IsDone())
-      return nullptr;
-
-    TopoDS_Shape result = splitter.Shape();
-    if (result.IsNull())
-      return nullptr;
-
-    // Extract solids from result
-    std::vector<TopoDS_Shape> solids;
-    for (TopExp_Explorer exp(result, TopAbs_SOLID); exp.More(); exp.Next())
-    {
-      solids.push_back(exp.Current());
-    }
-
-    if (solids.empty())
-    {
-      for (TopExp_Explorer exp(result, TopAbs_SHELL); exp.More(); exp.Next())
-      {
-        solids.push_back(exp.Current());
-      }
-    }
-
-    if (solids.empty())
-    {
-      solids.push_back(result);
-    }
-
-    *outCount            = static_cast<int32_t>(solids.size());
-    OCCTShapeRef* shapes = new OCCTShapeRef[*outCount];
-    for (int32_t i = 0; i < *outCount; i++)
-    {
-      shapes[i] = new OCCTShape(solids[i]);
-    }
-
-    return shapes;
+    return occtNewShapeArray(pieces, outCount);
   }
   catch (...)
   {
     occtRecordCaughtException(__func__);
     *outCount = 0;
+    return nullptr;
+  }
+}
+
+OCCTBooleanHistoryRef OCCTShapeSplitByPlaneWithHistory(OCCTShapeRef   shape,
+                                                       double         planeX,
+                                                       double         planeY,
+                                                       double         planeZ,
+                                                       double         normalX,
+                                                       double         normalY,
+                                                       double         normalZ,
+                                                       OCCTShapeRef** outPieces,
+                                                       int32_t*       outCount,
+                                                       OCCTShapeRef*  outCuttingFace)
+{
+  if (!outPieces || !outCount || !outCuttingFace)
+    return nullptr;
+  *outPieces      = nullptr;
+  *outCount       = 0;
+  *outCuttingFace = nullptr;
+  if (!shape)
+    return nullptr;
+
+  try
+  {
+    const gp_Pln plane(gp_Pnt(planeX, planeY, planeZ), gp_Dir(normalX, normalY, normalZ));
+    std::unique_ptr<BRepAlgoAPI_Splitter> splitter;
+    TopoDS_Shape                          face;
+    std::vector<TopoDS_Shape>             pieces;
+    if (!occtSplitByPlane(shape->shape, plane, splitter, face, pieces))
+      return nullptr;
+    // The history walks the cutting face's sub-shapes as well as the shape's, as
+    // OCCTBooleanSplitWithHistory's does its tool's.
+    TopTools_ListOfShape arguments;
+    arguments.Append(shape->shape);
+    arguments.Append(face);
+    std::unique_ptr<OCCTBooleanHistory> history(
+      new OCCTBooleanHistory(std::move(splitter), arguments));
+    *outPieces      = occtNewShapeArray(pieces, outCount);
+    *outCuttingFace = new OCCTShape(face);
+    return history.release();
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    *outPieces      = nullptr;
+    *outCount       = 0;
+    *outCuttingFace = nullptr;
     return nullptr;
   }
 }

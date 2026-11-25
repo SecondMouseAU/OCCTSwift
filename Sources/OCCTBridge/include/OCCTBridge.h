@@ -157,7 +157,8 @@ typedef enum
 //                                       OCCTShapeHistoryFromDefeature, OCCTShapeRemoveSmallFaces
 // BRepAlgoAPI_Fuse                    → OCCTShapeUnion
 // BRepAlgoAPI_Section                 → OCCTShapeSection, OCCTShapeSliceAtZ, OCCTSectionBuilder*
-// BRepAlgoAPI_Splitter                → OCCTShapeSplit
+// BRepAlgoAPI_Splitter                → OCCTShapeSplit, OCCTShapeSplitByPlane,
+//                                       OCCTShapeSplitByPlaneWithHistory
 //
 // --- BRepBuilderAPI ---
 // BRepBuilderAPI_Copy                 → OCCTShapeCopy

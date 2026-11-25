@@ -2413,6 +2413,55 @@ The top-level children of the compound result are returned as individual pieces.
 
 ---
 
+### `splitWithFullHistory(atPlane:normal:)`
+
+Split `self` by a plane with full per-input-subshape history.
+
+```swift
+public func splitWithFullHistory(atPlane point: SIMD3<Double>, normal: SIMD3<Double>)
+    -> (pieces: [Shape], history: ShapeHistoryRef, cuttingFace: Shape)?
+```
+
+The pieces are exactly [`split(atPlane:normal:)`](Shape-Features.md#splitatplanenormal)'s, in the
+same order, because both run one bridge implementation (#3559): the solids of the splitter's
+result, else its shells, else the result itself. A solid the plane misses therefore comes back as
+one piece that `isSame(as:)` the input. Wrapping the plane face in `splitWithFullHistory(by:)`
+instead returns the result's children, and the splitter returns a single item unwrapped, so that
+solid would come back as its shells.
+
+`cuttingFace` is the bounded face of the plane the splitter cut with: the one input of the split
+the caller did not build, returned so its record can be read. What OCCT records
+(`BOPAlgo_Builder::PrepareHistory`), measured on a 10 mm box cut at z = 1:
+
+| Input sub-shape | `modified` | `generated` | `isDeleted` |
+|---|---|---|---|
+| `cuttingFace` | the cap face, one face both pieces share | the 4 section edges and their 4 vertices | `false`; `true` when the plane misses |
+| a face the plane crosses | its 2 pieces, one in each piece of the box | its section edge | `false` |
+| an edge the plane crosses | its 2 pieces | its section vertex | `false` |
+| a face the plane misses | empty: it is in one piece unchanged | empty | `false` |
+
+The cap face is the cutting face's `modified`, not its `generated`: it is a split of the tool face,
+and OCCT generates only edges and vertices from a face (`BOPAlgo_Builder::LocGenerated`).
+
+- **Parameters:** `point`, a point on the cutting plane; `normal`, the plane normal.
+- **Returns:** The pieces, the history and the cutting face, or nil where `split(atPlane:normal:)`
+  returns nil.
+- **OCCT:** `BRepBuilderAPI_MakeFace` + `BRepAlgoAPI_Splitter`, the history read through
+  `BRepAlgoAPI_BuilderAlgo::Modified` / `Generated` / `IsDeleted` (via
+  `OCCTShapeSplitByPlaneWithHistory`).
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  if let (pieces, history, cuttingFace) = box.splitWithFullHistory(
+      atPlane: SIMD3(0, 0, 1), normal: SIMD3(0, 0, 1))
+  {
+      let cap = history.record(of: cuttingFace).modified
+      print(pieces.count, cap.count)  // 2 1
+  }
+  ```
+
+---
+
 ### `filletedWithFullHistory(radius:edges:)`
 
 Apply a uniform-radius fillet to the given edges with history tracking.
