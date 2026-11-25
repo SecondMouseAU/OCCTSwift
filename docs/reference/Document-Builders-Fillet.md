@@ -897,6 +897,34 @@ print(builder.edgeCount(contour: 0))        // 0, not contour 1
 print(builder.edgeCount(contour: 2))        // 0
 ```
 
+**Changing radii after a build.** A contour that holds a `build()` or a `simulate(contour:)` result
+refuses a radius change that OCCT would have to replay on the finished contour:
+`setRadius(_:contour:vertex:)`, `setTwoRadii(_:_:contour:edgeInContour:)`, and `addEdge(_:radius:)`
+and `addEdge(_:radius1:radius2:)` for an edge that already belongs to such a contour all answer
+`false` and change nothing. `reset()` lifts it, and it is what `BRepFilletAPI_MakeFillet`'s own
+header names for changing a built fillet. A contour whose build was declined holds no result, and a
+radius can still be changed on it.
+
+`ChFiDS_FilSpine::SetRadius(UandR, IinC)` inserts the radius and then, when the spine is already
+split, replays the radius law on the spine's elementary spines: it reads the first of them through
+an iterator with no emptiness test. For an analytic blend (plane and plane, plane and cylinder, and
+so on) there are none once the contour is built or simulated, so the read was a null dereference and
+an uncatchable SIGSEGV with a valid contour and edge index (#3524, `Scripts/repro/3524/`). Neither
+`IsDone()` nor `build()` succeeding is the predicate: `simulate(contour:)` leaves `IsDone()` false
+and faults the same way, and so does contour 1 of a build that completed it and declined contour 2.
+`setRadius(_:contour:edge:)` clears the split first and is not affected.
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let builder = FilletBuilder(shape: box)!
+builder.addEdge(box.edges()[0], radius: 1)
+let vertex = builder.firstVertex(contour: 1)!
+_ = builder.build()
+print(builder.setRadius(2, contour: 1, vertex: vertex))   // false: built, reset() first
+builder.reset()
+print(builder.setRadius(2, contour: 1, vertex: vertex))   // true
+```
+
 ### `FilletBuilder.init?(shape:)`
 
 Create a fillet builder on the given shape.
@@ -932,6 +960,8 @@ public func addEdge(_ edge: Edge, radius: Double) -> Bool
 ```
 
 - **Parameters:** `edge`, the edge to fillet; `radius`, constant fillet radius (> 0).
+- **Returns:** `false`, and nothing changes, for an edge that already belongs to a contour holding a
+  `build()` or `simulate(contour:)` result: `reset()` first (#3524).
 - **OCCT:** `BRepFilletAPI_MakeFillet::Add` (via `OCCTFilletBuilderAddEdge`).
 
 ---
@@ -945,6 +975,7 @@ Add an edge with an evolving fillet radius (`r1` at the start vertex, `r2` at th
 public func addEdge(_ edge: Edge, radius1: Double, radius2: Double) -> Bool
 ```
 
+- **Returns:** `false` in the same case as `addEdge(_:radius:)` (#3524).
 - **OCCT:** `BRepFilletAPI_MakeFillet::Add` with two radii (via `OCCTFilletBuilderAddEdgeEvolving`).
 
 ---
@@ -1122,6 +1153,26 @@ public func reset()
 
 Builder for applying chamfers to selected edges of a solid, wrapping `BRepFilletAPI_MakeChamfer`.
 
+**Contour and edge indices.** Every method that takes a contour index takes it 1-based, in
+`1...contourCount`; the edge index inside a contour is `1...edgeCount(contour:)`. An index outside
+its range, `0` and the negatives included, is refused with the answer each method documents (`0`,
+`-1`, `false`, `nil`) and never reaches the kernel. OCCT range-checks neither end reliably:
+`ChFi3d_Builder::Value(I)` walks its stripe list `I - 1` times, so an index past the end, or any
+index on a builder with no contour, steps onto a null node and faults the process uncatchably,
+while `0` and the negatives run no steps and read, or write, contour 1 (#3523,
+`Scripts/repro/3523/`). It is the defect #3518 fixed for `FilletBuilder`, over eighteen accessors
+instead of sixteen.
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let builder = ChamferBuilder(shape: box)!
+print(builder.edgeCount(contour: 1))        // 0: no contour yet, and not a crash
+builder.addEdge(box.edges()[0], distance: 1)
+print(builder.edgeCount(contour: 1))        // 1
+print(builder.edgeCount(contour: 0))        // 0, not contour 1
+print(builder.edgeCount(contour: 2))        // 0
+```
+
 ### `ChamferBuilder.init?(shape:)`
 
 Create a chamfer builder on the given shape.
@@ -1213,11 +1264,13 @@ public var contourCount: Int { get }
 
 ### `ChamferBuilder.isDistanceAngle(contour:)`
 
-Whether a contour uses distance-angle mode (1-based index).
+Whether a contour uses distance-angle mode (1-based index, `1...contourCount`).
 
 ```swift
 public func isDistanceAngle(contour: Int) -> Bool
 ```
+
+Answers `false` for a contour that does not exist (#3523).
 
 - **OCCT:** `BRepFilletAPI_MakeChamfer::IsDistanceAngle` (via `OCCTChamferBuilderIsDistAngle`).
 
@@ -1229,13 +1282,26 @@ Additional inspection and mutation methods on `ChamferBuilder`.
 
 ### `ChamferBuilder.edgeCount(contour:)`
 
-Number of edges in a contour (1-based index).
+Number of edges in a contour (1-based index, `1...contourCount`).
 
 ```swift
 public func edgeCount(contour: Int) -> Int
 ```
 
-- **OCCT:** `BRepFilletAPI_MakeChamfer::NbEdges` (via `OCCTChamferBuilderNbEdges`).
+Answers `0` for a contour that does not exist. OCCT reads its stripe list with no range test here,
+so an index past the end faulted the process, and so did any index on a builder with no contour
+(#3523).
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let builder = ChamferBuilder(shape: box)!
+builder.addEdge(box.edges()[0], distance: 1)
+print(builder.edgeCount(contour: 1))   // 1
+print(builder.edgeCount(contour: 2))   // 0: past contourCount, not a crash
+```
+
+- **OCCT:** `BRepFilletAPI_MakeChamfer::NbEdges` (via `OCCTChamferBuilderNbEdges`), read only for a
+  contour in `1...NbContours()`.
 
 ---
 
@@ -1247,7 +1313,9 @@ Get the symmetric chamfer distance for a contour (1-based).
 public func getDistance(contour: Int) -> Double
 ```
 
-- **Returns:** The distance, or `-1.0` if not set.
+- **Returns:** The distance, or `-1.0` if not set, and for a contour that does not exist, the
+  value OCCT documents for an index outside its table. `0` and the negatives used to answer
+  contour 1 (#3523).
 - **OCCT:** `BRepFilletAPI_MakeChamfer::GetDist` (via `OCCTChamferBuilderGetDist`).
 
 ---
@@ -1260,7 +1328,8 @@ Get the two distances for a contour (1-based).
 public func getDistances(contour: Int) -> (d1: Double, d2: Double)
 ```
 
-- **Returns:** Tuple of `(d1, d2)`; both `-1.0` if not set.
+- **Returns:** Tuple of `(d1, d2)`; both `-1.0` if not set and for a contour that does not exist
+  (#3523).
 - **OCCT:** `BRepFilletAPI_MakeChamfer::Dists` (via `OCCTChamferBuilderGetDists`).
 
 ---
@@ -1273,7 +1342,8 @@ Get the distance and angle for a contour (1-based).
 public func getDistAngle(contour: Int) -> (distance: Double, angle: Double)
 ```
 
-- **Returns:** Tuple of `(distance, angle)`; both `-1.0` if not set.
+- **Returns:** Tuple of `(distance, angle)`; both `-1.0` if not set and for a contour that does not
+  exist (#3523).
 - **OCCT:** `BRepFilletAPI_MakeChamfer::GetDistAngle` (via `OCCTChamferBuilderGetDistAngle`).
 
 ---
@@ -1285,6 +1355,22 @@ Set symmetric distance on a contour (1-based, requires face for orientation).
 ```swift
 @discardableResult
 public func setDistance(_ dist: Double, contour: Int, face: Face) -> Bool
+```
+
+Returns `false`, and changes nothing, for a contour that does not exist. `0` and the negatives used
+to rewrite contour 1, and an index past the end answered `true` for a write that never happened
+(#3523). `setDistances(_:_:contour:face:)` and `setDistAngle(distance:angle:contour:face:)` refuse
+the same way.
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let edge = box.edges()[0]
+let face = edge.adjacentFaces(in: box)![0]
+let builder = ChamferBuilder(shape: box)!
+builder.addEdge(edge, distance: 1)
+print(builder.setDistance(3, contour: 1, face: face))   // true
+print(builder.setDistance(3, contour: 0, face: face))   // false: no contour 0
+print(builder.getDistance(contour: 1))                   // 3.0
 ```
 
 - **OCCT:** `BRepFilletAPI_MakeChamfer::SetDist` (via `OCCTChamferBuilderSetDist`).
@@ -1319,11 +1405,14 @@ public func setDistAngle(distance: Double, angle: Double, contour: Int, face: Fa
 
 ### `ChamferBuilder.length(contour:)`
 
-Length of a contour (1-based).
+Length of a contour (1-based, `1...contourCount`).
 
 ```swift
 public func length(contour: Int) -> Double
 ```
+
+Answers `-1` for a contour that does not exist, the value OCCT documents for an index outside its
+table (#3523).
 
 - **OCCT:** `BRepFilletAPI_MakeChamfer::Length` (via `OCCTChamferBuilderLength`).
 
@@ -1361,6 +1450,9 @@ Whether a contour (1-based) is closed.
 ```swift
 public func isClosed(contour: Int) -> Bool
 ```
+
+Answers `false` for a contour that does not exist (#3523). `isClosedAndTangent(contour:)`,
+`isSymmetric(contour:)` and `isTwoDistances(contour:)` answer `false` the same way.
 
 - **OCCT:** `BRepFilletAPI_MakeChamfer::Closed` (via `OCCTChamferBuilderClosed`).
 
@@ -1410,7 +1502,8 @@ Get edge `index` in contour `contour` (both 1-based) as a `Shape`.
 public func edge(contour: Int, index: Int) -> Shape?
 ```
 
-- **Returns:** The edge as a `Shape`, or `nil` if the indices are out of range.
+- **Returns:** The edge as a `Shape`, or `nil` when either index is outside its range (#3523): the
+  contour in `1...contourCount`, the edge in `1...edgeCount(contour:)`.
 - **OCCT:** `BRepFilletAPI_MakeChamfer::Edge` (via `OCCTChamferBuilderEdge`).
 
 ---
@@ -1422,6 +1515,8 @@ Get the first vertex of a contour (1-based) as a `Shape`.
 ```swift
 public func firstVertex(contour: Int) -> Shape?
 ```
+
+Answers `nil` for a contour that does not exist (#3523); `lastVertex(contour:)` does too.
 
 - **OCCT:** `BRepFilletAPI_MakeChamfer::FirstVertex` (via `OCCTChamferBuilderFirstVertex`).
 
@@ -1458,6 +1553,9 @@ Curvilinear abscissa of a vertex on a contour (1-based).
 ```swift
 public func abscissa(contour: Int, vertex: Shape) -> Double
 ```
+
+Answers `-1` for a contour that does not exist, the value OCCT documents for an index outside its
+table (#3523); `relativeAbscissa(contour:vertex:)` does too.
 
 - **OCCT:** `BRepFilletAPI_MakeChamfer::Abscissa` (via `OCCTChamferBuilderAbscissa`).
 
@@ -1505,7 +1603,18 @@ Set a radius at a specific vertex in a contour (1-based, `1...contourCount`).
 public func setRadius(_ radius: Double, contour: Int, vertex: Shape) -> Bool
 ```
 
-Returns `false`, and changes nothing, for a contour that does not exist (#3518).
+Returns `false`, and changes nothing, for a contour that does not exist (#3518), and for a contour
+that holds a `build()` or a `simulate(contour:)` result, until `reset()` (#3524).
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let builder = FilletBuilder(shape: box)!
+builder.addEdge(box.edges()[0], radius: 1)
+let vertex = builder.firstVertex(contour: 1)!
+print(builder.setRadius(2, contour: 1, vertex: vertex))   // true: nothing has run yet
+_ = builder.build()
+print(builder.setRadius(3, contour: 1, vertex: vertex))   // false: built, reset() first
+```
 
 - **OCCT:** `BRepFilletAPI_MakeFillet::SetRadius` at vertex (via `OCCTFilletBuilderSetRadiusAtVertex`).
 
@@ -1523,7 +1632,8 @@ public func setTwoRadii(_ r1: Double, _ r2: Double, contour: Int, edgeInContour:
 
 Returns `false`, and changes nothing, when either index is outside its range. `0` is not an edge:
 OCCT reads it as an absolute abscissa, and an index past the contour's edges reads the spine's
-abscissa table out of bounds (#3518).
+abscissa table out of bounds (#3518). Also `false` for a contour that holds a `build()` or a
+`simulate(contour:)` result, until `reset()` (#3524).
 
 - **OCCT:** `BRepFilletAPI_MakeFillet::SetRadius` two-radius variant (via `OCCTFilletBuilderSetTwoRadii`).
 

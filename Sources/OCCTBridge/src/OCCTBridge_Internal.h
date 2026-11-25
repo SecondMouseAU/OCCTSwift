@@ -3275,17 +3275,37 @@ OCCTShapeRef occtShapeFilletEdgeList(OCCTShapeRef   shape,
 // NbContours() is safe in every one of those states (it only walks the stripe list), so it is the
 // bound to test against. The edge index within a contour (Edge(I, J), SetRadius(R1, R2, IC, IinC))
 // indexes the spine's edge sequence unchecked as well; NbEdges(IC) is safe once IC is in range.
+//
+// BRepFilletAPI_MakeChamfer shares ChFi3d_Builder::Value and the same unchecked accessors, so the
+// rule is one template over the two builder classes (#3523): OCCTBridge_Modeling_Fillet.mm and
+// OCCTBridge_Modeling_Chamfer.mm both reach it, which is what places it here and not in either .mm
+// (okf/policies/helper-placement-by-reach.md). The two fillet names below are kept for the sites
+// that already call them.
+template <class Blend>
+inline bool occtBlendContourInRange(const Blend& blend, int32_t contourIndex)
+{
+  return contourIndex >= 1 && contourIndex <= blend.NbContours();
+}
+
+template <class Blend>
+inline bool occtBlendEdgeInContourInRange(const Blend& blend,
+                                          int32_t      contourIndex,
+                                          int32_t      edgeIndex)
+{
+  return occtBlendContourInRange(blend, contourIndex) && edgeIndex >= 1
+         && edgeIndex <= blend.NbEdges(contourIndex);
+}
+
 inline bool occtFilletContourInRange(const BRepFilletAPI_MakeFillet& fillet, int32_t contourIndex)
 {
-  return contourIndex >= 1 && contourIndex <= fillet.NbContours();
+  return occtBlendContourInRange(fillet, contourIndex);
 }
 
 inline bool occtFilletEdgeInContourInRange(const BRepFilletAPI_MakeFillet& fillet,
                                            int32_t                         contourIndex,
                                            int32_t                         edgeIndex)
 {
-  return occtFilletContourInRange(fillet, contourIndex) && edgeIndex >= 1
-         && edgeIndex <= fillet.NbEdges(contourIndex);
+  return occtBlendEdgeInContourInRange(fillet, contourIndex, edgeIndex);
 }
 
 // === #505: the precondition BRepFilletAPI_MakeFillet's edge-keyed radius laws never check ===

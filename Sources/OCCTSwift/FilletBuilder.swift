@@ -41,6 +41,32 @@ import OCCTPlatform
 /// print(builder.edgeCount(contour: 0))        // 0, not contour 1
 /// print(builder.edgeCount(contour: 2))        // 0
 /// ```
+///
+/// ## Changing radii after a build (#3524)
+///
+/// A contour that holds a ``build()`` or a ``simulate(contour:)`` result refuses a radius change
+/// that OCCT would have to replay on the finished contour: ``setRadius(_:contour:vertex:)``,
+/// ``setTwoRadii(_:_:contour:edgeInContour:)`` and ``addEdge(_:radius:)`` and
+/// ``addEdge(_:radius1:radius2:)`` for an edge that already belongs to such a contour all answer
+/// `false` and change nothing. OCCT replays the radius law on the contour's elementary spines and
+/// reads the first of them with no emptiness test; for every analytic blend (plane and plane, plane
+/// and cylinder, and so on) there are none once the contour is built or simulated, so the replay
+/// faulted the process uncatchably. This is a refusal and not a restriction on top of OCCT: its own
+/// callers set the radii, build once and never change one afterwards, and
+/// `BRepFilletAPI_MakeFillet` says that ``reset()`` is what "allows modifications to be made to the
+/// contours and fillet parameters in order to rebuild the shape".
+///
+/// ```swift
+/// let box = Shape.box(width: 10, height: 10, depth: 10)!
+/// let edge = box.edges()[0]
+/// let builder = FilletBuilder(shape: box)!
+/// builder.addEdge(edge, radius: 1)
+/// let vertex = builder.firstVertex(contour: 1)!
+/// _ = builder.build()                                   // the contour now holds a result
+/// print(builder.setRadius(2, contour: 1, vertex: vertex))   // false: reset() first
+/// builder.reset()
+/// print(builder.setRadius(2, contour: 1, vertex: vertex))   // true
+/// ```
 public final class FilletBuilder: @unchecked Sendable {
     private let handle: OCCTFilletBuilderRef
     private let input: Shape
@@ -55,12 +81,18 @@ public final class FilletBuilder: @unchecked Sendable {
     deinit { OCCTFilletBuilderRelease(handle) }
 
     /// Add an edge with constant fillet radius.
+    ///
+    /// Answers `false`, and changes nothing, for an edge that already belongs to a contour holding a
+    /// ``build()`` or ``simulate(contour:)`` result: call ``reset()`` first (#3524).
     @discardableResult
     public func addEdge(_ edge: Edge, radius: Double) -> Bool {
         OCCTFilletBuilderAddEdge(handle, edge.handle, radius)
     }
 
     /// Add an edge with evolving fillet radius (r1 at start, r2 at end).
+    ///
+    /// Answers `false`, and changes nothing, for an edge that already belongs to a contour holding a
+    /// ``build()`` or ``simulate(contour:)`` result: call ``reset()`` first (#3524).
     @discardableResult
     public func addEdge(_ edge: Edge, radius1: Double, radius2: Double) -> Bool {
         OCCTFilletBuilderAddEdgeEvolving(handle, edge.handle, radius1, radius2)
@@ -203,11 +235,18 @@ extension FilletBuilder {
 
     /// Set the radius at a specific vertex in a contour.
     ///
+    /// Refused once the contour holds a result: after ``build()`` completed, or ``simulate(contour:)``
+    /// ran on it, until ``reset()`` (#3524). The build is over by then, and OCCT replays the radius
+    /// law on a contour that no longer has the elementary spines it reads, which faulted the process
+    /// uncatchably. A contour whose build was declined holds no result, so a radius can still be
+    /// changed on it.
+    ///
     /// - Parameters:
     ///   - radius: The radius at the vertex.
     ///   - contour: The 1-based contour index, `1...contourCount`.
     ///   - vertex: A vertex of the contour.
-    /// - Returns: `false`, and changes nothing, for a contour that does not exist (#3518).
+    /// - Returns: `false`, and changes nothing, for a contour that does not exist (#3518) and for a
+    ///   contour that holds a build or a simulation (#3524).
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -215,6 +254,9 @@ extension FilletBuilder {
     /// builder.addEdge(box.edges()[0], radius: 1)
     /// let vertex = builder.firstVertex(contour: 1)!
     /// print(builder.setRadius(2, contour: 5, vertex: vertex))   // false: no contour 5
+    /// print(builder.setRadius(2, contour: 1, vertex: vertex))   // true: nothing has run yet
+    /// _ = builder.build()
+    /// print(builder.setRadius(3, contour: 1, vertex: vertex))   // false: built, reset() first
     /// ```
     @discardableResult
     public func setRadius(_ radius: Double, contour: Int, vertex: Shape) -> Bool {
@@ -229,7 +271,9 @@ extension FilletBuilder {
     ///   - contour: The 1-based contour index, `1...contourCount`.
     ///   - edgeInContour: The 1-based position of the edge inside the contour,
     ///     `1...edgeCount(contour:)`. `0` is not an edge: OCCT reads it as an absolute abscissa.
-    /// - Returns: `false`, and changes nothing, when either index is outside its range (#3518).
+    /// - Returns: `false`, and changes nothing, when either index is outside its range (#3518), and
+    ///   for a contour that holds a ``build()`` or ``simulate(contour:)`` result, until ``reset()``
+    ///   (#3524): see ``setRadius(_:contour:vertex:)``.
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -237,6 +281,8 @@ extension FilletBuilder {
     /// builder.addEdge(box.edges()[0], radius: 1)
     /// print(builder.setTwoRadii(1, 3, contour: 1, edgeInContour: 1))   // true
     /// print(builder.setTwoRadii(1, 3, contour: 1, edgeInContour: 2))   // false: one edge only
+    /// _ = builder.build()
+    /// print(builder.setTwoRadii(1, 3, contour: 1, edgeInContour: 1))   // false: built, reset() first
     /// ```
     @discardableResult
     public func setTwoRadii(_ r1: Double, _ r2: Double, contour: Int, edgeInContour: Int) -> Bool {
