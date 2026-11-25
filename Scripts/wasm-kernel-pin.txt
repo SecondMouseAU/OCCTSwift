@@ -36,28 +36,37 @@
 # for why a count alone is necessary and not sufficient.
 
 # --- where the asset is ---
-OCCT_WASM_RELEASE_TAG=kernel-8.0.2-c1
+# This branch (release/4.0.0-lts.1) pins the VANILLA wasm kernel, the LTS flavour. `main` pins the
+# hardened one, kernel-8.0.2-c1.
+OCCT_WASM_RELEASE_TAG=kernel-8.0.2
 OCCT_WASM_ASSET_NAME=libOCCT-wasm.tar.gz
-OCCT_WASM_ASSET_URL=https://github.com/SecondMouseAU/OCCTSwift/releases/download/kernel-8.0.2-c1/libOCCT-wasm.tar.gz
-OCCT_WASM_ASSET_SHA256=11ebf764c151f289b68c5f9e8a63f2eb7f67a6feeb56024dddda7aeffcd939c9
-OCCT_WASM_ASSET_BYTES=40298959
+OCCT_WASM_ASSET_URL=https://github.com/SecondMouseAU/OCCTSwift/releases/download/kernel-8.0.2/libOCCT-wasm.tar.gz
+OCCT_WASM_ASSET_SHA256=7ef2a29a5fe3b680901a362f6c744a460fe9d083475ac466b992e53f27596add
+OCCT_WASM_ASSET_BYTES=40246673
 
 # --- what is inside it, for the parity gate ---
 # The carried patches are Scripts/patches/NNNN-*.patch. FIRST and LAST are the numbers, not an
-# assertion that every number between them exists: the gate reads the actual file list.
+# assertion that every number between them exists: the gate reads the actual file list. The vanilla
+# kernel carries none of them, so the count is 0 and FIRST and LAST are `none`, which the gate does
+# not compare when Package.swift's enumeration is empty too. The count is not zero for want of
+# patches: Scripts/patches/ holds fifty-one, and this asset carries none of them on purpose (see
+# Package.swift's pin block and okf/policies/kernel-fix-ledger.md).
 OCCT_VERSION=V8_0_2
-OCCT_WASM_PATCH_COUNT=51
-OCCT_WASM_PATCH_FIRST=0010
-OCCT_WASM_PATCH_LAST=0080
+OCCT_WASM_PATCH_COUNT=0
+OCCT_WASM_PATCH_FIRST=none
+OCCT_WASM_PATCH_LAST=none
 # The WASI-only source changes, Scripts/patches-wasi/*.patch, which only build-occt-wasm.sh applies.
 OCCT_WASM_WASI_PATCH_COUNT=11
 
 # --- the acknowledged divergence, and what closes it ---
-# THERE IS NO DIVERGENCE. Both kernels in kernel-8.0.2-c1 were built from one source commit carrying all
-# fifty-one carried patches, in one sitting, which is what the retired acknowledgement below
-# said would close it. The two ACKNOWLEDGED_* keys are deliberately absent rather than set to a
-# zero or a nil: this field's own rule is that AGAINST is never a number to bump, so an
-# acknowledgement that no longer acknowledges anything is deleted, not updated. Retired here:
+# THERE IS NO DIVERGENCE BETWEEN THE TWO PLATFORMS. Both kernels in kernel-8.0.2 are vanilla: the
+# native xcframework carries no patch and this wasm asset carries no carried patch, only the eleven
+# WASI port patches, so Package.swift's enumeration (empty) and OCCT_WASM_PATCH_COUNT (0) agree.
+# Neither carries the fifty-one patches of the hardened kernel, kernel-8.0.2-c1, on purpose: that
+# is the flavour, not a divergence the gate should acknowledge. The two ACKNOWLEDGED_* keys are
+# deliberately absent rather than set to a zero or a nil: this field's own rule is that AGAINST is
+# never a number to bump, so an acknowledgement that no longer acknowledges anything is deleted,
+# not updated. Retired here:
 #
 #   v4.0.0-kernel.3 pinned 0043 (#2827) natively without rebuilding this 69-minute wasm asset,
 #   so the browser returned the fabricated 0.0 from Face.volumeInertia(planeNormal:planeDistance:).
@@ -66,10 +75,13 @@ OCCT_WASM_WASI_PATCH_COUNT=11
 
 # --- provenance ---
 # The commit whose Scripts/patches/ and Scripts/patches-wasi/ the archive was built from, so the
-# claim above can be checked rather than believed: `git show <sha>:Scripts/patches` lists them.
-OCCT_WASM_BUILT_FROM=a2f9e00f23651580f2fcbe5ef57aff2a76b74a84
+# claim above can be checked rather than believed: `git show <sha>:Scripts/patches-wasi` lists the
+# eleven WASI patches it applied. `git show <sha>:Scripts/patches` lists the carried patches it did
+# NOT apply, and it is the same commit the native vanilla asset was built from. BUILT_ON is the
+# day the release asset was uploaded, in UTC.
+OCCT_WASM_BUILT_FROM=60bb2f79a566e6af0588f27e133dda58e3e42ea7
 OCCT_WASM_BUILT_ON=2026-11-25
 # Unpacked sizes, so a truncated or wrong-shaped extraction is caught before a 69-minute rebuild is
 # blamed for it.
-OCCT_WASM_ARCHIVE_BYTES=153297132
-OCCT_WASM_HEADER_FILES=7161
+OCCT_WASM_ARCHIVE_BYTES=153183998
+OCCT_WASM_HEADER_FILES=7160

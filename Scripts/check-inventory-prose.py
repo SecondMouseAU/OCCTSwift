@@ -1334,8 +1334,12 @@ def self_test():
     # pinned_patch_numbers() returns STRINGS, so comparing it against a set of ints never matched
     # and the check reported clean on a deliberately-broken tree. Caught by injection, not by
     # review. The case pins the type so it cannot regress.
+    # The fixture is a literal enumeration, not the tree's: this case used to read the real
+    # Package.swift and assert 0021 was in it, which is true only while the pin is a carry kernel and
+    # failed on the vanilla pin (release/4.0.0-lts.1), whose enumeration is empty by design.
     case("tsan-supp-pinned-numbers-compare-as-ints",
-         {int(n) for n in pinned_patch_numbers()} & {21} == {21})
+         {int(n) for n in pinned_patch_numbers(
+             "x survive, all present in Scripts/patches/, are:\n//   0021  x\n")} & {21} == {21})
 
     # 10. #2148: a .patch in Scripts/patches/ that is not NNNN-named. Monkeypatched rather than
     #     written into the real directory, because the behaviour under test is what the glob

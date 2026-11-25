@@ -24,6 +24,8 @@ dependencies: [
 
 The package ships a pre-built `OCCT.xcframework` as a release asset, so no source build of OCCT is required for end users.
 
+**LTS preview.** `v4.0.0-lts.1` is a pre-release of the LTS flavour: the same API as `main`, linked against OCCT `V8_0_2` exactly as Open Cascade tagged it, with no carried patch (on wasm, only the WASI port patches). Pin it exactly, since a version range never resolves a pre-release: `.package(url: "https://github.com/SecondMouseAU/OCCTSwift.git", exact: "4.0.0-lts.1")`. It makes no ThreadSanitizer-clean claim, is not safe for untrusted BREP, STEP or OCAF input, has no crash-guard promise, does not reinstate the bridge guards retired at earlier repins, and has not had its full test suite run. The hardened kernel is the default and is what `v4.0.0` ships; see [Kernel flavour](docs/reference/Kernel.md).
+
 A Swift target that does `import OCCTSwift` needs nothing else: no `cxxLanguageStandard`, no
 `.interoperabilityMode(.Cxx)`, no extra build settings. A file of *yours* that includes an OCCT
 header does have requirements, and a `.m` file fails there with `'type_traits' file not found`

@@ -47,8 +47,10 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.2 plus the fifty-one carried patches are documented in Scripts/patches/README.md
-// (patch list, verification status, and CI coverage gaps for maintainers).
+// OCCT V8.0.2, exactly as Open Cascade tagged it, is what this branch pins: the LTS preview
+// (v4.0.0-lts.1), see the pin block below. The fifty-one patches the hardened kernel carries on top of
+// V8.0.2 are documented in Scripts/patches/README.md (patch list, verification status, and CI
+// coverage gaps for maintainers); the kernel pinned here carries none of them.
 let occtTarget: Target =
     isWASI
     // WASI: Use locally built static library from Scripts/build-occt-wasm.sh
@@ -86,13 +88,42 @@ let occtTarget: Target =
             name: "OCCT",
             path: "Libraries/OCCT.xcframework"
         )
-        // OCCT V8_0_2 + the fifty-one carried patches (the carry kernel; there is also a vanilla one).
+        // OCCT V8_0_2 + the zero carried patches: the VANILLA kernel, which is the LTS flavour and is
+        // what the v4.0.0-lts.1 preview pins (branch release/4.0.0-lts.1).
         //
-        // Scripts/build-occt.sh builds V8_0_2, which absorbed ten more of the carried patches (0019,
-        // 0029, 0034, 0043, 0044, 0045, 0048, 0052, 0054 and 0064; their files are deleted, their
-        // writeups kept in Scripts/patches/README.md under "Retired patches"). V8_0_1 had absorbed ten
-        // before them (0001-0009 and 0013). The fifty-one that
-        // survive, all present in Scripts/patches/, are:
+        // WHAT IS PINNED. The kernel-8.0.2 pre-release asset: upstream OCCT V8_0_2 exactly as Open
+        // Cascade tagged it, built by `Scripts/build-occt.sh --flavour vanilla` from a tree with no
+        // modified file and no carried patch applied. Its OCCTKernelFixes.h says `vanilla`, `8.0.2`
+        // and 9 of the 60 fixes in Scripts/kernel-fixes.tsv (the ledger; the rules are in
+        // okf/policies/kernel-fix-ledger.md). The wasm kernel is the same flavour: V8_0_2 plus only
+        // the 11 WASI port patches in Scripts/patches-wasi/, without which OCCT does not build for
+        // wasm, recorded in Scripts/wasm-kernel-pin.txt. Both assets were built from `main` at
+        // 60bb2f79a, and docs/reference/Kernel.md states what the flavour does and does not promise.
+        //
+        // WHAT IS NOT PINNED, AND THE WRITTEN REASON FOR THAT DIVERGENCE. `main` pins the hardened
+        // kernel, kernel-8.0.2-c1: V8_0_2 plus the fifty-one patches in Scripts/patches/. This branch
+        // deliberately does not. Scripts/patches/ holds fifty-one patches and
+        // the pinned asset lacks fifty-one of them, a divergence that
+        // okf/policies/pinned-kernel-patch-check.md allows once its reason is written down, and the
+        // reason is the flavour: LTS means provenance, exactly what Open Cascade ships, and not
+        // robustness. The 14 thread-safety patches, the damaged-input and crash guards and the
+        // answer-changing fixes are all absent, so this kernel makes no ThreadSanitizer-clean claim,
+        // is not safe for untrusted BREP, STEP or OCAF input and has no crash-guard promise. The
+        // bridge guards retired at earlier repins because the hardened kernel holds the fix are NOT
+        // reinstated for it (the surface-less clause at the two Boolean-check sites #3533, the
+        // analyzer guards #3503, the datum lookup guard #1030 and the bridge arc-length subdivision
+        // #603), and the full test suite has never been run against it.
+        //
+        // EVERYTHING BELOW, UP TO THE ENUMERATION AT THE END OF THIS BLOCK, IS THE RECORD OF THE
+        // HARDENED KERNEL. It is kept as written so that this branch's diff against `main` stays small
+        // enough to review. Where a paragraph below says "the pinned asset" or "this asset" it means
+        // that kernel, and "pinned by v4.0.0-kernel.N" is that kernel's history, not this pin's.
+        //
+        // The hardened kernel's patch set. Scripts/build-occt.sh builds V8_0_2, which absorbed ten more
+        // of the carried patches (0019, 0029, 0034, 0043, 0044, 0045, 0048, 0052, 0054 and 0064; their
+        // files are deleted, their writeups kept in Scripts/patches/README.md under "Retired
+        // patches"); V8_0_1 had absorbed ten before them. The fifty-one that remain in Scripts/patches/
+        // and that the hardened kernel carries are:
         //
         //   0010  Intf_Interference O(1) tangent-zone lookup + checkpointed breaker            #319
         //   0011  XCAFDoc_ShapeTool::OwnAutoNamingScope per-instance override             #341/#363
@@ -259,10 +290,10 @@ let occtTarget: Target =
         //     They are the only two patches in the tree with no CI coverage of any kind, which is
         //     worth knowing before trusting "the fix is in the kernel" about either.
         //
-        // Pinned to the kernel-8.0.2-c1 pre-release asset: upstream V8_0_2 plus the fifty-one patches listed above,
-        // and nothing else. That was NOT true of v4.0.0-kernel.1, which carried two patches that are
-        // not in Scripts/patches/ at all, so read the next paragraph before treating any older asset's
-        // enumeration as its contents.
+        // The hardened kernel is the kernel-8.0.2-c1 pre-release asset: upstream V8_0_2 plus the
+        // fifty-one patches of the record above, and nothing else. That was NOT true of
+        // v4.0.0-kernel.1, which carried two patches that are not in Scripts/patches/ at all, so read
+        // the next paragraph before treating any older asset's enumeration as its contents.
         //
         // ===================================================================================
         // THE v4.0.0-kernel.1 ASSET CARRIED THIRTY-ONE PATCHES. THE TREE CARRIED TWENTY-NINE. (#2190)
@@ -288,7 +319,7 @@ let occtTarget: Target =
         // probe. Nothing a consumer can call behaves differently.
         //
         // THAT DIVERGENCE IS CLOSED. The two strays above belonged to the v4.0.0-kernel.1 asset. The
-        // pin below is now kernel-8.0.2-c1, built from a tree whose only modifications are the carried
+        // hardened pin on `main` is now kernel-8.0.2-c1, built from a tree whose only modifications are the carried
         // patches, so neither is present: step 1 of "Shipping a rebuild" computes zero modified files
         // that no carried patch explains, over 125 as of 2026-11-25 (v4.0.0-kernel.9 computed it over 141, v4.0.0-kernel.8 the same
         // over 139, v4.0.0-kernel.7 over 102, v4.0.0-kernel.6 over 93, v4.0.0-kernel.5 over 96, v4.0.0-kernel.4 over 92, v4.0.0-kernel.3 over 79 and v4.0.0-kernel.2 over 78, before 0043 added its one).
@@ -297,8 +328,9 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The pinned asset lacks none of them: it holds fifty-one and Scripts/patches/ holds
-        // fifty-one, so there is no untested patch. 0079 (#3506) and 0080 (#3509) were carried
+        // The hardened asset lacks none of them: it holds fifty-one and Scripts/patches/ holds
+        // fifty-one, so there is no untested patch on `main` (kernel-prose-exempt: this describes
+        // the hardened kernel's pin, which is not the pin of this branch). 0079 (#3506) and 0080 (#3509) were carried
         // after v4.0.0-kernel.8 and were pinned by v4.0.0-kernel.9; the rows for 0053 through
         // 0080 below are history in the way the rows for 0044 through 0052 became at
         // v4.0.0-kernel.4. kernel-8.0.2-c1 retired ten (0019, 0029, 0034, 0043, 0044, 0045, 0048,
@@ -347,9 +379,9 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds fifty-one patches and the pinned asset holds the same fifty-one,
+        // Scripts/patches/ holds fifty-one patches and the hardened asset holds the same fifty-one,
         // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 51 against a list of 51,
-        // and there is no divergence. The v4.0.0-kernel.4 rebuild closed the divergence that 0044 had
+        // and there is no divergence on `main`. The v4.0.0-kernel.4 rebuild closed the divergence that 0044 had
         // opened and that 0045 through 0052 widened, the v4.0.0-kernel.5 rebuild closed the one that
         // 0053 through 0057 opened, the v4.0.0-kernel.6 rebuild closed the one that 0058 and 0059
         // opened, the v4.0.0-kernel.7 rebuild closed the one that 0064 through 0069 opened, and the
@@ -770,12 +802,28 @@ let occtTarget: Target =
         // Bump BOTH url and checksum whenever the xcframework is rebuilt, or
         // URL-resolving consumers silently keep the previous kernel while local sibling builds get the
         // new one.
+        //
+        // THE PATCH SET THE PINNED ASSET CARRIES. check-inventory-prose.py and
+        // check-wasm-kernel-parity.py read the enumeration that follows as that set, so it is the one
+        // place in this block that is about this branch's pin and not about the hardened kernel's,
+        // and it is last in the block on purpose: both parsers read every comment line after the
+        // anchor sentence until the first line that is not a comment, and the record above holds
+        // lines that begin with a patch number. This pin applies none of the carried patches:
+        // V8_0_2 absorbed ten of them and V8_0_1 ten before them (0001-0009 and 0013). The zero that
+        // survive, all present in Scripts/patches/, are:
+        //
+        //   (none: the vanilla kernel is built from a pristine V8_0_2 tree, so this list is empty)
+        //
+        // Pinned to the kernel-8.0.2 pre-release asset: upstream V8_0_2 plus the zero patches listed above,
+        // and nothing else. Both counts are derived, not kept by hand: `ls Scripts/patches/*.patch |
+        // wc -l` answers 51 and the list above holds none, so the pinned asset lacks fifty-one of them
+        // by design, and Scripts/wasm-kernel-pin.txt declares the wasm kernel at the same zero.
         // Remote binary xcframework for native platforms
         : .binaryTarget(
             name: "OCCT",
             url:
-                "https://github.com/SecondMouseAU/OCCTSwift/releases/download/kernel-8.0.2-c1/OCCT.xcframework.zip",
-            checksum: "729937d39d481b028492e5a8e4addee980084bee9e4047210c1a3b43f6ca88b9"
+                "https://github.com/SecondMouseAU/OCCTSwift/releases/download/kernel-8.0.2/OCCT.xcframework.zip",
+            checksum: "cb547a566ccd3d4be5113844f15cdfe7f72984b7d8e98c59e08bf642cfb6f967"
         )
 
 // OCCTBridge is 16 Objective-C++ files / ~62K lines wrapping the OCCT header tree; SwiftPM recompiles

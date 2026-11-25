@@ -15,7 +15,10 @@ OCCTSwift is a comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0
 **One OCCT version is in play, in two flavours.** `Scripts/build-occt.sh` builds `V8_0_2` and `Package.swift` pins
 the pre-release asset its `url:` names, which is that same `V8_0_2` plus the carried patches that
 existed when it was built (the carry flavour; `--flavour vanilla` builds the LTS kernel with none,
-and `Scripts/kernel-fixes.tsv` says which fixes each holds: [the ledger](okf/policies/kernel-fix-ledger.md)). Any patch the asset lacks is exercised by **no required check**, because
+and `Scripts/kernel-fixes.tsv` says which fixes each holds: [the ledger](okf/policies/kernel-fix-ledger.md)).
+**On the `release/4.0.0-lts.1` branch the pin is the vanilla asset instead** (`kernel-8.0.2`, no carried
+patch), so every patch in `Scripts/patches/` is "lacked by the asset" there, by design, and
+`Package.swift` carries the written reason. Any patch the asset lacks is exercised by **no required check**, because
 `build-and-test` resolves the asset rather than building from source; `kernel-integration.yml` is
 the one job that builds an unpinned patch, and it proves the patch applies, compiles and regresses
 nothing, never that the fix reaches a consumer. Before trusting "the fix is

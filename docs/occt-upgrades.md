@@ -133,8 +133,10 @@ expectation moves against both kernels.
 
 ### Kernel flavours (planned for v4.0.0)
 
-Decided 2026-11-24, and not shipped yet: the carry kernel is #3535, the vanilla kernel #3544 and the
-trait that selects it #3545. The plan is in [`v4.0.0-plan.md`](v4.0.0-plan.md) family E. This table is
+Decided 2026-11-24. The carry kernel is #3535 and is the default; the vanilla kernel is #3544, published as
+`kernel-8.0.2`, and the first preview of it is the `v4.0.0-lts.1` pre-release (see
+[`reference/Kernel.md`](reference/Kernel.md)). The mechanism that selects it after `v4.0.0` (the trait,
+#3545, or a version line) is not decided. The plan is in [`v4.0.0-plan.md`](v4.0.0-plan.md) family E. This table is
 the contract skeleton; once the fix ledger exists (#3543) it is generated from the ledger rather
 than written by hand, so it cannot go stale.
 

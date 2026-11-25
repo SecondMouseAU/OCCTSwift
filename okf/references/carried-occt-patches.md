@@ -117,17 +117,27 @@ are not `Sendable`. See `Scripts/patches/README.md`'s retired `0031` entry.
 means the xcframework; the wasm asset has its own section after it. Collapsing them would repeat the
 mistake the rest of this page is about.
 
+**On the `release/4.0.0-lts.1` branch both are the VANILLA kernel, so the pinned set is empty.**
+The `v4.0.0-lts.1` preview pins `kernel-8.0.2`, `V8_0_2` exactly as Open Cascade tagged it, with no
+carried patch (and, on wasm, only the eleven WASI port patches). That is the LTS flavour of the
+[kernel-fix ledger](../policies/kernel-fix-ledger.md), and every count below that says "carries" is
+about it: the divergence between `Scripts/patches/` and the pinned asset is the whole of
+`Scripts/patches/`, deliberately, and its written reason is the flavour. `main` pins the hardened
+kernel, `kernel-8.0.2-c1`, which carries all of them; the rest of this section is the record of
+that kernel's pins and is kept as written.
+
 ### The xcframework
 
-`Scripts/patches/` holds fifty-one patches, of which the pinned asset carries fifty-one. **These
+`Scripts/patches/` holds fifty-one patches, of which the pinned asset carries zero. **These
 are the counts `CLAUDE.md` used to restate and no longer does** (#2954); both are derived from
 `Scripts/patches/` and `Package.swift` by `check-inventory-prose.py`, which fails the PR that lets
-this page and the tree disagree. The kernel-8.0.2-c1 asset `Package.swift` pins lacks none of them,
-so **there is no native divergence**, per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md). It was
-built from a `V8_0_2` tree whose only modifications are the fifty-one patches it holds (the
-modified-file set was computed against the patches' own file lists: 125 files, none unexplained, see
-`Package.swift`), so none of a retired patch's edits is in it.
-`0031` left at v4.0.0-kernel.6 and is not in either asset.
+this page and the tree disagree. The kernel-8.0.2 asset `Package.swift` pins lacks fifty-one of them,
+a divergence with a written reason (the vanilla flavour, above), per
+[Pinned kernel patch check](../policies/pinned-kernel-patch-check.md). The hardened asset on `main`,
+`kernel-8.0.2-c1`, lacks none of them and was built from a `V8_0_2` tree whose only modifications are
+the fifty-one patches it holds (the modified-file set was computed against the patches' own file
+lists: 125 files, none unexplained, see `Package.swift`), so none of a retired patch's edits is in it.
+`0031` left at v4.0.0-kernel.6 and is not in either hardened asset.
 
 **The divergence that stood until v4.0.0-kernel.9 is closed.** `0079` and `0080` were merged after
 v4.0.0-kernel.8 and were live nowhere until the v4.0.0-kernel.9 rebuild pinned both. Both are
@@ -241,11 +251,11 @@ older asset. `Package.swift`'s pin block records that exception against
 
 `libOCCT-wasm.a` and its header tree are a **second** pinned asset, recorded in
 `Scripts/wasm-kernel-pin.txt` rather than in `Package.swift`, because SwiftPM has no `binaryTarget`
-for a bare static library. Both kernels carry the same patches, `0010` to `0080` less the ten `V8_0_2` absorbed. As of this
-writing the pinned native asset carries fifty-one, and so does this one, plus the eleven in
-`Scripts/patches-wasi/` that only the wasm build applies. They were built from one tree in one
-sitting and published to one release tag, so **there is no divergence between the two platforms to
-record**.
+for a bare static library. Both kernels carry the same patches. As of this writing on the
+`release/4.0.0-lts.1` branch the pinned native asset carries zero, and so does this one, plus the
+eleven in `Scripts/patches-wasi/` that only the wasm build applies (on `main`, both carry `0010` to
+`0080` less the ten `V8_0_2` absorbed). They were built from one tree in one sitting and published to
+one release tag, `kernel-8.0.2`, so **there is no divergence between the two platforms to record**.
 
 `Scripts/check-wasm-kernel-parity.py` reports both sides at the same count, and
 `wasm-kernel-pin.txt` carries no `ACKNOWLEDGED_*` keys. They were deleted rather than re-keyed,
