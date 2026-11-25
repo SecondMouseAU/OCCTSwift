@@ -21,6 +21,22 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### STEP files that start with a UTF-8 byte order mark load (#3529)
+
+`Document.load(from:)` and every other STEP loader (`Document.loadSTEP` in each spelling,
+`Shape.load`, `Shape.loadSTEP` with and without a unit, the per-root, robust and diagnostics loaders)
+refused a file whose first three bytes are `EF BB BF`, with the kernel's `Incorrect syntax:
+unexpected QUID, expecting STEP` and nothing that names the cause. A mark in front of a text file is
+ordinary (some Windows editors add one on save), and a producer that writes one would have every file
+refused. The mark is skipped, and the file is read from the byte after it. A file without a mark is
+read exactly as before. Only one UTF-8 mark is skipped: a UTF-16 mark, or a second UTF-8 one, is still
+refused.
+
+```swift
+// A file written by `Document.writeSTEP(to:)` with `Data([0xEF, 0xBB, 0xBF])` in front of it
+let document = try Document.load(from: markedFile)   // loads; it threw before
+```
+
 ### OCCT 8.0.2 base, the kernel-fix ledger and the `Kernel` probe (#3543, #3535)
 
 The kernel build moves to OCCT 8.0.2: ten carried patches are retired as absorbed upstream, three are rebased, 51 remain, and the pinned kernel is `kernel-8.0.2-c1`. Adds `Kernel` (`flavour`, `occtVersion`, `hasFix(_:)`) to report which kernel flavour a build links against and which ledger fixes it holds. A few results move with 8.0.2 (HLR edge counts, a coarse mesh's triangle count, fillet volumes at the 1e-8 level); see `docs/occt-upgrades.md`, "8.0.1 to 8.0.2".
