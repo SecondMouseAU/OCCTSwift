@@ -353,8 +353,8 @@ def facts():
 # count. Reword a sentence and its regex must be updated with it: that is the point.
 
 CLAIMS = [
-    ("Package.swift", r"OCCT V8_0_1 \+ the (\S+) carried patches listed below", "patches_pinned"),
-    ("Package.swift", r"under \"Retired patches\"\)\.\s*The (\S+) that", "patches_pinned"),
+    ("Package.swift", r"OCCT V8_0_2 \+ the (\S+) carried patches", "patches_pinned"),
+    ("Package.swift", r"\(0001-0009 and 0013\)\.\s*The (\S+) that", "patches_pinned"),
     ("Package.swift", r"plus (?:the )?(\S+) patches listed above", "patches_pinned"),
     ("Package.swift", r"Scripts/patches/ holds ([A-Za-z-]+) patches", "patches_on_disk"),
     # #1403: three claims that existed all along and were read by nothing. Kilo's review caught the
@@ -1486,11 +1486,13 @@ def self_test():
             globals()["carried_patch_digests"] = saved_digests
 
         # A development tree states OCC_VERSION_DEVELOPMENT and tree_occt_version appends it, so
-        # the stamp can read "8.0.1.dev" against build-occt.sh's bare "8.0.1". Comparing the
-        # triple is what the docstring always claimed; string equality is what it did (#2893).
+        # the stamp can read "8.0.2.dev" against build-occt.sh's bare "8.0.2". Comparing the
+        # triple is what the docstring always claimed; string equality is what it did (#2893). The
+        # version is the one build-occt.sh names, so an OCCT bump does not break this case (#3543).
         globals()["read"] = with_map(
-            re.sub(r"^# occt-version: .*$", "# occt-version: 8.0.1.dev", real_map, count=1,
-                   flags=re.MULTILINE))
+            re.sub(r"^# occt-version: .*$",
+                   "# occt-version: %s.dev" % build_script_occt_version(read("Scripts/build-occt.sh")),
+                   real_map, count=1, flags=re.MULTILINE))
         case("a-development-suffix-on-the-stamp-is-not-a-version-bump",
              not any("Scripts/build-occt.sh builds" in p
                      for p in check_raise_map_provenance()),

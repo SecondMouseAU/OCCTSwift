@@ -119,13 +119,13 @@ mistake the rest of this page is about.
 
 ### The xcframework
 
-`Scripts/patches/` holds sixty-one patches, of which the pinned asset carries sixty-one. **These
+`Scripts/patches/` holds fifty-one patches, of which the pinned asset carries fifty-one. **These
 are the counts `CLAUDE.md` used to restate and no longer does** (#2954); both are derived from
 `Scripts/patches/` and `Package.swift` by `check-inventory-prose.py`, which fails the PR that lets
-this page and the tree disagree. The v4.0.0-kernel.9 asset `Package.swift` pins lacks none of them,
+this page and the tree disagree. The kernel-8.0.2-c1 asset `Package.swift` pins lacks none of them,
 so **there is no native divergence**, per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md). It was
-built from a `V8_0_1` tree whose only modifications are the sixty-one patches it holds (the
-modified-file set was computed against the patches' own file lists: 141 files, none unexplained, see
+built from a `V8_0_2` tree whose only modifications are the fifty-one patches it holds (the
+modified-file set was computed against the patches' own file lists: 125 files, none unexplained, see
 `Package.swift`), so none of a retired patch's edits is in it.
 `0031` left at v4.0.0-kernel.6 and is not in either asset.
 
@@ -241,8 +241,8 @@ older asset. `Package.swift`'s pin block records that exception against
 
 `libOCCT-wasm.a` and its header tree are a **second** pinned asset, recorded in
 `Scripts/wasm-kernel-pin.txt` rather than in `Package.swift`, because SwiftPM has no `binaryTarget`
-for a bare static library. Both kernels carry the same patches, `0010` to `0080`. As of this
-writing the pinned native asset carries sixty-one, and so does this one, plus the eleven in
+for a bare static library. Both kernels carry the same patches, `0010` to `0080` less the ten `V8_0_2` absorbed. As of this
+writing the pinned native asset carries fifty-one, and so does this one, plus the eleven in
 `Scripts/patches-wasi/` that only the wasm build applies. They were built from one tree in one
 sitting and published to one release tag, so **there is no divergence between the two platforms to
 record**.
