@@ -1,3 +1,7 @@
+# Re-recorded against kernel-8.0.2-c1 (OCCT V8_0_2 plus 51 carried patches), #3537. Only the lines that moved were rewritten.
+# Moved: T036 volume 523.36978147415812 to 523.36978147415823, one unit in the 16th digit.
+# Cause: OCCT commit 36d7686389 (V8_0_2, "Coding - Migrate remaining fixes"), AppCont_LeastSquare.cxx, which centres the least-squares equations on the first point so curves far from the origin keep their accuracy.
+# Verified by linking that one translation unit into the v4.0.0-kernel.9 archive: the probe then prints exactly the lines below.
 K033|deviation|0.0005064525299411152
 K034|c0|0.0005064525299411152
 K034|c1|0.0005064525299411152
@@ -12,7 +16,7 @@ T035|bsplineFaces|6
 T035|volume|149.99999999999997
 T036|valid|true
 T036|bsplineFaces|1
-T036|volume|523.36978147415812
+T036|volume|523.36978147415823
 T037|valid|true
 T037|bsplineFaces|26
 T037|volume|975.58701381539038

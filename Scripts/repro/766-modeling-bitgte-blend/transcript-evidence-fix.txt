@@ -1,3 +1,7 @@
+# Re-recorded against kernel-8.0.2-c1 (OCCT V8_0_2 plus 51 carried patches), #3537. Only the lines that moved were rewritten.
+# Moved: blendConcaveEdge volume (the same figure as the concave scan) and halfRadiusVolume 24019.261082480105 to 24019.261082463574.
+# Cause: OCCT commit 36d7686389 (V8_0_2, "Coding - Migrate remaining fixes"), AppCont_LeastSquare.cxx, which centres the least-squares equations on the first point so curves far from the origin keep their accuracy.
+# Verified by linking that one translation unit into the v4.0.0-kernel.9 archive: the probe then prints exactly the lines below.
 blendBoxEdge: done=true type="SHELL" faces=6 valid=true volume=480000
 blendMultipleEdges: done=true type="SHELL" faces=6 valid=true volume=124999.99999999999
-blendConcaveEdge: cornerEdges=1 edgeIndex=22 inputFaces=14 inputVolume=24000 done=true type="SHELL" faces=17 valid=true volume=24076.815240690972 halfRadiusFaces=17 halfRadiusVolume=24019.261082480105
+blendConcaveEdge: cornerEdges=1 edgeIndex=22 inputFaces=14 inputVolume=24000 done=true type="SHELL" faces=17 valid=true volume=24076.81524066042 halfRadiusFaces=17 halfRadiusVolume=24019.261082463574

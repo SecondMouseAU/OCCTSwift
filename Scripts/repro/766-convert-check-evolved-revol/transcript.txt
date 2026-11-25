@@ -1,10 +1,14 @@
+# Re-recorded against kernel-8.0.2-c1 (OCCT V8_0_2 plus 51 carried patches), #3537. Only the lines that moved were rewritten.
+# Moved: fusedConsistency maxDistance 9.5267920493270872e-08 to 9.5267665377338638e-08 (an absolute 2.6e-13).
+# Cause: OCCT commit 36d7686389 (V8_0_2, "Coding - Migrate remaining fixes"), AppCont_LeastSquare.cxx, which centres the least-squares equations on the first point so curves far from the origin keep their accuracy.
+# Verified by linking that one translation unit into the v4.0.0-kernel.9 archive: the probe then prints exactly the lines below.
 cylinderPatch: 5x2 poles bounds=[0, 3.1415926535897931]x[0, 10] S(0.3, 0.6 of domain)=(2.9055429055745949, 4.0691301802553754, 6)
 conePatch: 5x2 poles bounds=[0, 3.1415926535897931]x[0, 10] S(0.3, 0.6 of domain)=(4.6488686489193523, 6.5106082884085996, 5.196152422706632)
 fullTorus: 6x6 poles bounds=[0, 6.2831853071795862]x[0, 6.2831853071795862] S(0.3, 0.6 of domain)=(-5.3865777080062784, 15.141849190972033, -3.0929478706587101)
 boxConsistency: pairs checked=24 maxDistance=0
 sphereConsistency: pairs checked=2 maxDistance=3.4638242249419733e-15
 cylinderConsistency: pairs checked=6 maxDistance=1.2246467991473533e-15
-fusedConsistency: pairs checked=44 maxDistance=9.5267920493270872e-08
+fusedConsistency: pairs checked=44 maxDistance=9.5267665377338638e-08
 simpleEvolved: threw Geom_TrimmedCurve::U1 == U2
 evolved square/segment: IsDone=1
 evolved square/segment: type=0 valid=1 volume=-533.33333333333337 area=160
