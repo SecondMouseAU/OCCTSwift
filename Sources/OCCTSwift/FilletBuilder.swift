@@ -523,6 +523,12 @@ extension FilletBuilder {
     ///
     /// An index outside `1...contourCount` does nothing: OCCT walks its contour list for the
     /// index and finds none.
+    ///
+    /// The call returns normally whether or not the simulation completes, so ``stripeStatus(contour:)``
+    /// is how to tell. A simulation OCCT declines partway keeps the surfaces it had computed and
+    /// sets the status to `3`, which since OCCT 8.0.2 is what a blend reports when it reaches a
+    /// vertex whose neighbour face holds no edge to follow. ``build()`` reports the same contour
+    /// through ``faultyContourCount``.
     public func simulate(contour: Int) {
         OCCTFilletBuilderSimulate(handle, Int32(clamping: contour))
     }
@@ -530,8 +536,10 @@ extension FilletBuilder {
     /// Get the number of simulated surfaces for a contour (1-based).
     ///
     /// Answers `0` while the contour holds no surface data: the builder was never built or
-    /// simulated, ``reset()`` has been called since, the simulation was declined, or `contour`
-    /// names no contour. OCCT reads this count from a sequence that only ``build()`` or
+    /// simulated, ``reset()`` has been called since, the simulation was declined before it computed
+    /// anything, or `contour` names no contour. A simulation that fails partway keeps the surfaces
+    /// it had computed and counts them, so read ``stripeStatus(contour:)`` first (see
+    /// ``simulate(contour:)``). OCCT reads this count from a sequence that only ``build()`` or
     /// ``simulate(contour:)`` creates for a contour, and reading it before either had run, or after
     /// a reset, used to fault the process uncatchably (#3519). A contour that ``build()`` has run on
     /// keeps the surface count that build left.

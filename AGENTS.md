@@ -8,7 +8,7 @@
 
 ### OCCT / OCCTSwift — Mandatory Docs Lookup
 Never rely on training data for OCCT/OCCTSwift signatures. Use in order:
-1. **`context` MCP** (`mcp__context__get_docs`) — `occt`, `occt-refman@8.0.1`, `occtswift`, and other ecosystem packages
+1. **`context` MCP** (`mcp__context__get_docs`) — `occt`, `occt-refman@8.0.2`, `occtswift`, and other ecosystem packages
 2. **context7** — for external libs not in local `context` cache
 3. **Other ecosystem repos** (`okf/`, `docs/`, READMEs) — the fallback
 
