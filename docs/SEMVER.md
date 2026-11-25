@@ -696,13 +696,22 @@ anything that merges before the tag is assessed at that point.
   documents is a behaviour of OCCT 8.0.2 that is in the break table below: a simulation that fails
   partway keeps its surfaces and sets `stripeStatus(contour:)` to 3.
 - #3552 states NONE. It re-records probe transcripts and touches no file under `Sources/`.
-- #3553 states PATCH. Its Swift edits are `Int32(clamping:)` conversions, so no declaration changes. It
-  carries behaviour changes under that grade, recorded in the break table below with #3521's: eighteen
-  `ChamferBuilder` accessors and setters refuse an index outside the contour range where they
-  faulted or read contour 1, `setDistance`, `setDistances` and `setDistAngle` answer `false` for an
-  index past the end where they answered `true`, and `FilletBuilder`'s `setRadius(_:contour:vertex:)`,
-  `setTwoRadii` and `addEdge` for an edge already in a contour answer `false` once the contour holds a
-  build or a simulation, including a non-analytic blend where they used to succeed.
+- #3553 (#3523, #3524) states PATCH. No declaration changes: its Swift edits are doc comments,
+  `Int32(clamping:)` conversions and one reformatted `guard`, and its header edits are comments. It
+  carries behaviour changes under that grade, recorded in the break table below with #3521's:
+  eighteen `ChamferBuilder` bridge functions refuse a contour index outside `1...contourCount`
+  where they faulted or read contour 1, three chamfer setters answer `false` for a write that never
+  happened where they answered `true`, and `FilletBuilder`'s `setRadius(_:contour:vertex:)`,
+  `setTwoRadii` and the two `addEdge` overloads, for an edge already in a contour, answer `false`
+  once the fillet is done or the contour holds surfaces, including a non-analytic blend where they
+  used to succeed.
+- #3556 (#3522) states PATCH. No declaration changes: its Swift edits are `Int32(clamping:)`
+  conversions and its header edits are comments. `ChamferBuilder.simulatedSurfaceCount(contour:)`
+  answers `0` where it crashed, and for one input answers a different number: an index past
+  `contourCount`. It is in the break table below.
+- #3557 (#3529) states PATCH. No declaration changes: its Swift edits are doc comments and it touches
+  no header. Fifteen STEP reader entry points skip a leading UTF-8 byte order mark, so a file that was
+  refused is read. It is in the break table below.
 
 **How the rc.1 set was checked.** Every `## SemVer impact` statement was read, and every statement
 of anything above NONE was read against its diff. Then the public API was compared mechanically, in
@@ -735,7 +744,9 @@ against their diffs.
   an easy mistake the old code answered with contour 1's value.
 - #3517 states PATCH and names its one behaviour change beyond the fault: after a completed build and
   a `reset()`, `surfaceCount` answered the stale count and now answers `0`. It is in the same row.
-- #3553 (pending) states PATCH and is treated as #3521 is.
+- #3553 and #3556 (pending) state PATCH. They are recorded PATCH for the crashes they stop and as
+  behaviour rows for the answers they change, as #3521 is. #3557 (pending) states PATCH and is a
+  behaviour row, since a refusal becomes a success, with no signature change.
 - #3520 and #3528 state PATCH and stay PATCH. #3547 states MINOR, which holds for `Kernel`; the kernel
   move it mentions is the table above.
 - #3530 and #3532 state PATCH, and #3533 states NONE, for kernel and guard changes whose only visible
@@ -1303,7 +1314,10 @@ paragraph above that records it.
 | `FilletBuilder`'s contour accessors answer a refusal for an index of `0` or below, where they read or wrote contour 1; its three radius setters answer `false` for a write that did not happen; `surfaceCount` answers `0` after a completed build and `reset()` | different result, no signature change | [#3518, #3516](#v400-filletbuilder-answers-a-refusal-for-an-index-or-a-state-it-used-to-misread-3518-3516) |
 | `FilletBuilder.simulate(contour:)` for a simulation OCCT declines partway keeps the surfaces it computed and sets `stripeStatus(contour:)` to `3`, where it read `0` | different result, no signature change | [#3550](#v400-a-simulation-occt-declines-partway-keeps-its-surfaces-3550-occt1708) |
 | Mesh triangle counts, HLR edge counts and volumes that depend on an approximated curve move with OCCT 8.0.2 | different result, no signature change | "The move to OCCT 8.0.2" above, measured in #3552 |
-| `ChamferBuilder`'s contour accessors and setters refuse an index outside their range, and `FilletBuilder` refuses a radius change on a built or simulated contour (pending) | different result, no signature change | [#3523, #3524](#v400-filletbuilder-answers-a-refusal-for-an-index-or-a-state-it-used-to-misread-3518-3516), in the same section |
+| `ChamferBuilder`'s eighteen contour accessors and setters refuse an index outside their range, where they faulted or read contour 1, and `setDistance`, `setDistances` and `setDistAngle` answer `false` for a write that never happened (pending, #3553) | different result, no signature change | [#3523](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-pending-3553-3556-3557) |
+| `FilletBuilder.setRadius(_:contour:vertex:)`, `setTwoRadii` and `addEdge` for an edge already in a contour answer `false` once the fillet is done or the contour holds surfaces, where they faulted or, for a non-analytic blend, succeeded (pending, #3553) | different result, no signature change | [#3524](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-pending-3553-3556-3557) |
+| `ChamferBuilder.simulatedSurfaceCount(contour:)` answers `0` for an index past `contourCount`, where it read a corner stripe as a contour (pending, #3556) | different result, no signature change | [#3522](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-pending-3553-3556-3557) |
+| A STEP file that starts with a UTF-8 byte order mark loads in every STEP reader, where it was refused (pending, #3557) | different result, no signature change | [#3529](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-pending-3553-3556-3557) |
 
 ##### v4.0.0: `FilletBuilder` answers a refusal for an index or a state it used to misread (#3518, #3516)
 
@@ -1339,22 +1353,14 @@ for a declined edge answered contour 1's radius and now answers `-1`. v4.0.0 is 
 does not move the version number, and a reader who disagrees can downgrade the row to a note without
 touching a signature.
 
-**Pending, #3553.** The same refusal reaches `ChamferBuilder`: eighteen accessors and setters answer
-the value `BRepFilletAPI_MakeChamfer.hxx` documents (`0`, `-1`, `false` or `nil`) for a contour index
-outside `1...contourCount` and an edge index outside `1...edgeCount(contour:)`, where they faulted or
-read contour 1, and `setDistance`, `setDistances` and `setDistAngle` answer `false` for an index past
-the end where they answered `true`. And `FilletBuilder.setRadius(_:contour:vertex:)`,
-`setTwoRadii(_:_:contour:edgeInContour:)` and `addEdge` for an edge already in a contour answer
-`false` and change nothing once that contour holds a `build()` or a `simulate(contour:)` result,
-where they faulted for an analytic blend and succeeded for a non-analytic one. `reset()` lifts the
-refusal.
+**Pending.** The same refusal reaches `ChamferBuilder` and the radius setters (#3553), and the chamfer's
+simulated-surface count (#3556): see the section after #3550's, below.
 
 **Migration.** Pass a 1-based contour index within `1...contourCount`, and an edge index within
 `1...edgeCount(contour:)`. A caller that passed `0` expecting the first contour, which the old
 behaviour allowed by accident, should pass `1`. A caller that treated `true` from a radius setter as
 proof that the radius was set can now rely on it: `false` means nothing was written. Read
-`surfaceCount` after `build()` has completed and before `reset()`. Call `reset()` before changing the
-radii of a contour that has been built or simulated.
+`surfaceCount` after `build()` has completed and before `reset()`.
 
 ##### v4.0.0: a simulation OCCT declines partway keeps its surfaces (#3550, OCCT#1708)
 
@@ -1374,6 +1380,64 @@ probed.
 **Migration.** Read `stripeStatus(contour:)` before `simulatedSurfaceCount(contour:)`: a status of `3`
 means the simulation was declined and the count is partial. A caller that treated a nonzero
 `simulatedSurfaceCount(contour:)` as a completed simulation should test the status as well.
+
+##### v4.0.0: blend-builder indices, radii on a built contour and a STEP byte order mark (pending #3553, #3556, #3557)
+
+Three open pull requests carry behaviour changes under a PATCH statement. None changes a Swift or C
+declaration: their Swift edits are doc comments, `Int32(clamping:)` conversions and one reformatted
+`guard`, and their header edits are comments. Read here from their diffs at the heads of 2026-11-26
+(#3553 at `90a9e8f6`, #3556 at `168a3eb9`, #3557 at `96979464`), and to be read again if they change
+before they merge.
+
+**`ChamferBuilder`, #3553 (#3523).** Eighteen bridge functions are gated on `1 <= IC <= NbContours()`,
+and `Edge` also on `1 <= J <= NbEdges(IC)`, and answer the value the header documents for each: `0`
+for `edgeCount(contour:)`; `-1` for `length`, `getDistance`, `getDistances`, `getDistAngle`,
+`abscissa` and `relativeAbscissa`; `false` for `isDistanceAngle`, `isClosed`, `isClosedAndTangent`,
+`isSymmetric`, `isTwoDistances` and the three setters; and `nil` for `edge`, `firstVertex` and
+`lastVertex`. Past the end, and on a builder with no contour, that is a crash becoming a refusal. For
+`0` and the negatives the old answer was contour 1's value, or a write to contour 1. And
+`setDistance`, `setDistances` and `setDistAngle` returned `true` unconditionally after the call, so an
+index past the end answered `true` for a write that never happened and now answers `false`.
+
+**`FilletBuilder`, #3553 (#3524).** `setRadius(_:contour:vertex:)`, `setTwoRadii(_:_:contour:edgeInContour:)`,
+`addEdge(_:radius:)` and `addEdge(_:radius1:radius2:)` for an edge that already belongs to a contour
+answer `false`, and change nothing, when the fillet is done (`IsDone()`) or the contour has computed
+surfaces (`NbComputedSurfaces(IC) > 0`). They faulted the process for an analytic blend (a box edge, a
+cylinder's rim), because OCCT replays the radius law on elementary spines that are empty there. For a
+non-analytic blend (measured on a BSpline-edged prism) they used to succeed after a build and now answer
+`false` until `reset()`, because the refusal does not depend on the geometry. An edge in no contour
+opens a new one and is not refused; `setRadius(_:contour:edge:)` is not refused; a contour whose build
+or simulation was declined holds no surfaces, so changing its radii still works. Because `IsDone()` is
+part of the test, a contour added after a completed build is refused too until `reset()`.
+
+**`ChamferBuilder.simulatedSurfaceCount(contour:)`, #3556 (#3522).** It answers `0`, where it faulted,
+for a contour never built or simulated, after `reset()`, and for a contour that another contour's
+simulation never reached, and keeps every count it answered before. One answer changes: for an index
+past `contourCount`. With three chamfers meeting at a vertex, OCCT keeps a fourth stripe with no
+spine, and `NbSurf(4)` read it as a contour and answered `1` where `contourCount` is 3; it now answers
+`0`. `FilletBuilder.simulatedSurfaceCount(contour:)` and `ChamferBuilder.simulate(contour:)` convert
+the index with `Int32(clamping:)`, so an `Int` past 32 bits is an ordinary out-of-range index where it
+trapped. The PR reaches the count through an explicit instantiation that names a private member of
+`BRepFilletAPI_MakeChamfer`, and leaves the choice of that over a state flag to the owner; it has no
+effect on the API.
+
+**The STEP readers, #3557 (#3529).** Fifteen reader entry points (fourteen in the STEP format file of
+the bridge, one in the document lifecycle file) read through one helper. It opens the file, and when the
+first three bytes are `EF BB BF` it reads with `ReadStream` from the byte after them; any other file
+goes through `ReadFile` as before. So `Document.load(from:)`, every spelling of `Document.loadSTEP`,
+`Shape.load`, `Shape.loadSTEP` with and without a unit, and the per-root, robust and diagnostics
+loaders read a file that starts with a UTF-8 byte order mark, which they refused with `Incorrect
+syntax: unexpected QUID, expecting STEP`. Only one UTF-8 mark is skipped: a UTF-16 mark and a second
+UTF-8 mark are still refused. A refusal becoming a success has no signature to change, so it is a
+behaviour row and not a compile error.
+
+**Migration.** For the chamfer, pass a contour index within `1...contourCount` and an edge index within
+`1...edgeCount(contour:)`, and treat `false` from a setter as "nothing was written". For a fillet, call
+`reset()` before changing the radii of a contour that has been built or simulated, which is what
+`BRepFilletAPI_MakeFillet.hxx` says to do. `simulatedSurfaceCount(contour:)` needs no migration beyond
+the index range. A caller that strips a byte order mark before loading a STEP file can stop, and
+nothing breaks if it does not; a caller that relied on a thrown `ImportError` as the sign of a
+marked file will see it load.
 
 ##### Found by the mechanical API comparison (#3539): breaks the register did not list
 
