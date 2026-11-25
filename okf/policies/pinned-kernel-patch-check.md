@@ -8,8 +8,8 @@ timestamp: 2026-09-07
 
 # Pinned kernel patch check
 
-**One OCCT version is in play.** `Scripts/build-occt.sh` builds `V8_0_1`, and `Package.swift` pins
-a release asset that is that same `V8_0_1` plus whatever patches were in `Scripts/patches/` when
+**One OCCT version is in play.** `Scripts/build-occt.sh` builds `V8_0_2`, and `Package.swift` pins
+a release asset that is that same `V8_0_2` plus whatever patches were in `Scripts/patches/` when
 the asset was built. Patches land after. Any patch present in `Scripts/patches/` but absent from
 the pinned asset is exercised by **no CI job at all**, because `ci.yml`'s `build-and-test` resolves
 the asset rather than building from source.
@@ -115,7 +115,7 @@ pinned asset, by whichever of these applies:
 
 ## What `kernel-integration.yml` does and does not prove
 
-It triggers on `Scripts/patches/**`, builds `V8_0_1` plus every carried patch from source, and runs
+It triggers on `Scripts/patches/**`, builds `V8_0_2` plus every carried patch from source, and runs
 the full suite against that binary. So the PR that **adds** a patch gets it built, and that proves
 the patch applies, compiles and regresses nothing. It cannot prove the fix works unless a
 Swift-reachable assertion exists for it (a data-race fix has none without TSan instrumentation the

@@ -10,11 +10,12 @@ that stood until 2026-09-07 grew to 159 KB, 70% of it Known OCCT Bugs narrative 
 
 ## Project Summary
 
-OCCTSwift is a comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0.1. It exposes B-Rep solid modeling capabilities to Swift for macOS (arm64, v12+) and iOS (arm64, v15+) via a three-layer architecture: Swift public API → Objective-C++ bridge (C functions) → OCCT C++ library. Uses Swift 6 language mode (strict concurrency).
+OCCTSwift is a comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0.2. It exposes B-Rep solid modeling capabilities to Swift for macOS (arm64, v12+) and iOS (arm64, v15+) via a three-layer architecture: Swift public API → Objective-C++ bridge (C functions) → OCCT C++ library. Uses Swift 6 language mode (strict concurrency).
 
-**One OCCT version is in play.** `Scripts/build-occt.sh` builds `V8_0_1` and `Package.swift` pins
-the pre-release asset its `url:` names, which is that same `V8_0_1` plus the carried patches that
-existed when it was built. Any patch the asset lacks is exercised by **no required check**, because
+**One OCCT version is in play, in two flavours.** `Scripts/build-occt.sh` builds `V8_0_2` and `Package.swift` pins
+the pre-release asset its `url:` names, which is that same `V8_0_2` plus the carried patches that
+existed when it was built (the carry flavour; `--flavour vanilla` builds the LTS kernel with none,
+and `Scripts/kernel-fixes.tsv` says which fixes each holds: [the ledger](okf/policies/kernel-fix-ledger.md)). Any patch the asset lacks is exercised by **no required check**, because
 `build-and-test` resolves the asset rather than building from source; `kernel-integration.yml` is
 the one job that builds an unpinned patch, and it proves the patch applies, compiles and regresses
 nothing, never that the fix reaches a consumer. Before trusting "the fix is
