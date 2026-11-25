@@ -78,6 +78,7 @@ Tests/OCCTModelingTests/FilletTestFixtures.swift	Tests/OCCTModelingTests/FilletT
 Tests/OCCTModelingTests/FuseAndBlendTests.swift	Tests/OCCTModelingTests/Blends/FuseAndBlendTests.swift	Blends	-	fuse-and-blend and cut-and-blend
 Tests/OCCTModelingTests/GlueTests.swift	Tests/OCCTModelingTests/Booleans/GlueTests.swift	Booleans	-	Shape.glue of two boxes and its tolerance
 Tests/OCCTModelingTests/HalfSpaceTests.swift	Tests/OCCTModelingTests/Construction/HalfSpaceTests.swift	Construction	#2702	half-space solid from a face
+Tests/OCCTModelingTests/History/FuseAllFullHistoryTests.swift	Tests/OCCTModelingTests/History/FuseAllFullHistoryTests.swift	History	-	fuseAll with full history: the result is fuseAll's, a shared boundary face maps to its merged image, an untouched face to itself
 Tests/OCCTModelingTests/HistoryExtendedTests.swift	Tests/OCCTModelingTests/History/HistoryExtendedTests.swift	History	#2709	merge histories and replace generated and modified
 Tests/OCCTModelingTests/IntegrationBooleanChainStressTests.swift	Tests/OCCTModelingTests/Booleans/IntegrationBooleanChainStressTests.swift	Booleans	#2709	twenty chained subtractions
 Tests/OCCTModelingTests/IntegrationDraftAnalysisTests.swift	Tests/OCCTModelingTests/Offsets/IntegrationDraftAnalysisTests.swift	Offsets	-	box face normal classification for draft analysis

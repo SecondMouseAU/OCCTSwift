@@ -811,38 +811,77 @@ OCCTShapeRef OCCTShapeSection(OCCTShapeRef shape1, OCCTShapeRef shape2)
   }
 }
 
+// #3560: the one General Fuse behind OCCTShapeFuseMulti and OCCTShapeFuseMultiWithHistory, so the
+// history variant's result is fuseAll's by construction. Fills theArgs with every argument, the
+// list BRepTools_History walks when the history is absorbed into a graph. Returns null on a null
+// shape or a failed build. Throws whatever OCCT throws; both callers catch.
+static std::unique_ptr<BRepAlgoAPI_BuilderAlgo> occtFuseMultiBuild(const OCCTShapeRef*   theShapes,
+                                                                   int32_t               theCount,
+                                                                   TopTools_ListOfShape& theArgs)
+{
+  for (int32_t i = 0; i < theCount; ++i)
+  {
+    if (!theShapes[i])
+      return nullptr;
+    theArgs.Append(theShapes[i]->shape);
+  }
+  std::unique_ptr<BRepAlgoAPI_BuilderAlgo> builder(new BRepAlgoAPI_BuilderAlgo());
+  builder->SetArguments(theArgs);
+  // #367/#369: SetRunParallel(true) was removed here after appearing to cause silent data
+  // corruption under concurrent top-level callers. #369's root-cause investigation found the
+  // "corruption" was a test-harness bug
+  // (Scripts/repro/342-boolean-ops/occt_342_boolean_stress.cpp compared this General Fuse
+  // operation's output against a BRepAlgoAPI_Fuse baseline, a different OCCT operation with
+  // legitimately different topology for the same input), not a real defect in
+  // OSD_ThreadPool/BOPTools_Parallel: both direct isolation testing and the corrected harness
+  // show zero TSan races and zero wrong results, solo or under concurrent load.
+  // SetRunParallel(true) is very likely safe to re-enable here; left at the serial default
+  // pending that follow-up decision. See CLAUDE.md's Known OCCT Bugs #367/#369 entry.
+  builder->Build();
+  if (!builder->IsDone() || builder->Shape().IsNull())
+    return nullptr;
+  return builder;
+}
+
 OCCTShapeRef OCCTShapeFuseMulti(const OCCTShapeRef* shapes, int32_t count)
 {
   if (!shapes || count < 2)
     return nullptr;
   try
   {
-    TopTools_ListOfShape arguments;
-    for (int32_t i = 0; i < count; ++i)
-    {
-      if (!shapes[i])
-        return nullptr;
-      arguments.Append(shapes[i]->shape);
-    }
-    BRepAlgoAPI_BuilderAlgo builder;
-    builder.SetArguments(arguments);
-    // #367/#369: SetRunParallel(true) was removed here after appearing to cause silent data
-    // corruption under concurrent top-level callers. #369's root-cause investigation found the
-    // "corruption" was a test-harness bug
-    // (Scripts/repro/342-boolean-ops/occt_342_boolean_stress.cpp compared this General Fuse
-    // operation's output against a BRepAlgoAPI_Fuse baseline -- a different OCCT operation with
-    // legitimately different topology for the same input), not a real defect in
-    // OSD_ThreadPool/BOPTools_Parallel: both direct isolation testing and the corrected harness
-    // show zero TSan races and zero wrong results, solo or under concurrent load.
-    // SetRunParallel(true) is very likely safe to re-enable here; left at the serial default
-    // pending that follow-up decision. See CLAUDE.md's Known OCCT Bugs #367/#369 entry.
-    builder.Build();
-    if (!builder.IsDone())
+    TopTools_ListOfShape                     arguments;
+    std::unique_ptr<BRepAlgoAPI_BuilderAlgo> builder = occtFuseMultiBuild(shapes, count, arguments);
+    if (!builder)
       return nullptr;
-    TopoDS_Shape result = builder.Shape();
-    if (result.IsNull())
+    return new OCCTShape(builder->Shape());
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return nullptr;
+  }
+}
+
+OCCTBooleanHistoryRef OCCTShapeFuseMultiWithHistory(const OCCTShapeRef* shapes,
+                                                    int32_t             count,
+                                                    OCCTShapeRef*       outResult)
+{
+  if (outResult)
+    *outResult = nullptr;
+  if (!shapes || count < 2)
+    return nullptr;
+  try
+  {
+    TopTools_ListOfShape                     arguments;
+    std::unique_ptr<BRepAlgoAPI_BuilderAlgo> builder = occtFuseMultiBuild(shapes, count, arguments);
+    if (!builder)
       return nullptr;
-    return new OCCTShape(result);
+    const TopoDS_Shape                  result = builder->Shape();
+    std::unique_ptr<OCCTBooleanHistory> history(
+      new OCCTBooleanHistory(std::move(builder), arguments));
+    if (outResult)
+      *outResult = new OCCTShape(result);
+    return history.release();
   }
   catch (...)
   {

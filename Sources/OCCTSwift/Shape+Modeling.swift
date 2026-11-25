@@ -1304,6 +1304,45 @@ extension Shape {
         guard let h = result else { return nil }
         return Shape(handle: h)
     }
+
+    /// Fuse multiple shapes simultaneously, keeping the General Fuse history of every argument.
+    ///
+    /// The result is ``fuseAll(_:)``'s: both run one bridge implementation. The history answers for
+    /// a sub-shape of any of `shapes`, so it can be read after a split's history to carry a
+    /// sub-shape through both. Where two arguments touch on a face, the two faces become one face
+    /// of the result, and each argument's face is `modified` into it.
+    ///
+    /// ```swift
+    /// let a = Shape.box(origin: SIMD3(-10, 0, 0), width: 10, height: 10, depth: 10)!
+    /// let b = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
+    /// if let (result, history) = Shape.fuseAllWithFullHistory([a, b]) {
+    ///     // The face of `a` on x = 0 is now the one face the two solids share.
+    ///     let onBoundary = a.subShapes(ofType: .face).first { face in
+    ///         guard let box = face.bounds else { return false }
+    ///         return abs(box.min.x) < 1e-6 && abs(box.max.x) < 1e-6
+    ///     }!
+    ///     print(result.solids.count, history.record(of: onBoundary).modified.count)  // 2 1
+    /// }
+    /// ```
+    ///
+    /// - Parameter shapes: The shapes to fuse; at least two
+    /// - Returns: The result and its history, or nil where ``fuseAll(_:)`` returns nil
+    public static func fuseAllWithFullHistory(_ shapes: [Shape])
+        -> (result: Shape, history: ShapeHistoryRef)?
+    {
+        guard shapes.count >= 2 else { return nil }
+        let handles: [OCCTShapeRef] = shapes.map { $0.handle }
+        defer { withExtendedLifetime(shapes) {} }
+        var resultRef: OCCTShapeRef?
+        let h = handles.withUnsafeBufferPointer { buffer in
+            OCCTShapeFuseMultiWithHistory(buffer.baseAddress!, Int32(shapes.count), &resultRef)
+        }
+        // Wrapped before the guard, so whatever the bridge handed over is released.
+        let result = resultRef.map(Shape.init(handle:))
+        let history = h.map(ShapeHistoryRef.init)
+        guard let result, let history else { return nil }
+        return (result, history)
+    }
     /// Generate multiple parallel offset wires from a planar face boundary.
     ///
     /// More efficient than calling `Wire.offset` multiple times, and produces

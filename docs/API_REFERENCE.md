@@ -1137,6 +1137,7 @@ Swift-side from the request array rather than from OCCT. See `Shape.FilletResult
 | Swift API | OCCT Class |
 |-----------|------------|
 | `Shape.fuseAll(_:)` | `BRepAlgoAPI_BuilderAlgo` |
+| `Shape.fuseAllWithFullHistory(_:)` → result, `ShapeHistoryRef` | `BRepAlgoAPI_BuilderAlgo` (`Modified` / `Generated` / `IsDeleted`) |
 
 #### Evolved Shape Advanced (v0.33.0)
 | Swift API | OCCT Class |
