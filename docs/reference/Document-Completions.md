@@ -2140,12 +2140,28 @@ Get the number of simulated chamfer surfaces on a contour (after calling `simula
 public func simulatedSurfaceCount(contour: Int) -> Int
 ```
 
-- **Parameters:** `contour`, 1-based contour index.
-- **Returns:** Number of surfaces that would be generated.
-- **OCCT:** `BRepFilletAPI_MakeChamfer::NbSurf`.
+- **Parameters:** `contour`, 1-based contour index, `1...contourCount`.
+- **Returns:** Number of surfaces that would be generated, or `0` while the contour holds no surface
+  data: it was never built or simulated, `reset()` has been called since, the simulation or build
+  was declined, a simulation of another contour never reached it, or `contour` names no contour. OCCT
+  reads this count from a sequence that only `build()` or `simulate(contour:)` creates for a contour,
+  and reading it before either had run, or after a reset, used to fault the process uncatchably
+  (#3522, `Scripts/repro/3522/`). A contour that `build()` has run on keeps the surface count that
+  build left. An index past `contourCount` answers `0` even where OCCT would read a corner stripe as
+  a contour.
+- **OCCT:** `BRepFilletAPI_MakeChamfer::NbSurf`, read only while the contour's own
+  `ChFi3d_Builder::NbComputedSurfaces` is above 0.
 - **Example:**
   ```swift
-  let n = chamfer.simulatedSurfaceCount(contour: 1)
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  let chamfer = ChamferBuilder(shape: box)!
+  chamfer.addEdge(box.edges()[0], distance: 1)
+
+  print(chamfer.simulatedSurfaceCount(contour: 1))   // 0: nothing has run on it yet
+  chamfer.simulate(contour: 1)
+  print(chamfer.simulatedSurfaceCount(contour: 1))   // 1: one chamfer face on a box edge
+  chamfer.reset()
+  print(chamfer.simulatedSurfaceCount(contour: 1))   // 0: reset discards the surface data
   ```
 
 ---

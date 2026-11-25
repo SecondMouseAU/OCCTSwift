@@ -1,0 +1,140 @@
+=== BRepFilletAPI_MakeChamfer: NbSurf against the opened NbComputedSurfaces ===
+
+--- state: fresh (no contour)
+    IsDone=0 NbContours=0 
+    IC=0*  NbSurf=0     predicate=0     bridge=0    
+    IC=1*  NbSurf=0     predicate=0     bridge=0    
+    IC=2*  NbSurf=0     predicate=0     bridge=0    
+    IC=3*  NbSurf=0     predicate=0     bridge=0    
+    IC=4*  NbSurf=0     predicate=0     bridge=0    
+
+--- state: edge added, never built or simulated
+    IsDone=0 NbContours=1 
+    IC=0*  NbSurf=0     predicate=0     bridge=0    
+    IC=1   NbSurf=SEGV  predicate=0     bridge=0    
+    IC=2*  NbSurf=0     predicate=0     bridge=0    
+    IC=3*  NbSurf=0     predicate=0     bridge=0    
+    IC=4*  NbSurf=0     predicate=0     bridge=0    
+
+--- state: CONTROL: Simulate(1)
+    IsDone=0 NbContours=1 
+    IC=0*  NbSurf=0     predicate=0     bridge=0    
+    IC=1   NbSurf=1     predicate=1     bridge=1    
+    IC=2*  NbSurf=0     predicate=0     bridge=0    
+    IC=3*  NbSurf=0     predicate=0     bridge=0    
+    IC=4*  NbSurf=0     predicate=0     bridge=0    
+
+--- state: Simulate(1), Reset()
+    IsDone=0 NbContours=1 
+    IC=0*  NbSurf=0     predicate=0     bridge=0    
+    IC=1   NbSurf=SEGV  predicate=0     bridge=0    
+    IC=2*  NbSurf=0     predicate=0     bridge=0    
+    IC=3*  NbSurf=0     predicate=0     bridge=0    
+    IC=4*  NbSurf=0     predicate=0     bridge=0    
+
+--- state: Simulate(1), Reset(), Simulate(1)
+    IsDone=0 NbContours=1 
+    IC=0*  NbSurf=0     predicate=0     bridge=0    
+    IC=1   NbSurf=1     predicate=1     bridge=1    
+    IC=2*  NbSurf=0     predicate=0     bridge=0    
+    IC=3*  NbSurf=0     predicate=0     bridge=0    
+    IC=4*  NbSurf=0     predicate=0     bridge=0    
+
+--- state: built ok
+    IsDone=1 NbContours=1 
+    IC=0*  NbSurf=0     predicate=0     bridge=0    
+    IC=1   NbSurf=1     predicate=1     bridge=1    
+    IC=2*  NbSurf=0     predicate=0     bridge=0    
+    IC=3*  NbSurf=0     predicate=0     bridge=0    
+    IC=4*  NbSurf=0     predicate=0     bridge=0    
+
+--- state: built ok, Reset()
+    IsDone=0 NbContours=1 
+    IC=0*  NbSurf=0     predicate=0     bridge=0    
+    IC=1   NbSurf=SEGV  predicate=0     bridge=0    
+    IC=2*  NbSurf=0     predicate=0     bridge=0    
+    IC=3*  NbSurf=0     predicate=0     bridge=0    
+    IC=4*  NbSurf=0     predicate=0     bridge=0    
+
+--- state: Simulate(1), Build()
+    IsDone=1 NbContours=1 
+    IC=0*  NbSurf=0     predicate=0     bridge=0    
+    IC=1   NbSurf=1     predicate=1     bridge=1    
+    IC=2*  NbSurf=0     predicate=0     bridge=0    
+    IC=3*  NbSurf=0     predicate=0     bridge=0    
+    IC=4*  NbSurf=0     predicate=0     bridge=0    
+
+--- state: Build(), Simulate(1)
+    IsDone=1 NbContours=1 
+    IC=0*  NbSurf=0     predicate=0     bridge=0    
+    IC=1   NbSurf=1     predicate=1     bridge=1    
+    IC=2*  NbSurf=0     predicate=0     bridge=0    
+    IC=3*  NbSurf=0     predicate=0     bridge=0    
+    IC=4*  NbSurf=0     predicate=0     bridge=0    
+
+--- state: declined build (distance 20)
+    IsDone=0 NbContours=1 
+    IC=0*  NbSurf=0     predicate=0     bridge=0    
+    IC=1   NbSurf=0     predicate=0     bridge=0    
+    IC=2*  NbSurf=0     predicate=0     bridge=0    
+    IC=3*  NbSurf=0     predicate=0     bridge=0    
+    IC=4*  NbSurf=0     predicate=0     bridge=0    
+
+--- state: Simulate(1) declined (distance 20)
+    IsDone=0 NbContours=1 [threw: StartSol echec] 
+    IC=0*  NbSurf=0     predicate=0     bridge=0    
+    IC=1   NbSurf=0     predicate=0     bridge=0    
+    IC=2*  NbSurf=0     predicate=0     bridge=0    
+    IC=3*  NbSurf=0     predicate=0     bridge=0    
+    IC=4*  NbSurf=0     predicate=0     bridge=0    
+
+--- state: Build() with no contour
+    IsDone=0 NbContours=0 [threw: There are no suitable edges for chamfer or fillet] 
+    IC=0*  NbSurf=0     predicate=0     bridge=0    
+    IC=1*  NbSurf=0     predicate=0     bridge=0    
+    IC=2*  NbSurf=0     predicate=0     bridge=0    
+    IC=3*  NbSurf=0     predicate=0     bridge=0    
+    IC=4*  NbSurf=0     predicate=0     bridge=0    
+
+--- state: two contours, only Simulate(1)
+    IsDone=0 NbContours=2 
+    IC=0*  NbSurf=0     predicate=0     bridge=0    
+    IC=1   NbSurf=1     predicate=1     bridge=1    
+    IC=2   NbSurf=SEGV  predicate=0     bridge=0    
+    IC=3*  NbSurf=0     predicate=0     bridge=0    
+    IC=4*  NbSurf=0     predicate=0     bridge=0    
+
+--- state: two contours, nothing run
+    IsDone=0 NbContours=2 
+    IC=0*  NbSurf=0     predicate=0     bridge=0    
+    IC=1   NbSurf=SEGV  predicate=0     bridge=0    
+    IC=2   NbSurf=SEGV  predicate=0     bridge=0    
+    IC=3*  NbSurf=0     predicate=0     bridge=0    
+    IC=4*  NbSurf=0     predicate=0     bridge=0    
+
+--- state: built ok, then a second edge added
+    IsDone=1 NbContours=2 
+    IC=0*  NbSurf=0     predicate=0     bridge=0    
+    IC=1   NbSurf=1     predicate=1     bridge=1    
+    IC=2   NbSurf=SEGV  predicate=0     bridge=0    
+    IC=3*  NbSurf=0     predicate=0     bridge=0    
+    IC=4*  NbSurf=0     predicate=0     bridge=0    
+
+--- state: two built, first contour removed
+    IsDone=1 NbContours=1 
+    IC=0*  NbSurf=0     predicate=0     bridge=0    
+    IC=1   NbSurf=1     predicate=1     bridge=1    
+    IC=2*  NbSurf=0     predicate=0     bridge=0    
+    IC=3*  NbSurf=0     predicate=0     bridge=0    
+    IC=4*  NbSurf=0     predicate=0     bridge=0    
+
+--- state: three edges at a vertex, built
+    IsDone=1 NbContours=3 
+    IC=0*  NbSurf=0     predicate=0     bridge=0    
+    IC=1   NbSurf=1     predicate=1     bridge=1    
+    IC=2   NbSurf=1     predicate=1     bridge=1    
+    IC=3   NbSurf=1     predicate=1     bridge=1    
+    IC=4*  NbSurf=1     predicate=0     bridge=0    
+
+(* = outside 1..NbContours())
+0 mismatch(es)

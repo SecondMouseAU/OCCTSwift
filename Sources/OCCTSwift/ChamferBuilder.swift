@@ -487,13 +487,30 @@ extension ChamferBuilder {
     /// Simulate the chamfer on a contour (1-based index) without building.
     @discardableResult
     public func simulate(contour: Int) -> Bool {
-        OCCTChamferBuilderSimulate(handle, Int32(contour))
+        OCCTChamferBuilderSimulate(handle, Int32(clamping: contour))
     }
 
     /// Get the number of simulated surfaces for a contour (1-based).
     ///
-    /// Call after simulate.
+    /// Answers `0` while the contour holds no surface data: it was never built or simulated,
+    /// ``reset()`` has been called since, the simulation or build was declined, a simulation of
+    /// another contour never reached it, or `contour` names no contour. OCCT reads this count from
+    /// a sequence that only ``build()`` or ``simulate(contour:)`` creates for a contour, and
+    /// reading it before either had run, or after a reset, used to fault the process uncatchably
+    /// (#3522). A contour that ``build()`` has run on keeps the surface count that build left.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = ChamferBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], distance: 1)
+    ///
+    /// print(builder.simulatedSurfaceCount(contour: 1))   // 0: nothing has run on it yet
+    /// builder.simulate(contour: 1)
+    /// print(builder.simulatedSurfaceCount(contour: 1))   // 1: one chamfer face on a box edge
+    /// builder.reset()
+    /// print(builder.simulatedSurfaceCount(contour: 1))   // 0: reset discards the surface data
+    /// ```
     public func simulatedSurfaceCount(contour: Int) -> Int {
-        Int(OCCTChamferBuilderNbSurf(handle, Int32(contour)))
+        Int(OCCTChamferBuilderNbSurf(handle, Int32(clamping: contour)))
     }
 }

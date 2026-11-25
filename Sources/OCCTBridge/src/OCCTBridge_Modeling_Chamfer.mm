@@ -1539,12 +1539,65 @@ bool OCCTChamferBuilderSimulate(OCCTChamferBuilderRef builder, int32_t contourIn
   }
 }
 
+// === #3522: NbSurf needs OCCT's own stripe test, and it sits behind a private member ===
+//
+// ChFi3d_ChBuilder::NbSurf(IC) is `stripe->SetOfSurfData()->Length()` with no null test, and a
+// stripe's sequence is null until Build or Simulate reaches the stripe and null again after
+// Reset(), so NbSurf faults the process on a contour never run, after reset(), and on a contour a
+// Simulate of another contour never reached (Scripts/repro/3522/, the chamfer half of
+// Scripts/repro/3519/). ChFi3d_Builder::NbComputedSurfaces(IC) reads the same length behind
+// `if (hd.IsNull()) return 0;` (ChFi3d_Builder_1.cxx:460-465), which is the null test OCCT ships,
+// and BRepFilletAPI_MakeFillet exposes it, which is how the fillet side was guarded (#3519).
+// BRepFilletAPI_MakeChamfer has no such member and keeps its ChFi3d_ChBuilder in a private field.
+//
+// The state cannot be tracked from outside instead: whether a stripe holds a sequence depends on
+// Build, Simulate, Reset, Add and Remove together, and Remove renumbers contours. So the bridge
+// asks OCCT. C++ allows exactly one spelling of a private member's name outside its class, the
+// argument of an explicit instantiation ([temp.spec], access checking does not apply to it), and
+// the instantiation below uses it to take a pointer to the member. That is standard C++, not a
+// macro over `private`, it reads the object through its own member function, and it changes no
+// layout. A rename of the field upstream is a compile error here, not a silent miss.
+namespace
+{
+struct OCCTChamferInnerBuilderTag
+{
+  typedef ChFi3d_ChBuilder BRepFilletAPI_MakeChamfer::* Type;
+  friend Type occtChamferInnerBuilderOf(OCCTChamferInnerBuilderTag);
+};
+
+template <class Tag, typename Tag::Type Member>
+struct OCCTChamferInnerBuilderOpener
+{
+  friend typename Tag::Type occtChamferInnerBuilderOf(Tag) { return Member; }
+};
+
+template struct OCCTChamferInnerBuilderOpener<OCCTChamferInnerBuilderTag,
+                                              &BRepFilletAPI_MakeChamfer::myBuilder>;
+} // namespace
+
+// Equals NbSurf(IC) in every state where NbSurf answers for a contour (1..NbContours()), and 0
+// where it would fault. Also 0 for an IC with no stripe and for a corner stripe (one with no spine,
+// past NbContours()), which NbSurf(IC) reads as a contour.
+static int32_t occtChamferComputedSurfaces(const BRepFilletAPI_MakeChamfer& chamfer,
+                                           int32_t                          contourIndex)
+{
+  const ChFi3d_ChBuilder& inner = chamfer.*occtChamferInnerBuilderOf(OCCTChamferInnerBuilderTag());
+  return inner.NbComputedSurfaces(contourIndex);
+}
+
 int32_t OCCTChamferBuilderNbSurf(OCCTChamferBuilderRef builder, int32_t contourIndex)
 {
   if (!builder)
     return 0;
   try
   {
+    // #3522: 0 is this function's answer for a contour with no simulation, as after a declined
+    // build or simulation (the sequence is then set and empty). NbSurf is read only for a contour
+    // that holds surface data, so a completed build keeps the count it always answered. The
+    // predicate is also 0 for an index with no stripe and for a corner stripe, which has no spine
+    // and sits past NbContours() where NbSurf(IC) would read it as a contour.
+    if (occtChamferComputedSurfaces(builder->chamfer, contourIndex) <= 0)
+      return 0;
     return builder->chamfer.NbSurf(contourIndex);
   }
   catch (...)
