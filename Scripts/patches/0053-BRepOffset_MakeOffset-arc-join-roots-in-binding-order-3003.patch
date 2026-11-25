@@ -68,12 +68,11 @@ sub-shapes, whose addresses then do not change. It fails without the change (15 
 passes with it (15 of 15); the other 19 tests in the file pass either way.
 
 Reported as SecondMouseAU/OCCTSwift#3003.
-
 diff --git a/src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_MakeOffset.cxx b/src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_MakeOffset.cxx
-index 75132843..4395dfc8 100644
+index 75132843ef8e8f3e2bc0e1eeccf92c51d105ae2d..4395dfc887938603baec57745214bf79a989f88f 100644
 --- a/src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_MakeOffset.cxx
 +++ b/src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_MakeOffset.cxx
-@@ -1914,6 +1914,23 @@
+@@ -1914,6 +1914,23 @@ void BRepOffset_MakeOffset::BuildOffsetByArc(const Message_ProgressRange& theRan
    {
      return;
    }
@@ -97,7 +96,7 @@ index 75132843..4395dfc8 100644
    //--------------------------------------------------------
    // Construction of tubes on edge.
    //--------------------------------------------------------
-@@ -1987,6 +2004,7 @@
+@@ -1987,6 +2004,7 @@ void BRepOffset_MakeOffset::BuildOffsetByArc(const Message_ProgressRange& theRan
            }
            BRepOffset_Offset OF(E, EOn1, EOn2, CurOffset, E1f, E1l);
            MapSF.Bind(E, OF);
@@ -105,7 +104,7 @@ index 75132843..4395dfc8 100644
          }
        }
        else
-@@ -2046,6 +2064,7 @@
+@@ -2046,6 +2064,7 @@ void BRepOffset_MakeOffset::BuildOffsetByArc(const Message_ProgressRange& theRan
  
          BRepOffset_Offset OF(V, LOE, CurOffset);
          MapSF.Bind(V, OF);
@@ -113,7 +112,7 @@ index 75132843..4395dfc8 100644
        }
        //--------------------------------------------------------------
        // Particular processing if V is at least a free border.
-@@ -2089,17 +2108,22 @@
+@@ -2089,17 +2108,22 @@ void BRepOffset_MakeOffset::BuildOffsetByArc(const Message_ProgressRange& theRan
    {
      RT = ChFiDS_Convex;
    }
@@ -141,7 +140,7 @@ index 75132843..4395dfc8 100644
      if (SF.Status() == BRepOffset_Reversed || SF.Status() == BRepOffset_Degenerated)
      {
        //------------------------------------------------
-@@ -2108,7 +2132,7 @@
+@@ -2108,7 +2132,7 @@ void BRepOffset_MakeOffset::BuildOffsetByArc(const Message_ProgressRange& theRan
        continue;
      }
  
@@ -150,7 +149,7 @@ index 75132843..4395dfc8 100644
      myInitOffsetFace.Bind(SI, OF);
      myInitOffsetFace.SetRoot(SI); // Initial<-> Offset
      myImageOffset.SetRoot(OF);    // FaceOffset root of images
-@@ -2127,7 +2151,7 @@
+@@ -2127,7 +2151,7 @@ void BRepOffset_MakeOffset::BuildOffsetByArc(const Message_ProgressRange& theRan
          if (!L.IsEmpty() && L.First().Type() != RT)
          {
            TopAbs_Orientation OO          = E.Orientation();
@@ -160,19 +159,19 @@ index 75132843..4395dfc8 100644
            //          TopoDS_Edge        OE  = TopoDS::Edge(It.Value().Generated(E));
            myAsDes->Add(OF, OE.Oriented(OO));
 diff --git a/src/ModelingAlgorithms/TKOffset/GTests/BRepOffset_MakeOffset_Test.cxx b/src/ModelingAlgorithms/TKOffset/GTests/BRepOffset_MakeOffset_Test.cxx
-index 6c3bfe59..6fdd44b4 100644
+index 9b5523af3f0e9332f8accb4b5b998ee9b68cef94..d3ab36b30a806d0d3f933cb1a1dae524be4a3696 100644
 --- a/src/ModelingAlgorithms/TKOffset/GTests/BRepOffset_MakeOffset_Test.cxx
 +++ b/src/ModelingAlgorithms/TKOffset/GTests/BRepOffset_MakeOffset_Test.cxx
-@@ -13,6 +13,8 @@
- 
+@@ -14,6 +14,8 @@
  #include <gtest/gtest.h>
  
+ #include <BRepOffsetAPI_MakeOffset.hxx>
 +#include <BRepGProp.hxx>
 +#include <BRepOffsetAPI_MakeOffsetShape.hxx>
  #include <BRepOffsetAPI_MakeThickSolid.hxx>
  #include <BRepOffsetAPI_ThruSections.hxx>
  #include <BRepOffset_MakeOffset.hxx>
-@@ -25,6 +27,7 @@
+@@ -26,6 +28,7 @@
  #include <BRepPrimAPI_MakeSphere.hxx>
  #include <BRepCheck_Analyzer.hxx>
  #include <BRepAlgoAPI_Fuse.hxx>
@@ -180,19 +179,18 @@ index 6c3bfe59..6fdd44b4 100644
  #include <Geom_Circle.hxx>
  #include <Geom_Ellipse.hxx>
  #include <Geom_BSplineCurve.hxx>
-@@ -41,6 +44,9 @@
- #include <TopExp_Explorer.hxx>
+@@ -43,6 +46,8 @@
  #include <NCollection_List.hxx>
  
+ #include <cmath>
 +#include <memory>
 +#include <vector>
-+
+ 
  //=================================================================================================
  // Helper function to create a circular wire
- //=================================================================================================
-@@ -1027,3 +1033,50 @@
-   // Octagon is closer to a circle, corners are less sharp
-   EXPECT_TRUE(aThickMaker.IsDone()) << "ThickSolid on circle-to-octagon loft failed.";
+@@ -1097,3 +1102,50 @@ TEST(BRepOffset_MakeOffsetTest, CollapsedCircularWireOffsetIsNotDone)
+   ASSERT_NO_THROW(isDone = IsCircularWireOffsetDone(2.0, -1.0));
+   EXPECT_FALSE(isDone);
  }
 +
 +//=================================================================================================

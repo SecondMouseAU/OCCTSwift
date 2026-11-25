@@ -3,6 +3,12 @@
 # Build OpenCASCADE for WebAssembly (WASI)
 #
 # Usage: ./build-occt-wasm.sh [--toolkit NAME] [--require-complete] [--census-only] [--package-only]
+#                             [--flavour carry|vanilla]
+#
+#   --flavour F      carry (default): every patch in Scripts/patches plus the WASI patches, the
+#                    hardened kernel. vanilla: OCCT as tagged plus ONLY the WASI patches, which are a
+#                    port and not a fix, so this is still "just the upstream release" for behaviour.
+#                    The tree must be pristine for vanilla, since this script never reverts a patch.
 #
 #   --toolkit NAME   Build and archive ONE OCCT toolkit instead of everything, e.g.
 #                    `--toolkit TKernel`. The configure step is unchanged, so the narrow loop and
@@ -63,6 +69,7 @@ BUILD_TOOLKIT=""
 REQUIRE_COMPLETE=""
 CENSUS_ONLY=""
 PACKAGE_ONLY=""
+FLAVOUR="carry"
 while [ $# -gt 0 ]; do
     case "$1" in
         --require-complete)
@@ -86,6 +93,15 @@ while [ $# -gt 0 ]; do
             BUILD_TOOLKIT="${1#--toolkit=}"
             shift
             ;;
+        --flavour)
+            [ $# -ge 2 ] || { echo "ERROR: --flavour needs carry or vanilla." >&2; exit 1; }
+            FLAVOUR="$2"
+            shift 2
+            ;;
+        --flavour=*)
+            FLAVOUR="${1#--flavour=}"
+            shift
+            ;;
         -h|--help)
             # The header block, which ends at the blank line before `set -e`. Derived rather than
             # hardcoded: the line number was 38 and the block has grown twice since, so `--help`
@@ -94,7 +110,7 @@ while [ $# -gt 0 ]; do
             exit 0
             ;;
         *)
-            echo "ERROR: unknown argument '$1'. Usage: $0 [--toolkit NAME] [--require-complete] [--census-only] [--package-only]" >&2
+            echo "ERROR: unknown argument '$1'. Usage: $0 [--toolkit NAME] [--require-complete] [--census-only] [--package-only] [--flavour carry|vanilla]" >&2
             exit 1
             ;;
     esac
@@ -109,7 +125,21 @@ if [ -n "$REQUIRE_COMPLETE" ] && [ -z "$BUILD_TOOLKIT" ]; then
     exit 1
 fi
 
-OCCT_VERSION="8.0.1"
+case "$FLAVOUR" in
+    carry|vanilla) ;;
+    *) echo "ERROR: --flavour must be carry or vanilla, not '$FLAVOUR'." >&2; exit 1 ;;
+esac
+
+# The version lives in Scripts/build-occt.sh and nowhere else. This script had its own copy, nothing
+# checked the two agreed, and a bump that missed one built a wasm kernel from a different OCCT than
+# the native one it is meant to match (Scripts/check-wasm-kernel-parity.py exists for the same
+# reason). Parsed, not sourced: that script is a build, and sourcing it would run it.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+OCCT_VERSION="$(grep -m1 '^OCCT_VERSION=' "$SCRIPT_DIR/build-occt.sh" | cut -d'"' -f2)"
+if [ -z "$OCCT_VERSION" ]; then
+    echo "ERROR: no OCCT_VERSION=\"...\" line in $SCRIPT_DIR/build-occt.sh, which is where it is read from." >&2
+    exit 1
+fi
 OCCT_RC=""
 # Underscores, not dots, matching Scripts/build-occt.sh. Upstream carries BOTH V8.0.1 and V8_0_1
 # and they are the same commit, so the clone worked either way; `git describe --tags
@@ -122,7 +152,6 @@ else
     OCCT_TAG="V${OCCT_VERSION//./_}"
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 LIBRARIES_DIR="$PROJECT_DIR/Libraries"
 
@@ -342,6 +371,14 @@ package_build() {
     mkdir -p "$dst"
     # `$src/.` rather than `$src/*`: the same copy, without handing 7,000-odd paths to the shell.
     cp -R "$src"/. "$dst"/
+    # The kernel's own statement of which fixes it holds (see Scripts/build-occt.sh).
+    if [ "$FLAVOUR" = "carry" ]; then
+        python3 "$SCRIPT_DIR/emit-kernel-fixes-header.py" --flavour carry --occt-version "$OCCT_VERSION" \
+            --patches-dir "$SCRIPT_DIR/patches" --out "$dst/OCCTKernelFixes.h" || return 1
+    else
+        python3 "$SCRIPT_DIR/emit-kernel-fixes-header.py" --flavour vanilla --occt-version "$OCCT_VERSION" \
+            --out "$dst/OCCTKernelFixes.h" || return 1
+    fi
     local n_src n_dst
     n_src=$(find "$src" -type f | wc -l | tr -d ' ')
     n_dst=$(find "$dst" -type f | wc -l | tr -d ' ')
@@ -578,7 +615,26 @@ fi
 # that script patched must not stop this one (#3502).
 source "$SCRIPT_DIR/lib/apply-patches.sh"
 
-apply_patch_dir "$SCRIPT_DIR/patches" "carried OCCT patches"
+if [ "$FLAVOUR" = "carry" ]; then
+    apply_patch_dir "$SCRIPT_DIR/patches" "carried OCCT patches"
+else
+    # The WASI patches below are applied for every flavour: OCCT does not build for wasm without
+    # them. Anything else on the tree would make "vanilla" a carry kernel under another name, so a
+    # tree that is not the pristine tag, apart from files the WASI patches themselves touch, is
+    # refused. Checked against the patches' own file list rather than assumed clean, because a
+    # reused tree has the WASI patches applied already.
+    echo ">>> Flavour vanilla: no carried patch is applied, only the WASI patches below."
+    if [ -n "$(git -C occt-src status --porcelain --untracked-files=no)" ]; then
+        wasi_files="$(for p in "$SCRIPT_DIR"/patches-wasi/*.patch; do git -C occt-src apply --numstat "$p" | cut -f3; done | sort -u)"
+        stray="$(comm -23 <(git -C occt-src status --porcelain --untracked-files=no | awk '{print $NF}' | sort -u) <(printf '%s\n' "$wasi_files"))"
+        if [ -n "$stray" ]; then
+            echo "ERROR: $LIBRARIES_DIR/occt-src has modified files no WASI patch explains:" >&2
+            printf '    %s\n' $stray >&2
+            echo "       so it is not a vanilla $OCCT_TAG. Remove the tree and re-run." >&2
+            exit 1
+        fi
+    fi
+fi
 apply_patch_dir "$SCRIPT_DIR/patches-wasi" "WASI-only OCCT patches"
 
 # --------------------
@@ -729,7 +785,7 @@ CMAKE_COMMON_OPTS=(
 
 echo ""
 echo "========================================"
-echo "Building OCCT $OCCT_VERSION for WASI (wasm32-wasip1)"
+echo "Building OCCT $OCCT_VERSION ($FLAVOUR flavour) for WASI (wasm32-wasip1)"
 echo "========================================"
 echo "Project directory: $PROJECT_DIR"
 echo "Libraries directory: $LIBRARIES_DIR"

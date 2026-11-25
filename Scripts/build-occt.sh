@@ -2,7 +2,11 @@
 #
 # Build OpenCASCADE for iOS and macOS
 #
-# Usage: ./build-occt.sh
+# Usage: ./build-occt.sh [--flavour carry|vanilla]
+#
+# --flavour carry    (default) OCCT plus every patch in Scripts/patches: the hardened kernel.
+# --flavour vanilla  OCCT exactly as tagged, no carried patch: the LTS kernel. The tree must be
+#                    pristine, since this script never reverts a patch (see below).
 #
 # This script downloads OCCT source and builds it as static libraries
 # for iOS (arm64), iOS Simulator (arm64), and macOS (arm64).
@@ -39,7 +43,8 @@ set -e
 # A post-condition rather than a stricter exit code, because it catches causes that never produce
 # a non-zero status at all: a compiler crash, an OOM kill, a full disk.
 #
-# The list is the toolkit set of a healthy OCCT V8_0_1 build. If an OCCT upgrade legitimately adds
+# The list is the toolkit set of a healthy OCCT V8_0_1 or V8_0_2 build (the tags differ by no
+# public header). If an OCCT upgrade legitimately adds
 # or renames one, update it here in the same commit; a check that needs weakening is a signal to
 # look at the other measurement first.
 REQUIRED_TOOLKITS="TKBin TKBinL TKBinTObj TKBinXCAF TKBO TKBool TKBRep TKCAF TKCDF TKDE TKDECascade TKDEGLTF TKDEIGES TKDEOBJ TKDEPLY TKDESTEP TKDESTL TKDEVRML TKernel TKExpress TKFeat TKFillet TKG2d TKG3d TKGeomAlgo TKGeomBase TKHelix TKHLR TKLCAF TKMath TKMesh TKOffset TKPrim TKRWMesh TKService TKShHealing TKStd TKStdL TKTObj TKTopAlgo TKV3d TKVCAF TKXCAF TKXMesh TKXml TKXmlL TKXmlTObj TKXmlXCAF TKXSBase"
@@ -70,10 +75,12 @@ require_toolkits() {
 }
 
 
-OCCT_VERSION="8.0.1"
+OCCT_VERSION="8.0.2"
 OCCT_RC=""
 # Pre-release tags use format V8_0_0_rc5 / V8_0_0_beta2; the p1 hot-patch is V8_0_0_p1; GA is V8_0_0
-# and the 8.0.1 maintenance release is V8_0_1, both plain, so OCCT_RC is empty for a GA tag.
+# and the 8.0.1 and 8.0.2 maintenance releases are V8_0_1 and V8_0_2, all plain, so OCCT_RC is empty
+# for a GA tag. This line is the one place the version lives: Scripts/build-occt-wasm.sh reads it
+# from here, as do tsan-stress.sh and check-inventory-prose.py.
 if [ -n "$OCCT_RC" ]; then
     OCCT_TAG="V${OCCT_VERSION//./_}_${OCCT_RC}"
 else
@@ -83,6 +90,36 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 LIBRARIES_DIR="$PROJECT_DIR/Libraries"
+
+# --------------------
+# Arguments
+# --------------------
+FLAVOUR="carry"
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --flavour)
+            [ $# -ge 2 ] || { echo "ERROR: --flavour needs carry or vanilla." >&2; exit 1; }
+            FLAVOUR="$2"
+            shift 2
+            ;;
+        --flavour=*)
+            FLAVOUR="${1#--flavour=}"
+            shift
+            ;;
+        -h|--help)
+            sed -n '2,/^# Build time:/p' "$0"
+            exit 0
+            ;;
+        *)
+            echo "ERROR: unknown argument '$1'. Usage: $0 [--flavour carry|vanilla]" >&2
+            exit 1
+            ;;
+    esac
+done
+case "$FLAVOUR" in
+    carry|vanilla) ;;
+    *) echo "ERROR: --flavour must be carry or vanilla, not '$FLAVOUR'." >&2; exit 1 ;;
+esac
 
 # Parallelism
 JOBS=$(sysctl -n hw.ncpu)
@@ -107,7 +144,7 @@ CC=$(xcrun --find clang)
 CXX=$(xcrun --find clang++)
 
 echo "========================================"
-echo "Building OCCT $OCCT_VERSION for iOS/macOS"
+echo "Building OCCT $OCCT_VERSION ($FLAVOUR flavour) for iOS/macOS"
 echo "========================================"
 echo "Project directory: $PROJECT_DIR"
 echo "Libraries directory: $LIBRARIES_DIR"
@@ -193,7 +230,21 @@ fi
 # The loop, and how it reads a patch that a later one rewrote, are in Scripts/lib/apply-patches.sh,
 # shared with build-occt-wasm.sh so the two cannot disagree about a tree the other has patched (#3502).
 source "$SCRIPT_DIR/lib/apply-patches.sh"
-apply_patch_dir "$SCRIPT_DIR/patches" "local OCCT patches"
+if [ "$FLAVOUR" = "carry" ]; then
+    apply_patch_dir "$SCRIPT_DIR/patches" "local OCCT patches"
+else
+    # The vanilla kernel is the LTS flavour: exactly what Open Cascade tagged. Skipping the loop
+    # is not enough on its own, because a tree an earlier carry build patched still carries every
+    # patch and would ship under the vanilla name. So the tree is checked, not trusted.
+    echo ">>> Flavour vanilla: no carried patch is applied."
+    if [ -n "$(git -C occt-src status --porcelain --untracked-files=no)" ]; then
+        echo "ERROR: $LIBRARIES_DIR/occt-src has modified files, so it is not the pristine $OCCT_TAG" >&2
+        echo "       a vanilla kernel is. This script never reverts a patch. Look first for work worth" >&2
+        echo "       keeping (git -C '$LIBRARIES_DIR/occt-src' status --porcelain), then remove the tree" >&2
+        echo "       and re-run so the clone above fetches a clean $OCCT_TAG." >&2
+        exit 1
+    fi
+fi
 
 # --------------------
 # Clean stale install prefixes
@@ -541,6 +592,18 @@ if [ -d "occt-install-ios/include/opencascade" ]; then
     cp -R occt-install-ios/include/opencascade/* occt-headers/
 else
     cp -R occt-install-ios/include/* occt-headers/
+fi
+
+# The kernel's own statement of which fixes it holds, generated from Scripts/kernel-fixes.tsv. The
+# bridge reads it (OCCTSWIFT_KERNEL_HAS_Fxxxx) so a guard written for a missing fix compiles out of a
+# kernel that has it, and each flavour ships its own copy. `carry` is told which patches were applied
+# by listing the directory it just applied.
+if [ "$FLAVOUR" = "carry" ]; then
+    python3 "$SCRIPT_DIR/emit-kernel-fixes-header.py" --flavour carry --occt-version "$OCCT_VERSION" \
+        --patches-dir "$SCRIPT_DIR/patches" --out occt-headers/OCCTKernelFixes.h
+else
+    python3 "$SCRIPT_DIR/emit-kernel-fixes-header.py" --flavour vanilla --occt-version "$OCCT_VERSION" \
+        --out occt-headers/OCCTKernelFixes.h
 fi
 
 # --------------------

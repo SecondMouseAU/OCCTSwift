@@ -57,8 +57,8 @@
 # nothing else: a retired patch whose edits were never reverted is #2190's question, and
 # the stray check in docs/guides/building-occt.md's "Shipping a rebuild" answers it.
 #
-# occt-version: 8.0.1
-# derived against: 61 carried patch(es) in Scripts/patches/, every one of them verified
+# occt-version: 8.0.2
+# derived against: 51 carried patch(es) in Scripts/patches/, every one of them verified
 # derived against: applied in the tree the rows below were derived from.
 # patch: 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319 79fe529c26ef
 # patch: 0011-XCAFDoc_ShapeTool-AutoNamingScope-341 76898e2438a2
@@ -68,7 +68,6 @@
 # patch: 0016-Resource_Manager-atomic-Debug-Storage_Schema-per-instance-374 b2358f4d01e5
 # patch: 0017-null-reshape-context-ComposeShell-WireDivide-484 c0569555b41a
 # patch: 0018-GCPnts-degenerate-count-and-duplicate-end-point-555 16e06c6a7be2
-# patch: 0019-AdvApp2Var-jacobi-max-wrong-workspace-slot-522 66b25e11a6e1
 # patch: 0020-BRepFeat_MakeCylindricalHole-select-tool-parts-532 afaa1f1e5b7c
 # patch: 0021-CPnts-adaptive-arc-length-integration-603 fa8490c843b1
 # patch: 0022-ChFi2d_Builder-AddChamfer-connexion-error-check-705 e4e39a36e7b8
@@ -78,10 +77,8 @@
 # patch: 0026-BRepOffsetAPI_ThruSections-capping-guard-905 b039e598d4e9
 # patch: 0027-BRepOffsetAPI_ThruSections-CreateSmoothed-section-edge-count-guard-913 064dbcebbbdc
 # patch: 0028-GeomPlate_BuildPlateSurface-uninitialised-G0-G1-G2-errors-1018 89e36b4349ba
-# patch: 0029-XCAFDoc_Datum-point-read-from-plane-array-1022 d2fb2ba52ec8
 # patch: 0030-TopoDS_TShape-myState-atomic-1154 efabc01f31f2
 # patch: 0033-Interface_Static-thread-safety-mutex-1157 c21a2ee573ac
-# patch: 0034-GeomFill-CoonsAlgPatch-Value-U-parameter-1515 a16958a08528
 # patch: 0036-IFSelect_WorkSession-per-instance-error-guard-1403 e8f54ab54929
 # patch: 0037-STEPControl-ActorRead-non-manifold-flag-per-instance-2061 b81401095e9f
 # patch: 0038-Interface_CheckTool-errh-per-instance-1403 42fc2b4e9fda
@@ -89,23 +86,16 @@
 # patch: 0040-controller-one-time-init-thread-safe-1403 bcc09becc30a
 # patch: 0041-DE-registry-maps-synchronised-1403 915c6fd8f9c4
 # patch: 0042-ShapeAnalysis-GetFaceUVBounds-null-surface-2773 1cf9dbde5fce
-# patch: 0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827 5db36c8e8661
-# patch: 0044-Extrema-ExtSS-ExtCS-Points-bound-against-point-sequence-2840 0b0b4a459980
-# patch: 0045-Geom-Bezier-InsertPoleAfter-pole-bound-2875 1693b869b897
 # patch: 0046-math_Uzawa-Errinit-row-dimension-2860 23ec02a28dd1
 # patch: 0047-BRepMesh_IncrementalMesh-initParameters-refuses-NaN-2879-2900 dcfeed5d0e2b
-# patch: 0048-BRepGProp-by-plane-offset-sign-2873 5948949ee30f
 # patch: 0050-GProp_SelGProps-cone-lateral-area-drops-cos-semiangle-2992 faba6d52df0b
 # patch: 0051-GProp_VelGProps-cone-volume-is-the-frustum-2992 e6459f8745f2
-# patch: 0052-Geom_BezierSurface-rational-axis-prose-matches-example-2991 760bc76effae
-# patch: 0053-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003 fe6209d98f3a
-# patch: 0054-ChFi3d_Builder-StartSol-drops-an-obstacle-with-no-edge-2881 8299cab4767b
+# patch: 0053-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003 87ee49671b9f
 # patch: 0055-GProp_SelGProps-GProp_VelGProps-cone-matrix-of-inertia-3010 81390e4d295e
 # patch: 0056-BRepLib-Plane-creates-the-default-plane-under-the-magic-static-lock-3039 35b5684c9513
 # patch: 0057-GProp_SelGProps-GProp_VelGProps-cylinder-sphere-torus-inertia-3091 04a543f518b6
 # patch: 0058-BRepOffsetAPI_MiddlePath-Build-carries-a-vertex-path-forward-3105 3aa5e4f75495
 # patch: 0059-ChFi3d-Builder-fillets-that-meet-exactly-are-built-not-refused-3207 eb520b90a343
-# patch: 0064-TopOpeBRepBuild-CorrectUnclosedWire-collects-the-edges-before-removing-them-3335 944ae3ac3679
 # patch: 0065-BRepBlend_Walking-Perform-reports-not-done-for-a-non-finite-range-3350 89ab9a12f1fb
 # patch: 0066-BRepOffset_MakeLoops-cap-splits-oriented-against-the-offset-faces-3464 56fd1014432b
 # patch: 0068-BRepFill_TrimSurfaceTool-IntersectWith-refuses-incoherent-intersection-3449 d0878c045c01
@@ -113,8 +103,8 @@
 # patch: 0070-BinObjMgt_Persistent-compares-a-size-from-the-file-without-overflow-3489 42ae0243cea1
 # patch: 0071-BinMDataStd-array-and-list-drivers-bound-a-declared-span-by-the-data-left-3489 080d45a9cacd
 # patch: 0072-BinTools-Set-Read-cuts-the-table-name-token-at-the-buffer-3489 4be52ad597c1
-# patch: 0073-Text-shape-readers-bound-a-token-and-stop-at-a-failed-stream-3490 72cc40f22a5c
-# patch: 0074-Shape-readers-refuse-a-count-the-stream-cannot-supply-3490 c0350f73b62e
+# patch: 0073-Text-shape-readers-bound-a-token-and-stop-at-a-failed-stream-3490 80d66f21f976
+# patch: 0074-Shape-readers-refuse-a-count-the-stream-cannot-supply-3490 f91317e180e1
 # patch: 0075-Trimmed-curve-and-surface-refuse-a-parameter-that-is-not-a-number-3496 61d5774a23e0
 # patch: 0076-BinTools_ShapeReader-refuses-a-position-reference-that-leaves-the-stream-3495 57c60912bbcd
 # patch: 0077-BRepCheck_Edge-InContext-copes-with-a-face-without-a-surface-and-an-edge-without-a-3D-curve-3490 bd474bef9dbc
@@ -125,14 +115,14 @@
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    827 site(s) in  283 class(es)
 # totals: inline-throw       501 site(s) in  212 class(es)
-# totals: outofline-throw   3807 site(s) in  833 class(es)
-# totals: outofline-delegated  5947 site(s) in  924 class(es)
+# totals: outofline-throw   3811 site(s) in  833 class(es)
+# totals: outofline-delegated  6120 site(s) in  950 class(es)
 # totals: inherited-live    2587 site(s) in 2587 class(es)
-# totals: inline-dead-at-depth  9912 site(s) in  100 class(es)
+# totals: inline-dead-at-depth 10006 site(s) in  100 class(es)
 #
-# member attribution: 337 of 5043 row(s) carry at least one <file-scope> site, 264 name no member at all
+# member attribution: 337 of 5069 row(s) carry at least one <file-scope> site, 264 name no member at all
 #
-# packages examined: 404
+# packages examined: 405
 # packages: AIS,APIHeaderSection,Adaptor2d,Adaptor3d,AdvApp2Var,AdvApprox,AppBlend,AppCont,AppDef,AppParCurves,AppStd,AppStdL
 # packages: Approx,ApproxInt,Aspect,BOPAlgo,BOPDS,BOPTest,BOPTools,BRep,BRepAdaptor,BRepAlgo,BRepAlgoAPI,BRepApprox
 # packages: BRepBlend,BRepBndLib,BRepBuilderAPI,BRepCheck,BRepClass,BRepClass3d,BRepExtrema,BRepFeat,BRepFill,BRepFilletAPI,BRepGProp,BRepGraph
@@ -159,14 +149,14 @@
 # packages: Select3D,SelectBasics,SelectMgr,Shaders,ShapeAlgo,ShapeAnalysis,ShapeBuild,ShapeConstruct,ShapeCustom,ShapeExtend,ShapeFix,ShapePersistent
 # packages: ShapeProcess,ShapeProcessAPI,ShapeUpgrade,Standard,StdDrivers,StdFail,StdLDrivers,StdLPersistent,StdObjMgt,StdObject,StdPersistent,StdPrs
 # packages: StdSelect,StdStorage,StepAP203,StepAP209,StepAP214,StepAP242,StepBasic,StepData,StepDimTol,StepElement,StepFEA,StepFile
-# packages: StepGeom,StepKinematics,StepRepr,StepSelect,StepShape,StepTidy,StepToTopoDS,StepTransientReplacements,StepVisual,StlAPI,Storage,Sweep
-# packages: TColGeom,TColGeom2d,TColStd,TColgp,TCollection,TDF,TDataStd,TDataXtd,TDocStd,TFunction,TKBRep,TKBool
-# packages: TKDEIGES,TKDESTEP,TKMath,TKMesh,TKV3d,TKXSBase,TKernel,TNaming,TObj,TPrsStd,TShort,Textures
-# packages: TopAbs,TopBas,TopClass,TopCnx,TopExp,TopLoc,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepDS,TopOpeBRepTool,TopTools,TopTrans
-# packages: TopoDS,TopoDSToStep,Transfer,TransferBRep,Units,UnitsAPI,UnitsMethods,V3d,ViewerTest,Vrml,VrmlAPI,VrmlConverter
-# packages: VrmlData,WNT,Wasm,XBRepMesh,XCAFApp,XCAFDimTolObjects,XCAFDoc,XCAFNoteObjects,XCAFPrs,XCAFView,XDEDRAW,XSAlgo
-# packages: XSControl,XSDRAW,XSDRAWSTL,XSMessage,XmlDrivers,XmlLDrivers,XmlMDF,XmlMDataStd,XmlMDataXtd,XmlMDocStd,XmlMFunction,XmlMNaming
-# packages: XmlMXCAFDoc,XmlObjMgt,XmlTObjDrivers,XmlXCAFDrivers,Xw,gce,gp,math
+# packages: StepGeom,StepKinematics,StepRepr,StepSelect,StepShape,StepTidy,StepToGeom,StepToTopoDS,StepTransientReplacements,StepVisual,StlAPI,Storage
+# packages: Sweep,TColGeom,TColGeom2d,TColStd,TColgp,TCollection,TDF,TDataStd,TDataXtd,TDocStd,TFunction,TKBRep
+# packages: TKBool,TKDEIGES,TKDESTEP,TKMath,TKMesh,TKV3d,TKXSBase,TKernel,TNaming,TObj,TPrsStd,TShort
+# packages: Textures,TopAbs,TopBas,TopClass,TopCnx,TopExp,TopLoc,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepDS,TopOpeBRepTool,TopTools
+# packages: TopTrans,TopoDS,TopoDSToStep,Transfer,TransferBRep,Units,UnitsAPI,UnitsMethods,V3d,ViewerTest,Vrml,VrmlAPI
+# packages: VrmlConverter,VrmlData,WNT,Wasm,XBRepMesh,XCAFApp,XCAFDimTolObjects,XCAFDoc,XCAFNoteObjects,XCAFPrs,XCAFView,XDEDRAW
+# packages: XSAlgo,XSControl,XSDRAW,XSDRAWSTL,XSMessage,XmlDrivers,XmlLDrivers,XmlMDF,XmlMDataStd,XmlMDataXtd,XmlMDocStd,XmlMFunction
+# packages: XmlMNaming,XmlMXCAFDoc,XmlObjMgt,XmlTObjDrivers,XmlXCAFDrivers,Xw,gce,gp,math
 
 AISPresentation inherited-live 1 Standard_ProgramError Standard_Transient
 AISPresentation_1 inherited-live 1 Standard_ProgramError Standard_Transient
@@ -271,6 +261,7 @@ AppDef_Gradient_BFGSOfMyGradientbisOfBSplineCompute inherited-live 1 StdFail_Not
 AppDef_Gradient_BFGSOfMyGradientbisOfBSplineCompute_0 outofline-delegated 1 StdFail_NotDone math_BFGS
 AppDef_Gradient_BFGSOfTheGradient inherited-live 1 StdFail_NotDone math_BFGS
 AppDef_Gradient_BFGSOfTheGradient_0 outofline-delegated 1 StdFail_NotDone math_BFGS
+AppDef_LeastSquare_Test outofline-delegated 8 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec,gp_Vec2d
 AppDef_LinearCriteria outofline-throw 11 Standard_DomainError <file-scope>,DependenceTable,ErrorValues,Gradient,Hessian,QualityValues,SetWeight
 AppDef_MultiLine outofline-throw 3 Standard_ConstructionError,Standard_OutOfRange AppDef_MultiLine,SetValue,Value
 AppDef_MultiLine outofline-delegated 2 Standard_OutOfRange_Always Standard_OutOfRange
@@ -291,6 +282,7 @@ AppStd_Application inherited-live 1 Standard_Failure,Standard_NoSuchObject CDF_A
 Approx_CurveOnSurface outofline-throw 1 Standard_ConstructionError Perform
 Approx_CurvlinFunc outofline-throw 7 Standard_ConstructionError,Standard_OutOfRange <file-scope>,EvalCase1,EvalCase2,EvalCase3,EvalCurOnSur,GetUParameter,Trim
 Approx_CurvlinFunc outofline-delegated 1 Standard_OutOfRange_Always Standard_OutOfRange
+Approx_FitAndDivide_Test outofline-delegated 3 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec,gp_Vec2d
 Approx_SameParameter outofline-delegated 1 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec
 Approx_SweepApproximation inline-throw 17 Standard_DomainError,StdFail_NotDone Curve2dPoles,Curves2dDegree,Curves2dKnots,Curves2dMults,NbCurves2d,SurfPoles,SurfUKnots,SurfUMults,SurfVKnots,SurfVMults,SurfWeights,UDegree,VDegree
 Approx_SweepApproximation outofline-throw 11 Standard_DomainError,StdFail_NotDone Average2dError,AverageErrorOnSurf,Curve2d,Curves2dShape,Max2dError,MaxErrorOnSurf,SurfShape,Surface,TolCurveOnSurf
@@ -323,8 +315,9 @@ Aspect_XRAction inherited-live 1 Standard_ProgramError Standard_Transient
 Aspect_XRActionSet inherited-live 1 Standard_ProgramError Standard_Transient
 Aspect_XRSession outofline-throw 1 Standard_ProgramError TriggerHapticVibrationAction
 BOPAlgo_BOP_Test outofline-delegated 4 Standard_ConstructionError,Standard_OutOfRange gp_Dir
+BOPAlgo_MakerVolume_Test outofline-delegated 1 Standard_ConstructionError gp_Cone
 BOPAlgo_PaveFiller_6 outofline-delegated 2 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec
-BOPAlgo_PaveFiller_Test outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_Dir
+BOPAlgo_PaveFiller_Test outofline-delegated 3 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 BOPAlgo_Tools outofline-delegated 4 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
 BOPAlgo_WireSplitter_1 outofline-delegated 2 Standard_ConstructionError gp_Vec2d
 BOPDS_CommonBlock inherited-live 1 Standard_ProgramError Standard_Transient
@@ -465,7 +458,7 @@ BRepFill_OffsetAncestors outofline-raise 1 StdFail_NotDone Ancestor
 BRepFill_OffsetWire outofline-throw 3 Standard_ConstructionError,Standard_Failure FixHoles,Perform
 BRepFill_OffsetWire outofline-delegated 4 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir2d,gp_Vec
 BRepFill_Pipe outofline-throw 8 Standard_DomainError Edge,Face,FindEdge,FindVertex,MakeShape,Section
-BRepFill_PipeShell outofline-throw 8 Standard_ConstructionError,Standard_Failure,StdFail_NotDone <file-scope>,MakeSolid,Prepare,Set
+BRepFill_PipeShell outofline-throw 9 Standard_ConstructionError,Standard_Failure,StdFail_NotDone <file-scope>,MakeSolid,Prepare,Set
 BRepFill_Section outofline-throw 1 Standard_Failure BRepFill_Section
 BRepFill_SectionLaw inherited-live 1 Standard_ProgramError Standard_Transient
 BRepFill_SectionPlacement outofline-throw 1 Standard_ConstructionError Perform
@@ -543,6 +536,7 @@ BRepGraph_Validate_Test outofline-delegated 39 Standard_ConstructionError,Standa
 BRepGraph_Views_Test outofline-delegated 1 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec
 BRepIntCurveSurface_Inter outofline-throw 7 StdFail_NotDone Pnt,Point,State,Transition,U,V,W
 BRepLProp outofline-throw 1 Standard_Failure Continuity
+BRepLib_CheckCurveOnSurface_Test outofline-delegated 4 Standard_ConstructionError,Standard_OutOfRange gp_Dir,gp_Dir2d
 BRepLib_Command outofline-throw 1 StdFail_NotDone Check
 BRepLib_FuseEdges outofline-raise 3 Standard_NullObject BRepLib_FuseEdges,NbVertices,Shape
 BRepLib_FuseEdges outofline-throw 6 Standard_ConstructionError <file-scope>,BuildListResultEdges
@@ -570,6 +564,7 @@ BRepMeshData_PCurve inherited-live 1 Standard_ProgramError Standard_Transient
 BRepMeshData_Wire inherited-live 1 Standard_ProgramError Standard_Transient
 BRepMesh_BaseMeshAlgo outofline-delegated 1 Standard_OutOfRange Poly_Triangle
 BRepMesh_BaseMeshAlgo inherited-live 1 Standard_ProgramError Standard_Transient
+BRepMesh_CircleTool_Test outofline-delegated 21 Standard_ConstructionError,Standard_OutOfRange gp_XY
 BRepMesh_Classifier inherited-live 1 Standard_ProgramError Standard_Transient
 BRepMesh_ConstrainedBaseMeshAlgo inherited-live 1 Standard_ProgramError Standard_Transient
 BRepMesh_Context inherited-live 1 Standard_ProgramError Standard_Transient
@@ -626,11 +621,12 @@ BRepOffsetAPI_MiddlePath inherited-live 1 StdFail_NotDone BRepBuilderAPI_Command
 BRepOffsetAPI_NormalProjection inherited-live 1 StdFail_NotDone BRepBuilderAPI_Command
 BRepOffsetAPI_ThruSections outofline-throw 2 StdFail_NotDone <file-scope>
 BRepOffsetAPI_ThruSections outofline-delegated 8 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d
+BRepOffsetAPI_ThruSections_Test outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 BRepOffset_Analyse outofline-delegated 1 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec
 BRepOffset_Inter2d outofline-delegated 6 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir2d,gp_Vec,gp_Vec2d
 BRepOffset_MakeOffset outofline-throw 1 Standard_NotImplemented SelfInter
 BRepOffset_MakeOffset outofline-delegated 12 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Dir2d,gp_Vec
-BRepOffset_MakeOffset_Test outofline-delegated 11 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
+BRepOffset_MakeOffset_Test outofline-delegated 12 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
 BRepOffset_MakeSimpleOffset outofline-delegated 4 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d
 BRepOffset_Offset outofline-throw 2 Standard_ConstructionError Init
 BRepOffset_Offset outofline-delegated 22 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir2d,gp_Vec,gp_Vec2d
@@ -702,6 +698,8 @@ BRepToIGES_BRWire outofline-delegated 6 Standard_ConstructionError,Standard_OutO
 BRepTools outofline-throw 1 Standard_ConstructionError OriEdgeInFace
 BRepTools_CopyModification inherited-live 1 Standard_ProgramError Standard_Transient
 BRepTools_GTrsfModification outofline-throw 2 Standard_NoSuchObject NewCurve,NewSurface
+BRepTools_GTrsfModification outofline-delegated 5 Standard_ConstructionError,Standard_OutOfRange gp_Dir,gp_GTrsf,gp_Mat
+BRepTools_GTrsfModification_Test outofline-delegated 36 Standard_ConstructionError,Standard_NullObject,Standard_OutOfRange,gp_VectorWithNullMagnitude Poly_PolygonOnTriangulation,Poly_Triangle,gp_Dir,gp_Dir2d,gp_GTrsf,gp_Mat,gp_Vec,gp_XYZ
 BRepTools_History inherited-live 1 Standard_ProgramError Standard_Transient
 BRepTools_Modification inherited-live 1 Standard_ProgramError Standard_Transient
 BRepTools_Modifier inline-throw 1 Standard_NoSuchObject ModifiedShape
@@ -713,6 +711,7 @@ BRepTools_ShapeSet outofline-throw 2 Standard_Failure ReadGeometry
 BRepTools_ShapeSet outofline-delegated 3 Standard_NullObject,Standard_OutOfRange Poly_PolygonOnTriangulation,Poly_Triangle
 BRepTools_Substitution outofline-raise 2 Standard_ConstructionError,Standard_NoSuchObject Copy,Substitute
 BRepTools_TrsfModification outofline-throw 1 Standard_DomainError NewCurve2d
+BRepTools_TrsfModification_Test outofline-delegated 6 Standard_ConstructionError,Standard_NullObject,Standard_OutOfRange,gp_VectorWithNullMagnitude Poly_PolygonOnTriangulation,Poly_Triangle,gp_Dir,gp_Dir2d,gp_Vec
 BRepTools_WireExplorer outofline-throw 1 Standard_NoSuchObject Orientation
 BRepTopAdaptor_FClass2d outofline-throw 1 Standard_ConstructionError Copy
 BRepTopAdaptor_FClass2d outofline-delegated 4 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d,gp_Vec2d
@@ -855,11 +854,13 @@ BinTools_ShapeSet outofline-throw 23 Standard_Failure Read,ReadPolygon3D,ReadPol
 BinTools_ShapeSet outofline-delegated 2 Standard_NullObject,Standard_OutOfRange Poly_PolygonOnTriangulation,Poly_Triangle
 BinTools_ShapeWriter outofline-throw 2 Standard_Failure WriteLocation,WriteShape
 BinTools_SurfaceSet outofline-throw 7 Standard_Failure <file-scope>,Read,ReadSurface,WriteSurface
+BinTools_Test outofline-delegated 4 Standard_ConstructionError,Standard_OutOfRange gp_Dir,gp_Dir2d
 BinXCAFDrivers outofline-throw 1 Standard_Failure Factory
 BinXCAFDrivers_DocumentRetrievalDriver inherited-live 1 Standard_NotImplemented BinDrivers_DocumentRetrievalDriver
 BinXCAFDrivers_DocumentStorageDriver inherited-live 1 Standard_NotImplemented BinDrivers_DocumentStorageDriver
 Bisector_BisecAna outofline-throw 3 Standard_OutOfRange,StdFail_NotDone IntervalFirst,IntervalLast,Perform
 Bisector_BisecAna outofline-delegated 8 Standard_ConstructionError,Standard_OutOfRange,Standard_OutOfRange_Always Standard_OutOfRange,gp_Dir2d,gp_Vec2d
+Bisector_BisecAna_Test outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d
 Bisector_BisecCC outofline-throw 7 Geom2d_UndefinedDerivative,Standard_NotImplemented,Standard_OutOfRange Curve,EvalDN,IsConvex,Reverse,Sign
 Bisector_BisecCC outofline-delegated 7 Standard_ConstructionError,Standard_OutOfRange_Always Standard_OutOfRange,gp_Vec2d
 Bisector_BisecPC outofline-throw 4 Geom2d_UndefinedDerivative,Standard_NotImplemented CuspFilter,EvalDN,Reverse
@@ -940,9 +941,10 @@ ChFi2d_FilletAlgo outofline-delegated 8 Standard_ConstructionError,Standard_OutO
 ChFi3d_Builder outofline-throw 1 Standard_Failure Compute
 ChFi3d_Builder_0 outofline-throw 21 Standard_ConstructionError,Standard_Failure,Standard_NotImplemented,Standard_NullObject,StdFail_NotDone <file-scope>
 ChFi3d_Builder_0 outofline-delegated 10 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec,gp_Vec2d
+ChFi3d_Builder_0_Test outofline-delegated 2 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 ChFi3d_Builder_1 outofline-raise 2 Standard_NoSuchObject BadShape,Shape
 ChFi3d_Builder_1 outofline-throw 2 Standard_ConstructionError FaceTangency
-ChFi3d_Builder_2 outofline-throw 12 Standard_Failure <file-scope>,PerformSetOfKGen,PerformSetOfSurfOnElSpine,StartSol
+ChFi3d_Builder_2 outofline-throw 13 Standard_Failure <file-scope>,PerformSetOfKGen,PerformSetOfSurfOnElSpine,StartSol
 ChFi3d_Builder_6 outofline-delegated 4 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d,gp_Vec2d
 ChFi3d_Builder_C1 outofline-throw 40 Standard_ConstructionError,Standard_Failure,Standard_NotImplemented,Standard_NullObject,StdFail_NotDone <file-scope>,IntersectMoreCorner,PerformIntersectionAtEnd,PerformOneCorner
 ChFi3d_Builder_CnCrn outofline-throw 10 Standard_ConstructionError <file-scope>,PerformMoreThreeCorner
@@ -1254,8 +1256,9 @@ Extrema_ExtCC outofline-throw 4 Standard_OutOfRange,StdFail_NotDone IsParallel,N
 Extrema_ExtCC outofline-delegated 2 Standard_OutOfRange_Always Standard_OutOfRange
 Extrema_ExtCC2d outofline-throw 6 Standard_OutOfRange,StdFail_NotDone IsParallel,NbExt,Points,SquareDistance
 Extrema_ExtCC2d outofline-delegated 2 Standard_OutOfRange_Always Standard_OutOfRange
-Extrema_ExtCS outofline-throw 4 Standard_OutOfRange,StdFail_NotDone IsParallel,NbExt,Points,SquareDistance
+Extrema_ExtCS outofline-throw 5 Standard_OutOfRange,StdFail_NotDone IsParallel,NbExt,Points,SquareDistance
 Extrema_ExtCS outofline-delegated 2 Standard_OutOfRange_Always Standard_OutOfRange
+Extrema_ExtCS_Test outofline-delegated 4 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 Extrema_ExtElC outofline-throw 7 Standard_OutOfRange,StdFail_NotDone <file-scope>,IsParallel,NbExt,Points,SquareDistance
 Extrema_ExtElC outofline-delegated 8 Standard_ConstructionError,Standard_OutOfRange,Standard_OutOfRange_Always,gp_VectorWithNullMagnitude Standard_OutOfRange,gp_Dir2d,gp_Vec
 Extrema_ExtElC2d outofline-throw 4 Standard_OutOfRange,StdFail_NotDone IsParallel,NbExt,Points,SquareDistance
@@ -1277,8 +1280,9 @@ Extrema_ExtPRevS outofline-throw 3 Standard_OutOfRange,StdFail_NotDone NbExt,Poi
 Extrema_ExtPRevS outofline-delegated 8 Standard_ConstructionError,Standard_OutOfRange_Always,gp_VectorWithNullMagnitude Standard_OutOfRange,gp_Vec
 Extrema_ExtPS outofline-throw 3 Standard_OutOfRange,StdFail_NotDone NbExt,Point,SquareDistance
 Extrema_ExtPS outofline-delegated 2 Standard_OutOfRange_Always Standard_OutOfRange
-Extrema_ExtSS outofline-throw 4 Standard_OutOfRange,StdFail_NotDone IsParallel,NbExt,Points,SquareDistance
+Extrema_ExtSS outofline-throw 5 Standard_OutOfRange,StdFail_NotDone IsParallel,NbExt,Points,SquareDistance
 Extrema_ExtSS outofline-delegated 2 Standard_OutOfRange_Always Standard_OutOfRange
+Extrema_ExtSS_Test outofline-delegated 4 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 Extrema_FuncExtCS outofline-throw 6 Standard_TypeMismatch GetStateNumber,PointOnCurve,PointOnSurface,SquareDistance,Value,Values
 Extrema_FuncExtSS outofline-throw 6 Standard_TypeMismatch GetStateNumber,PointOnS1,PointOnS2,SquareDistance,Value,Values
 Extrema_FuncPSNorm outofline-throw 5 Standard_TypeMismatch GetStateNumber,Point,SquareDistance,Value,Values
@@ -1346,6 +1350,7 @@ GCPnts_QuasiUniformDeflection outofline-raise 1 StdFail_NotDone Value
 GCPnts_QuasiUniformDeflection outofline-delegated 1 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec
 GCPnts_QuasiUniformDeflection inline-dead-at-depth 15 StdFail_NotDone +3-more,BRepFeat,BRepLib,BRepOffset,BRepTopAdaptor,GeomFill,IntTools,StdPrs,VrmlConverter
 GCPnts_TangentialDeflection outofline-raise 2 Standard_ConstructionError ArcAngularStep,initialize
+GCPnts_TangentialDeflection_Test outofline-delegated 1 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec
 GCPnts_UniformAbscissa inline-raise 3 StdFail_NotDone <file-scope>
 GCPnts_UniformAbscissa inline-dead-at-depth 8 StdFail_NotDone BRepBuilderAPI,BRepFill,GCPnts,GeometryTest,PrsDim,QABugs
 GCPnts_UniformDeflection inline-raise 3 StdFail_NotDone <file-scope>
@@ -1510,6 +1515,7 @@ Geom2dAdaptor_Curve outofline-raise 6 Standard_NoSuchObject Circle,Ellipse,Hyper
 Geom2dAdaptor_Curve inline-throw 3 Standard_ConstructionError,Standard_NullObject <file-scope>
 Geom2dAdaptor_Curve outofline-throw 14 Geom2d_UndefinedDerivative,Geom2d_UndefinedValue,Standard_DomainError,Standard_NoSuchObject Continuity,Degree,EvalD0,EvalD1,EvalD2,EvalD3,EvalDN,Intervals,NbIntervals,NbKnots,NbPoles
 Geom2dAdaptor_Curve_Test outofline-delegated 2 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d
+Geom2dAdaptor_Test outofline-delegated 3 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d
 Geom2dConvert outofline-throw 14 Standard_ConstructionError,Standard_DomainError,Standard_Failure,Standard_OutOfRange <file-scope>,C0BSplineToC1BSplineCurve,ConcatC1,ConcatG1,CurveToBSplineCurve,SplitBSplineCurve
 Geom2dConvert outofline-delegated 1 Standard_OutOfRange_Always Standard_OutOfRange
 Geom2dConvert_ApproxArcsSegments outofline-delegated 7 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d,gp_Vec2d,gp_XY
@@ -1679,6 +1685,7 @@ GeomAdaptor_SurfaceOfLinearExtrusion outofline-delegated 3 Standard_Construction
 GeomAdaptor_SurfaceOfRevolution outofline-raise 6 Standard_NoSuchObject,Standard_OutOfRange Cone,Cylinder,Plane,Sphere,Torus,UTrim
 GeomAdaptor_SurfaceOfRevolution outofline-throw 6 Standard_ConstructionError,Standard_NoSuchObject BSpline,Bezier,IsURational,IsVRational,Load,NbVKnots
 GeomAdaptor_SurfaceOfRevolution outofline-delegated 11 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Cone,gp_Cylinder,gp_Dir,gp_Sphere,gp_Torus,gp_Vec
+GeomAdaptor_Test outofline-delegated 4 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 GeomAdaptor_TransformedCurve outofline-throw 1 Standard_NoSuchObject OffsetCurve
 GeomAdaptor_TransformedCurve_Test outofline-delegated 17 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
 GeomAdaptor_TransformedSurface inherited-live 1 Standard_NotImplemented Adaptor3d_Surface
@@ -1701,6 +1708,7 @@ GeomBndLib_SurfaceOfRevolution_Test outofline-delegated 1 Standard_ConstructionE
 GeomBndLib_Surface_Test outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 GeomConvert outofline-throw 13 Standard_ConstructionError,Standard_DomainError C0BSplineToC1BSplineCurve,ConcatC1,ConcatG1,CurveToBSplineCurve,SplitBSplineCurve
 GeomConvert_1 outofline-throw 7 Standard_DomainError SplitBSplineSurface,SurfaceToBSplineSurface
+GeomConvert_ApproxSurface_Test outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 GeomConvert_BSplineCurveKnotSplitting outofline-raise 1 Standard_RangeError SplitValue
 GeomConvert_BSplineCurveKnotSplitting outofline-throw 1 Standard_RangeError GeomConvert_BSplineCurveKnotSplitting
 GeomConvert_BSplineCurveToBezierCurve outofline-throw 2 Standard_DomainError,Standard_OutOfRange Arc,GeomConvert_BSplineCurveToBezierCurve
@@ -1764,6 +1772,7 @@ GeomFill_ConstantBiNormal inherited-live 1 Standard_NotImplemented GeomFill_Trih
 GeomFill_ConstrainedFilling outofline-throw 1 Standard_Failure ReBuild
 GeomFill_Coons outofline-raise 3 Standard_DomainError Init
 GeomFill_CoonsAlgPatch inherited-live 1 Standard_ProgramError Standard_Transient
+GeomFill_CoonsAlgPatch_Test outofline-delegated 2 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec
 GeomFill_CorrectedFrenet outofline-delegated 2 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec
 GeomFill_CorrectedFrenet inherited-live 1 Standard_NotImplemented GeomFill_TrihedronLaw
 GeomFill_CurveAndTrihedron inherited-live 1 Standard_NotImplemented GeomFill_LocationLaw
@@ -1917,6 +1926,7 @@ GeomToStep_MakeSweptSurface outofline-raise 1 StdFail_NotDone Value
 GeomToStep_MakeToroidalSurface outofline-raise 1 StdFail_NotDone Value
 GeomToStep_MakeVector outofline-raise 1 StdFail_NotDone Value
 GeomToStep_MakeVector outofline-delegated 4 Standard_ConstructionError,Standard_OutOfRange gp_Dir,gp_Dir2d
+GeomTools_Test outofline-delegated 2 Standard_ConstructionError,Standard_OutOfRange gp_Dir,gp_Dir2d
 GeomTools_UndefinedTypeHandler inherited-live 1 Standard_ProgramError Standard_Transient
 Geom_Axis1Placement inherited-live 1 Standard_ConstructionError Geom_Geometry
 Geom_Axis2Placement inherited-live 1 Standard_ConstructionError Geom_Geometry
@@ -1971,7 +1981,7 @@ Geom_Line_Test outofline-delegated 14 Standard_ConstructionError,Standard_OutOfR
 Geom_OffsetCurve outofline-raise 1 Standard_RangeError IsCN
 Geom_OffsetCurve outofline-throw 8 Geom_UndefinedDerivative,Geom_UndefinedValue,Standard_ConstructionError EvalD0,EvalD1,EvalD2,EvalD3,EvalDN,SetBasisCurve
 Geom_OffsetCurveUtils outofline-delegated 6 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec
-Geom_OffsetCurve_Test outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_Dir
+Geom_OffsetCurve_Test outofline-delegated 3 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 Geom_OffsetSurface outofline-raise 4 Standard_ConstructionError,Standard_RangeError IsCNu,IsCNv,UIso,VIso
 Geom_OffsetSurface outofline-throw 12 Geom_UndefinedDerivative,Geom_UndefinedValue,Standard_ConstructionError EvalD0,EvalD1,EvalD2,EvalD3,EvalDN,SetBasisSurface
 Geom_OffsetSurface_Test outofline-delegated 30 Standard_ConstructionError,Standard_OutOfRange gp_Dir
@@ -2121,7 +2131,7 @@ HLRAlgo_PolyInternalNode inherited-live 1 Standard_ProgramError Standard_Transie
 HLRAlgo_PolyShellData inherited-live 1 Standard_ProgramError Standard_Transient
 HLRAlgo_Projector inline-raise 1 Standard_NoSuchObject Focus
 HLRAlgo_Projector outofline-delegated 3 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
-HLRAlgo_Projector inline-dead-at-depth 17 Standard_NoSuchObject +2-more,DBRep,HLRAlgo,HLRAppli,HLRBRep,HLRTest,HLRTopoBRep,QABugs,StdPrs
+HLRAlgo_Projector inline-dead-at-depth 18 Standard_NoSuchObject +2-more,DBRep,HLRAlgo,HLRAppli,HLRBRep,HLRTest,HLRTopoBRep,QABugs,StdPrs
 HLRAlgo_WiresBlock inherited-live 1 Standard_ProgramError Standard_Transient
 HLRAppli_ReflectLines outofline-delegated 1 Standard_NoSuchObject HLRAlgo_Projector
 HLRBRep_Algo inherited-live 1 Standard_ProgramError Standard_Transient
@@ -2141,6 +2151,7 @@ HLRBRep_PolyAlgo outofline-raise 1 Standard_OutOfRange Remove
 HLRBRep_PolyAlgo outofline-delegated 21 Standard_ConstructionError,Standard_OutOfRange gp_XYZ
 HLRBRep_PolyAlgo inherited-live 1 Standard_ProgramError Standard_Transient
 HLRBRep_Surface outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_Dir
+HLRBRep_Surface_Test outofline-delegated 1 Standard_OutOfRange gp_Trsf
 HLRBRep_TheIntConicCurveOfCInter inherited-live 1 StdFail_NotDone IntRes2d_Intersection
 HLRBRep_TheIntPCurvePCurveOfCInter inherited-live 1 StdFail_NotDone IntRes2d_Intersection
 HLRBRep_TheInterferenceOfInterCSurf inherited-live 1 Standard_Failure Intf_Interference
@@ -2621,6 +2632,7 @@ IntAna_QuadQuadGeo outofline-throw 15 Standard_DomainError,Standard_OutOfRange,S
 IntAna_QuadQuadGeo outofline-delegated 43 Standard_ConstructionError,Standard_DomainError,Standard_OutOfRange,Standard_OutOfRange_Always,gp_VectorWithNullMagnitude Standard_OutOfRange,gp_Circ,gp_Dir,gp_Hypr,gp_Parab,gp_Vec
 IntCurveSurface_HInter inherited-live 1 StdFail_NotDone IntCurveSurface_Intersection
 IntCurveSurface_InterUtils outofline-delegated 15 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec,gp_Vec2d
+IntCurveSurface_InterUtils_Test outofline-delegated 17 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
 IntCurveSurface_Intersection outofline-throw 4 StdFail_NotDone NbPoints,NbSegments,Point,Segment
 IntCurveSurface_PolygonUtils outofline-delegated 4 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
 IntCurveSurface_TheInterferenceOfHInter inherited-live 1 Standard_Failure Intf_Interference
@@ -2890,9 +2902,9 @@ NCollection_AliasedArray inline-throw 8 Standard_DimensionMismatch,Standard_OutO
 NCollection_AliasedArray inline-dead-at-depth 2 Standard_OutOfRange,Standard_TypeMismatch Poly
 NCollection_AlignedAllocator inherited-live 1 Standard_ProgramError Standard_Transient
 NCollection_Array1 inline-raise 9 Standard_DimensionMismatch,Standard_OutOfRange,Standard_RangeError <file-scope>
-NCollection_Array1 inline-dead-at-depth 1151 Standard_DimensionMismatch,Standard_OutOfRange,Standard_RangeError +223-more,BRepFill,Convert,Expr,GccAna,GeomFill,GeomGridEval,RWStepAP214,RWStepVisual
+NCollection_Array1 inline-dead-at-depth 1164 Standard_DimensionMismatch,Standard_OutOfRange,Standard_RangeError +223-more,BRepFill,Convert,Expr,GccAna,GeomFill,GeomGridEval,RWStepAP214,RWStepVisual
 NCollection_Array2 inline-raise 6 Standard_DimensionMismatch,Standard_OutOfRange,Standard_RangeError <file-scope>
-NCollection_Array2 inline-dead-at-depth 198 Standard_DimensionMismatch,Standard_OutOfRange,Standard_RangeError +66-more,BSplSLib,Convert,FEmTool,Geom,GeomConvert,GeomFill,GeomGridEval,RWStepGeom
+NCollection_Array2 inline-dead-at-depth 203 Standard_DimensionMismatch,Standard_OutOfRange,Standard_RangeError +68-more,BSplSLib,Convert,FEmTool,Geom,GeomConvert,GeomFill,GeomGridEval,RWStepGeom
 NCollection_BaseAllocator inherited-live 1 Standard_ProgramError Standard_Transient
 NCollection_BaseList outofline-raise 6 Standard_NoSuchObject PInsertAfter,PInsertBefore,PRemove,PRemoveFirst
 NCollection_BaseMap inline-raise 1 Standard_OutOfRange <file-scope>
@@ -2908,12 +2920,12 @@ NCollection_DoubleMap inline-raise 4 Standard_NoSuchObject,Standard_OutOfRange <
 NCollection_DoubleMap inline-throw 4 Standard_MultiplyDefined,Standard_NoSuchObject <file-scope>
 NCollection_DoubleMap inline-dead-at-depth 15 Standard_NoSuchObject,Standard_OutOfRange BinMFunction,IVtkDraw,NCollection,QABugs,TDF,TFunction,ViewerTest
 NCollection_DynamicArray inline-raise 11 Standard_OutOfRange <file-scope>
-NCollection_DynamicArray inline-dead-at-depth 136 Standard_OutOfRange +50-more,AIS,BOPAlgo,BRepExtrema,BRepGraph,BRepGraphInc,BRepOffset,OpenGl,SelectMgr
+NCollection_DynamicArray inline-dead-at-depth 137 Standard_OutOfRange +50-more,AIS,BOPAlgo,BRepExtrema,BRepGraph,BRepMesh,BRepOffset,OpenGl,SelectMgr
 NCollection_FlatDataMap inline-raise 3 Standard_OutOfRange <file-scope>
 NCollection_FlatDataMap inline-throw 2 Standard_NoSuchObject <file-scope>
 NCollection_FlatDataMap inline-dead-at-depth 8 Standard_OutOfRange BRepGraph,NCollection
 NCollection_FlatMap inline-raise 1 Standard_OutOfRange <file-scope>
-NCollection_FlatMap inline-dead-at-depth 14 Standard_OutOfRange BRepGraph,BRepGraphInc,NCollection
+NCollection_FlatMap inline-dead-at-depth 15 Standard_OutOfRange BRepGraph,BRepGraphInc,NCollection,StepShape
 NCollection_HArray1 inherited-live 1 Standard_DimensionMismatch,Standard_OutOfRange,Standard_RangeError NCollection_Array1
 NCollection_HArray2 inherited-live 1 Standard_DimensionMismatch,Standard_OutOfRange,Standard_RangeError NCollection_Array2
 NCollection_HSequence inherited-live 1 Standard_NoSuchObject,Standard_OutOfRange NCollection_Sequence
@@ -2924,13 +2936,13 @@ NCollection_IndexedDataMap inline-throw 3 Standard_DomainError,Standard_NoSuchOb
 NCollection_IndexedDataMap inline-dead-at-depth 190 Standard_NoSuchObject,Standard_OutOfRange +67-more,BOPAlgo,BRepFill,BRepOffset,LocOpe,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepTool,Transfer
 NCollection_IndexedMap inline-raise 10 Standard_NoSuchObject,Standard_OutOfRange <file-scope>
 NCollection_IndexedMap inline-throw 1 Standard_DomainError <file-scope>
-NCollection_IndexedMap inline-dead-at-depth 251 Standard_NoSuchObject,Standard_OutOfRange +70-more,BOPAlgo,BRepOffset,BinMDataStd,BinMDataXtd,BinMXCAFDoc,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepTool
+NCollection_IndexedMap inline-dead-at-depth 254 Standard_NoSuchObject,Standard_OutOfRange +70-more,BOPAlgo,BRepOffset,BinMDataStd,BinMDataXtd,BinMXCAFDoc,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepTool
 NCollection_LinearVector inline-raise 13 Standard_OutOfMemory,Standard_OutOfRange <file-scope>
-NCollection_LinearVector inline-dead-at-depth 94 Standard_OutOfMemory,Standard_OutOfRange +18-more,BOPDS,BRepGraph,BRepGraphInc,BRepMesh,GeomFill,OpenGl,QABugs,RWGltf
+NCollection_LinearVector inline-dead-at-depth 98 Standard_OutOfMemory,Standard_OutOfRange +22-more,BOPDS,BRepGraph,BRepGraphInc,BRepMesh,GeomFill,OpenGl,QABugs,RWGltf
 NCollection_List inline-raise 4 Standard_NoSuchObject <file-scope>
-NCollection_List inline-dead-at-depth 623 Standard_NoSuchObject +133-more,BOPAlgo,BOPTest,BRepOffsetAPI,LocOpe,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepDS,TopOpeBRepTool
+NCollection_List inline-dead-at-depth 626 Standard_NoSuchObject +133-more,BOPAlgo,BOPTest,BRepOffsetAPI,LocOpe,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepDS,TopOpeBRepTool
 NCollection_Map inline-raise 3 Standard_NoSuchObject,Standard_OutOfRange <file-scope>
-NCollection_Map inline-dead-at-depth 307 Standard_NoSuchObject,Standard_OutOfRange +77-more,BOPAlgo,BRepGraph,DNaming,LocOpe,StepTidy,TNaming,TopOpeBRepBuild,TopOpeBRepTool
+NCollection_Map inline-dead-at-depth 308 Standard_NoSuchObject,Standard_OutOfRange +77-more,BOPAlgo,BRepGraph,DNaming,LocOpe,StepTidy,TNaming,TopOpeBRepBuild,TopOpeBRepTool
 NCollection_Mat3 inline-throw 1 Standard_ConstructionError <file-scope>
 NCollection_Mat4 inline-throw 1 Standard_ConstructionError <file-scope>
 NCollection_OrderedDataMap inline-raise 4 Standard_NoSuchObject,Standard_OutOfRange <file-scope>
@@ -2942,7 +2954,7 @@ NCollection_OrderedMap inline-dead-at-depth 1 Standard_NoSuchObject,Standard_Out
 NCollection_PackedMap inline-raise 1 Standard_NoSuchObject <file-scope>
 NCollection_PackedMap inline-dead-at-depth 1 Standard_NoSuchObject NCollection
 NCollection_Sequence inline-raise 30 Standard_NoSuchObject,Standard_OutOfRange <file-scope>
-NCollection_Sequence inline-dead-at-depth 498 Standard_NoSuchObject,Standard_OutOfRange +141-more,AIS,BRepFill,ChFi3d,GeomFill,IFSelect,IntPatch,ShapeUpgrade,XCAFDoc
+NCollection_Sequence inline-dead-at-depth 499 Standard_NoSuchObject,Standard_OutOfRange +141-more,AIS,BRepFill,ChFi3d,GeomFill,IFSelect,IntPatch,ShapeUpgrade,XCAFDoc
 NCollection_Shared inherited-live 1 Standard_ProgramError Standard_Transient
 NCollection_SparseArray inherited-live 1 Standard_OutOfRange NCollection_SparseArrayBase
 NCollection_SparseArrayBase inline-raise 1 Standard_OutOfRange <file-scope>
@@ -3095,9 +3107,9 @@ Poly_Polygon3D inherited-live 1 Standard_ProgramError Standard_Transient
 Poly_PolygonOnTriangulation inline-raise 3 Standard_NullObject <file-scope>
 Poly_PolygonOnTriangulation outofline-throw 1 Standard_OutOfRange SetParameters
 Poly_PolygonOnTriangulation outofline-delegated 1 Standard_OutOfRange_Always Standard_OutOfRange
-Poly_PolygonOnTriangulation inline-dead-at-depth 57 Standard_NullObject +13-more,BRep,BRepGraph,BRepGraphInc,BRepMesh,BRepTools,BinTools,MeshTest,StdPrs
+Poly_PolygonOnTriangulation inline-dead-at-depth 59 Standard_NullObject +13-more,BRep,BRepGraph,BRepGraphInc,BRepMesh,BRepTools,BinTools,MeshTest,StdPrs
 Poly_Triangle inline-raise 3 Standard_OutOfRange <file-scope>
-Poly_Triangle inline-dead-at-depth 64 Standard_OutOfRange +32-more,AIS,BRepGraph,BRepMesh,BRepTools,BinTools,DESTL,Poly,Prs3d
+Poly_Triangle inline-dead-at-depth 66 Standard_OutOfRange +32-more,AIS,BRepGraph,BRepMesh,BRepTools,BinTools,DESTL,Poly,Prs3d
 Poly_Triangulation outofline-throw 1 Standard_DomainError SetNormals
 Poly_TriangulationParameters inherited-live 1 Standard_ProgramError Standard_Transient
 Polygon3D inherited-live 1 Standard_ProgramError Standard_Transient
@@ -3109,7 +3121,8 @@ Position inherited-live 1 Standard_ProgramError Standard_Transient
 ProjLib outofline-throw 1 Standard_NotImplemented MakePCurveOfType
 ProjLib_CompProjectedCurve outofline-raise 2 Standard_TypeMismatch GetResult2dP,GetResult3dP
 ProjLib_CompProjectedCurve outofline-throw 12 Standard_ConstructionError,Standard_DomainError,Standard_NoSuchObject,Standard_NotImplemented,Standard_OutOfRange <file-scope>,Bounds,BuildIntervals,D0,DN,IsSinglePnt,IsUIso,IsVIso,MaxDistance
-ProjLib_CompProjectedCurve outofline-delegated 38 Standard_ConstructionError,Standard_OutOfRange,Standard_OutOfRange_Always Standard_OutOfRange,gp_Dir2d,gp_Vec2d,gp_XY
+ProjLib_CompProjectedCurve outofline-delegated 20 Standard_ConstructionError,Standard_OutOfRange,Standard_OutOfRange_Always Standard_OutOfRange,gp_Dir2d,gp_Vec2d,gp_XY
+ProjLib_CompProjectedCurve_Test outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 ProjLib_ComputeApprox outofline-throw 2 Standard_NoSuchObject <file-scope>,Perform
 ProjLib_ComputeApprox outofline-delegated 3 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d,gp_Vec2d
 ProjLib_ComputeApproxOnPolarSurface outofline-raise 1 Standard_NoSuchObject Curve2d
@@ -3131,6 +3144,7 @@ ProjLib_ProjectOnSurface outofline-raise 1 Standard_NoSuchObject BSpline
 ProjLib_ProjectedCurve outofline-raise 4 Standard_NoSuchObject Degree,IsRational,NbKnots,NbPoles
 ProjLib_ProjectedCurve outofline-throw 14 Standard_NoSuchObject,Standard_NotImplemented <file-scope>,Continuity,D0,D1,D2,D3,DN,Intervals,IsClosed,NbIntervals,Period,Resolution,Trim,Value
 ProjLib_ProjectedCurve outofline-delegated 1 Standard_ConstructionError gp_Vec2d
+ProjLib_ProjectionDerivative_Test outofline-delegated 4 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 ProjLib_Projector outofline-throw 5 Standard_NoSuchObject Circle,Ellipse,Hyperbola,Line,Parabola
 ProjLib_Projector outofline-delegated 2 Standard_ConstructionError gp_Vec2d
 ProjLib_Sphere outofline-raise 1 StdFail_NotDone SetInBounds
@@ -3392,6 +3406,7 @@ ShapeUpgrade_ConvertSurfaceToBezierBasis inherited-live 1 Standard_ProgramError 
 ShapeUpgrade_EdgeDivide inherited-live 1 Standard_ProgramError Standard_Transient
 ShapeUpgrade_FaceDivide inherited-live 1 Standard_ProgramError Standard_Transient
 ShapeUpgrade_FaceDivideArea inherited-live 1 Standard_ProgramError Standard_Transient
+ShapeUpgrade_FaceDivide_Test outofline-delegated 2 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
 ShapeUpgrade_FixSmallBezierCurves inherited-live 1 Standard_ProgramError Standard_Transient
 ShapeUpgrade_FixSmallCurves inherited-live 1 Standard_ProgramError Standard_Transient
 ShapeUpgrade_RemoveInternalWires inherited-live 1 Standard_ProgramError Standard_Transient
@@ -3439,7 +3454,7 @@ Standard_NumericError inline-throw 1 Standard_NumericError <file-scope>
 Standard_OutOfMemory inline-throw 1 Standard_OutOfMemory <file-scope>
 Standard_OutOfRange inline-raise 1 Standard_OutOfRange_Always <file-scope>
 Standard_OutOfRange inline-throw 2 Standard_OutOfRange <file-scope>
-Standard_OutOfRange inline-dead-at-depth 255 Standard_OutOfRange_Always +66-more,AppDef,BRepApprox,Expr,Extrema,GccAna,Geom2dGcc,GeomInt,gp
+Standard_OutOfRange inline-dead-at-depth 257 Standard_OutOfRange_Always +66-more,AppDef,BRepApprox,Expr,Extrema,GccAna,Geom2dGcc,GeomInt,gp
 Standard_Overflow inline-throw 1 Standard_Overflow <file-scope>
 Standard_Persistent inherited-live 1 Standard_ProgramError Standard_Transient
 Standard_ProgramError inline-throw 1 Standard_ProgramError <file-scope>
@@ -4270,8 +4285,8 @@ StepToTopoDS_MakeTransformed outofline-delegated 1 Standard_OutOfRange gp_Trsf
 StepToTopoDS_TranslateEdge outofline-raise 1 StdFail_NotDone Value
 StepToTopoDS_TranslateEdgeLoop outofline-raise 1 StdFail_NotDone Value
 StepToTopoDS_TranslateFace outofline-raise 1 StdFail_NotDone Value
-StepToTopoDS_TranslateFace outofline-delegated 4 Standard_OutOfRange Poly_Triangle
-StepToTopoDS_TranslateFace_Test outofline-delegated 41 Standard_ConstructionError,Standard_OutOfRange gp_XYZ
+StepToTopoDS_TranslateFace outofline-delegated 4 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude Poly_Triangle,gp_Vec
+StepToTopoDS_TranslateFace_Test outofline-delegated 88 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Vec,gp_XYZ
 StepToTopoDS_TranslatePolyLoop outofline-raise 1 StdFail_NotDone Value
 StepToTopoDS_TranslatePolyLoop outofline-delegated 6 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Dir2d,gp_Vec,gp_Vec2d
 StepToTopoDS_TranslateShell outofline-raise 1 StdFail_NotDone Value
@@ -4694,7 +4709,7 @@ TopTools_LocationSet outofline-throw 2 Standard_Failure Read
 TopTools_ShapeSet outofline-throw 4 Standard_Failure <file-scope>,Read
 TopTrans_SurfaceTransition_Test outofline-delegated 12 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 TopoDS inline-raise 16 Standard_TypeMismatch <file-scope>
-TopoDS inline-dead-at-depth 600 Standard_TypeMismatch +97-more,BRepFill,LocOpe,PrsDim,ShapeFix,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepDS,TopOpeBRepTool
+TopoDS inline-dead-at-depth 603 Standard_TypeMismatch +97-more,BRepFill,LocOpe,PrsDim,ShapeFix,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepDS,TopOpeBRepTool
 TopoDSToStep_Builder outofline-raise 2 StdFail_NotDone TessellatedValue,Value
 TopoDSToStep_MakeBrepWithVoids outofline-raise 2 StdFail_NotDone TessellatedValue,Value
 TopoDSToStep_MakeFacetedBrep outofline-raise 2 StdFail_NotDone TessellatedValue,Value
@@ -4885,6 +4900,7 @@ XCAFDoc_ClippingPlaneTool inherited-live 1 Standard_DomainError,Standard_Immutab
 XCAFDoc_Color inherited-live 1 Standard_DomainError,Standard_ImmutableObject TDF_Attribute
 XCAFDoc_ColorTool inherited-live 1 Standard_DomainError,Standard_ImmutableObject TDF_Attribute
 XCAFDoc_Datum inherited-live 1 Standard_DomainError,Standard_ImmutableObject TDF_Attribute
+XCAFDoc_Datum_Test outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 XCAFDoc_DimTol inherited-live 1 Standard_DomainError,Standard_ImmutableObject TDF_Attribute
 XCAFDoc_DimTolTool inherited-live 1 Standard_DomainError,Standard_ImmutableObject TDF_Attribute
 XCAFDoc_Dimension outofline-delegated 4 Standard_ConstructionError,Standard_OutOfRange gp_Dir
@@ -5052,36 +5068,36 @@ gce_MakeTranslation2d outofline-delegated 1 Standard_ConstructionError gp_Vec2d
 gp_Ax2 outofline-delegated 3 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 gp_Ax3 outofline-delegated 3 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 gp_Circ inline-raise 2 Standard_ConstructionError <file-scope>
-gp_Circ inline-dead-at-depth 214 Standard_ConstructionError +68-more,ChFiKPart,DrawDim,DsgPrs,ExtremaPC,Geom,GeomBndLib,ProjLib,PrsDim
+gp_Circ inline-dead-at-depth 215 Standard_ConstructionError +68-more,ChFiKPart,DrawDim,DsgPrs,ExtremaPC,Geom,GeomBndLib,ProjLib,PrsDim
 gp_Circ2d inline-raise 3 Standard_ConstructionError <file-scope>
 gp_Circ2d inline-dead-at-depth 159 Standard_ConstructionError +41-more,Adaptor2d,ChFiKPart,GccAna,Geom2d,Geom2dGcc,IntAna2d,IntCurve,ProjLib
 gp_Circ_Test outofline-delegated 9 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 gp_Cone inline-raise 3 Standard_ConstructionError <file-scope>,SetSemiAngle,gp_Cone
-gp_Cone inline-dead-at-depth 86 Standard_ConstructionError +39-more,Adaptor3d,BRepOffset,ChFiKPart,Extrema,GeomAdaptor,IntAna,IntPatch,ProjLib
+gp_Cone inline-dead-at-depth 87 Standard_ConstructionError +40-more,Adaptor3d,BRepOffset,ChFiKPart,Extrema,GeomAdaptor,IntAna,IntPatch,ProjLib
 gp_Cylinder inline-raise 2 Standard_ConstructionError <file-scope>
 gp_Cylinder inline-dead-at-depth 85 Standard_ConstructionError +39-more,Adaptor3d,BOPTools,ChFiKPart,Extrema,GeomAdaptor,IntAna,IntTools,ProjLib
 gp_Dir inline-raise 5 Standard_ConstructionError,Standard_OutOfRange Cross,CrossCross,SetCoord,gp_Dir
-gp_Dir inline-dead-at-depth 602 Standard_ConstructionError,Standard_OutOfRange +144-more,AIS,DsgPrs,Geom,GeomFill,GeomGridEval,IGESSolid,PrsDim,gp
+gp_Dir inline-dead-at-depth 619 Standard_ConstructionError,Standard_OutOfRange +144-more,AIS,DsgPrs,Geom,GeomFill,GeomGridEval,IGESSolid,PrsDim,gp
 gp_Dir2d inline-raise 3 Standard_ConstructionError,Standard_OutOfRange SetCoord,gp_Dir2d
-gp_Dir2d inline-dead-at-depth 313 Standard_ConstructionError,Standard_OutOfRange +81-more,ChFiKPart,Convert,GccAna,Geom2d,Geom2dGcc,ProjLib,TopOpeBRepTool,gp
+gp_Dir2d inline-dead-at-depth 320 Standard_ConstructionError,Standard_OutOfRange +82-more,ChFiKPart,Convert,GccAna,Geom2d,Geom2dGcc,ProjLib,TopOpeBRepTool,gp
 gp_Dir2d_Test outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d
 gp_Dir_Test outofline-delegated 11 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 gp_Elips inline-raise 5 Standard_ConstructionError <file-scope>,Directrix1,Directrix2
-gp_Elips inline-dead-at-depth 85 Standard_ConstructionError +41-more,Adaptor3d,BRepLib,BiTgte,BndLib,DsgPrs,ExtremaPC,ProjLib,PrsDim
+gp_Elips inline-dead-at-depth 86 Standard_ConstructionError +41-more,Adaptor3d,BRepLib,BiTgte,BndLib,DsgPrs,ExtremaPC,ProjLib,PrsDim
 gp_Elips2d inline-raise 6 Standard_ConstructionError <file-scope>,Directrix1,Directrix2
 gp_Elips2d inline-dead-at-depth 63 Standard_ConstructionError +30-more,Adaptor2d,BndLib,Convert,Geom2d,HLRBRep,IntAna2d,IntCurve,ProjLib
 gp_GTrsf inline-raise 2 Standard_OutOfRange SetValue,Value
 gp_GTrsf inline-throw 1 Standard_ConstructionError Trsf
 gp_GTrsf outofline-throw 1 Standard_ConstructionError SetForm
 gp_GTrsf outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_XYZ
-gp_GTrsf inline-dead-at-depth 82 Standard_OutOfRange +13-more,IGESData,IGESDimen,IGESDraw,IGESGeom,IGESSolid,IGESToBRep,SelectMgr,gp
+gp_GTrsf inline-dead-at-depth 83 Standard_OutOfRange +13-more,IGESData,IGESDimen,IGESDraw,IGESGeom,IGESSolid,IGESToBRep,SelectMgr,gp
 gp_GTrsf2d inline-raise 2 Standard_OutOfRange SetValue,Value
 gp_GTrsf2d outofline-throw 4 Standard_ConstructionError Trsf2d
 gp_GTrsf2d outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_XY
 gp_GTrsf2d inline-dead-at-depth 19 Standard_OutOfRange +1-more,Approx,BRepGraph,BRepTools,Geom,GeomConvert,GeomLib,GeomPlate,gp
 gp_GTrsf_Test outofline-delegated 2 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 gp_Hypr inline-raise 7 Standard_ConstructionError,Standard_DomainError <file-scope>,Asymptote1,Asymptote2
-gp_Hypr inline-dead-at-depth 58 Standard_ConstructionError,Standard_DomainError +26-more,Adaptor3d,BiTgte,BndLib,ElCLib,Extrema,ExtremaPC,GC,ProjLib
+gp_Hypr inline-dead-at-depth 59 Standard_ConstructionError,Standard_DomainError +26-more,Adaptor3d,BiTgte,BndLib,ElCLib,Extrema,ExtremaPC,GC,ProjLib
 gp_Hypr2d inline-raise 8 Standard_ConstructionError,Standard_DomainError <file-scope>,Asymptote1,Asymptote2
 gp_Hypr2d inline-dead-at-depth 63 Standard_ConstructionError,Standard_DomainError +31-more,Adaptor2d,BndLib,Convert,ElCLib,HLRBRep,IntAna2d,IntCurve,ProjLib
 gp_Lin outofline-delegated 2 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec
@@ -5090,7 +5106,7 @@ gp_Lin_Test outofline-delegated 20 Standard_ConstructionError,Standard_OutOfRang
 gp_Mat inline-raise 4 Standard_ConstructionError,Standard_OutOfRange <file-scope>,Divide
 gp_Mat outofline-raise 5 Standard_ConstructionError,Standard_OutOfRange Column,Invert,Row,SetCol,SetRow
 gp_Mat outofline-delegated 7 Standard_ConstructionError,Standard_OutOfRange gp_XYZ
-gp_Mat inline-dead-at-depth 52 Standard_ConstructionError,Standard_OutOfRange +12-more,BRepFill,BRepGProp,BRepTest,BRepTools,BinTools,GProp,GeomFill,gp
+gp_Mat inline-dead-at-depth 54 Standard_ConstructionError,Standard_OutOfRange +12-more,BRepFill,BRepGProp,BRepTest,BRepTools,BinTools,GProp,GeomFill,gp
 gp_Mat2d inline-raise 3 Standard_OutOfRange <file-scope>
 gp_Mat2d outofline-raise 5 Standard_ConstructionError,Standard_OutOfRange Column,Invert,Row,SetCol,SetRow
 gp_Mat2d outofline-delegated 5 Standard_ConstructionError,Standard_OutOfRange gp_XY
@@ -5114,20 +5130,20 @@ gp_Torus_Test outofline-delegated 2 Standard_ConstructionError,Standard_OutOfRan
 gp_Trsf inline-raise 1 Standard_OutOfRange Value
 gp_Trsf outofline-raise 5 Standard_ConstructionError Invert,SetScale,SetScaleFactor,SetValues
 gp_Trsf outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_XYZ
-gp_Trsf inline-dead-at-depth 329 Standard_OutOfRange +103-more,AIS,BRepFill,BRepGraph,Geom,GeomEval,Prs3d,SelectMgr,gp
+gp_Trsf inline-dead-at-depth 334 Standard_OutOfRange +103-more,AIS,BRepFill,BRepGraph,Geom,GeomEval,Prs3d,SelectMgr,gp
 gp_Trsf2d inline-raise 1 Standard_OutOfRange Value
 gp_Trsf2d outofline-raise 3 Standard_ConstructionError Invert,SetValues
 gp_Trsf2d outofline-delegated 3 Standard_ConstructionError,Standard_OutOfRange gp_XY
 gp_Trsf2d inline-dead-at-depth 97 Standard_OutOfRange +16-more,Bisector,Convert,Geom2d,Geom2dEval,IGESToBRep,ShapeFix,gce,gp
 gp_Trsf_Test outofline-delegated 2 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 gp_Vec inline-raise 4 Standard_ConstructionError,gp_VectorWithNullMagnitude <file-scope>,Angle,AngleWithRef,Normalized
-gp_Vec inline-dead-at-depth 736 Standard_ConstructionError,gp_VectorWithNullMagnitude +135-more,BRepBlend,BRepFill,BlendFunc,Geom,GeomEval,GeomFill,GeomGridEval,PrsDim
+gp_Vec inline-dead-at-depth 747 Standard_ConstructionError,gp_VectorWithNullMagnitude +135-more,BRepBlend,BRepFill,BlendFunc,Geom,GeomEval,GeomFill,GeomGridEval,PrsDim
 gp_Vec2d inline-raise 2 Standard_ConstructionError <file-scope>,Normalized
-gp_Vec2d inline-dead-at-depth 376 Standard_ConstructionError +97-more,BRepBlend,BlendFunc,Geom2d,Geom2dEval,Geom2dGcc,Geom2dGridEval,GeomFill,IntPatch
+gp_Vec2d inline-dead-at-depth 379 Standard_ConstructionError +97-more,BRepBlend,BlendFunc,Geom2d,Geom2dEval,Geom2dGcc,Geom2dGridEval,GeomFill,ProjLib
 gp_XY inline-raise 5 Standard_ConstructionError,Standard_OutOfRange <file-scope>,Normalize
 gp_XY inline-dead-at-depth 205 Standard_ConstructionError,Standard_OutOfRange +56-more,BRepMesh,GccAna,Geom2dGcc,IGESDimen,IGESGeom,NLPlate,Plate,gp
 gp_XYZ inline-raise 5 Standard_ConstructionError,Standard_OutOfRange <file-scope>,Normalize
-gp_XYZ inline-dead-at-depth 426 Standard_ConstructionError,Standard_OutOfRange +115-more,Geom,GeomFill,IGESDimen,IGESDraw,IGESGeom,IGESSolid,Plate,gp
+gp_XYZ inline-dead-at-depth 428 Standard_ConstructionError,Standard_OutOfRange +115-more,Geom,GeomFill,IGESDimen,IGESDraw,IGESGeom,IGESSolid,Plate,gp
 instance inherited-live 1 Standard_ProgramError Standard_Transient
 integer inherited-live 1 Standard_ProgramError Standard_Transient
 listBase inherited-live 1 Standard_ProgramError Standard_Transient

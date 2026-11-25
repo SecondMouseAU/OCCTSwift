@@ -46,6 +46,7 @@ OCCT#1608.
 
 ---
 diff --git a/src/FoundationClasses/TKMath/Poly/Poly.cxx b/src/FoundationClasses/TKMath/Poly/Poly.cxx
+index 67f7b720a6233eaac665b3b9199d39727b2416aa..e4ec8d1c79fee3fc2569db1eb87d2aa17c6aa112 100644
 --- a/src/FoundationClasses/TKMath/Poly/Poly.cxx
 +++ b/src/FoundationClasses/TKMath/Poly/Poly.cxx
 @@ -351,7 +351,8 @@ occ::handle<Poly_Triangulation> Poly::ReadTriangulation(Standard_IStream& IS)
@@ -79,6 +80,7 @@ diff --git a/src/FoundationClasses/TKMath/Poly/Poly.cxx b/src/FoundationClasses/
    {
  #ifdef OCCT_DEBUG
 diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx
+index f7abcb602e3b22b7445d158efac0c1ea49999aa3..0837615a741496920171e21882015a0bd60377c0 100644
 --- a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx
 +++ b/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx
 @@ -40,6 +40,7 @@
@@ -99,9 +101,9 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
    switch (buffer[0])
    {
  
-@@ -869,6 +871,11 @@ void BRepTools_ShapeSet::ReadGeometry(const TopAbs_ShapeEnum T,
-       {
-         GeomTools::GetReal(IS, p1);
+@@ -877,6 +879,11 @@ void BRepTools_ShapeSet::ReadGeometry(const TopAbs_ShapeEnum T,
+           return;
+         }
          IS >> val;
 +        // once the stream has failed val keeps its last value, and this loop never ends
 +        if (IS.fail())
@@ -111,7 +113,7 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
  
          occ::handle<BRep_PointRepresentation> PR;
          switch (val)
-@@ -960,6 +967,11 @@ void BRepTools_ShapeSet::ReadGeometry(const TopAbs_ShapeEnum T,
+@@ -976,6 +983,11 @@ void BRepTools_ShapeSet::ReadGeometry(const TopAbs_ShapeEnum T,
          do
          {
            IS >> val;
@@ -123,7 +125,7 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
            switch (val)
            {
  
-@@ -1361,8 +1373,9 @@ void BRepTools_ShapeSet::ReadPolygonOnTriangulation(Standard_IStream&
+@@ -1393,8 +1405,9 @@ void BRepTools_ShapeSet::ReadPolygonOnTriangulation(Standard_IStream&
                                                      const Message_ProgressRange& theProgress)
  {
    char buffer[255];
@@ -135,7 +137,7 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
    {
      return;
    }
-@@ -1374,7 +1387,7 @@ void BRepTools_ShapeSet::ReadPolygonOnTriangulation(Standard_IStream&
+@@ -1406,7 +1419,7 @@ void BRepTools_ShapeSet::ReadPolygonOnTriangulation(Standard_IStream&
    IS >> nbpol;
    // OCC19559
    Message_ProgressScope aPS(theProgress, "Polygons On Triangulation", nbpol);
@@ -144,7 +146,7 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
    {
      IS >> nbnodes;
      NCollection_Array1<int> Nodes(1, nbnodes);
-@@ -1383,7 +1396,8 @@ void BRepTools_ShapeSet::ReadPolygonOnTriangulation(Standard_IStream&
+@@ -1415,7 +1428,8 @@ void BRepTools_ShapeSet::ReadPolygonOnTriangulation(Standard_IStream&
        IS >> val;
        Nodes(j) = val;
      }
@@ -154,7 +156,7 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
      //      if (!strcasecmp(buffer, "p")) {
      double def;
      GeomTools::GetReal(IS, def);
-@@ -1530,8 +1544,9 @@ void BRepTools_ShapeSet::ReadPolygon3D(Standard_IStream&            IS,
+@@ -1570,8 +1584,9 @@ void BRepTools_ShapeSet::ReadPolygon3D(Standard_IStream&            IS,
    int    i, j, p, nbpol = 0, nbnodes = 0, hasparameters = false;
    double d, x, y, z;
  
@@ -166,7 +168,7 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
    {
      return;
    }
-@@ -1539,7 +1554,7 @@ void BRepTools_ShapeSet::ReadPolygon3D(Standard_IStream&            IS,
+@@ -1579,7 +1594,7 @@ void BRepTools_ShapeSet::ReadPolygon3D(Standard_IStream&            IS,
    IS >> nbpol;
    // OCC19559
    Message_ProgressScope aPS(theProgress, "3D Polygons", nbpol);
@@ -175,7 +177,7 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
    {
      IS >> nbnodes;
      IS >> hasparameters;
-@@ -1788,8 +1803,9 @@ void BRepTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
+@@ -1840,8 +1855,9 @@ void BRepTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
  
    occ::handle<Poly_Triangulation> T;
  
@@ -187,7 +189,7 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
    {
      return;
    }
-@@ -1797,7 +1813,7 @@ void BRepTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
+@@ -1849,7 +1865,7 @@ void BRepTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
    IS >> nbtri;
    // OCC19559
    Message_ProgressScope aPS(theProgress, "Triangulations", nbtri);
@@ -197,6 +199,7 @@ diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/Mode
  
      IS >> nbNodes >> nbTriangles >> hasUV;
 diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.cxx b/src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.cxx
+index 33dd92aef74e5f66d34cb8506cb12b1b186b78bd..93dcc0043f9cde433cfd17836cf8e7832f4b5d98 100644
 --- a/src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.cxx
 +++ b/src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.cxx
 @@ -1317,7 +1317,8 @@ void BinTools_ShapeSet::ReadPolygonOnTriangulation(Standard_IStream&
@@ -230,6 +233,7 @@ diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.cxx b/src/Modeli
    {
      throw Standard_Failure("BinTools_ShapeSet::Triangulation: Not a Triangulation section");
 diff --git a/src/ModelingData/TKBRep/TopTools/TopTools_LocationSet.cxx b/src/ModelingData/TKBRep/TopTools/TopTools_LocationSet.cxx
+index 042df7d81439df33218175c7953435ff6041ff9b..6e9aaa2a7379e45b8aa814c904870654e85f0140 100644
 --- a/src/ModelingData/TKBRep/TopTools/TopTools_LocationSet.cxx
 +++ b/src/ModelingData/TKBRep/TopTools/TopTools_LocationSet.cxx
 @@ -19,6 +19,7 @@
@@ -240,7 +244,7 @@ diff --git a/src/ModelingData/TKBRep/TopTools/TopTools_LocationSet.cxx b/src/Mod
  #include <fstream>
  #include <Message_ProgressScope.hxx>
  #include <TopTools_LocationSet.hxx>
-@@ -254,8 +255,9 @@ void TopTools_LocationSet::Read(Standard_IStream& IS, const Message_ProgressRang
+@@ -259,8 +260,9 @@ void TopTools_LocationSet::Read(Standard_IStream& IS, const Message_ProgressRang
    char buffer[255];
    int  l1, p;
  
@@ -252,7 +256,7 @@ diff --git a/src/ModelingData/TKBRep/TopTools/TopTools_LocationSet.cxx b/src/Mod
    {
      std::cout << "Not a location table " << '\n';
      return;
-@@ -269,7 +271,7 @@ void TopTools_LocationSet::Read(Standard_IStream& IS, const Message_ProgressRang
+@@ -274,7 +276,7 @@ void TopTools_LocationSet::Read(Standard_IStream& IS, const Message_ProgressRang
  
    // OCC19559
    Message_ProgressScope PS(theProgress, "Locations", nbLoc);
@@ -261,7 +265,7 @@ diff --git a/src/ModelingData/TKBRep/TopTools/TopTools_LocationSet.cxx b/src/Mod
    {
      int typLoc;
      IS >> typLoc;
-@@ -287,6 +289,11 @@ void TopTools_LocationSet::Read(Standard_IStream& IS, const Message_ProgressRang
+@@ -295,6 +297,11 @@ void TopTools_LocationSet::Read(Standard_IStream& IS, const Message_ProgressRang
        while (l1 != 0)
        {
          IS >> p;
@@ -274,6 +278,7 @@ diff --git a/src/ModelingData/TKBRep/TopTools/TopTools_LocationSet.cxx b/src/Mod
          L                  = L1.Powered(p) * L;
          IS >> l1;
 diff --git a/src/ModelingData/TKBRep/TopTools/TopTools_ShapeSet.cxx b/src/ModelingData/TKBRep/TopTools/TopTools_ShapeSet.cxx
+index f4d3360ea4a118836712d8a05716815ac3a28491..eda2530aff2d287de3c874a66a1ff57846f7e2e0 100644
 --- a/src/ModelingData/TKBRep/TopTools/TopTools_ShapeSet.cxx
 +++ b/src/ModelingData/TKBRep/TopTools/TopTools_ShapeSet.cxx
 @@ -22,6 +22,8 @@
@@ -299,7 +304,7 @@ diff --git a/src/ModelingData/TKBRep/TopTools/TopTools_ShapeSet.cxx b/src/Modeli
  
    switch (buffer[0])
    {
-@@ -733,8 +740,9 @@ void TopTools_ShapeSet::Read(Standard_IStream& IS, const Message_ProgressRange&
+@@ -745,8 +752,9 @@ void TopTools_ShapeSet::Read(Standard_IStream& IS, const Message_ProgressRange&
    //-----------------------------------------
  
    char buffer[255];
@@ -311,8 +316,8 @@ diff --git a/src/ModelingData/TKBRep/TopTools/TopTools_ShapeSet.cxx b/src/Modeli
    {
      std::cout << "Not a TShape table" << '\n';
      // restore LC_NUMERIC to the previous value
-@@ -757,7 +765,8 @@ void TopTools_ShapeSet::Read(Standard_IStream& IS, const Message_ProgressRange&
-     ReadGeometry(T, IS, S);
+@@ -774,7 +782,8 @@ void TopTools_ShapeSet::Read(Standard_IStream& IS, const Message_ProgressRange&
+     }
  
      // Set the flags
 -    IS >> buffer;
@@ -321,7 +326,7 @@ diff --git a/src/ModelingData/TKBRep/TopTools/TopTools_ShapeSet.cxx b/src/Modeli
  
      // sub-shapes
      TopoDS_Shape SS;
-@@ -851,14 +860,25 @@ void TopTools_ShapeSet::Read(TopoDS_Shape& S, Standard_IStream& IS, const int nb
+@@ -868,14 +877,25 @@ void TopTools_ShapeSet::Read(TopoDS_Shape& S, Standard_IStream& IS, const int nb
      return;
    }
    char buffer[255];
@@ -349,7 +354,7 @@ diff --git a/src/ModelingData/TKBRep/TopTools/TopTools_ShapeSet.cxx b/src/Modeli
      switch (buffer[0])
      {
  
-@@ -881,6 +901,10 @@ void TopTools_ShapeSet::Read(TopoDS_Shape& S, Standard_IStream& IS, const int nb
+@@ -898,6 +918,10 @@ void TopTools_ShapeSet::Read(TopoDS_Shape& S, Standard_IStream& IS, const int nb
  
      int l;
      IS >> l;
@@ -360,40 +365,12 @@ diff --git a/src/ModelingData/TKBRep/TopTools/TopTools_ShapeSet.cxx b/src/Modeli
      S.Location(myLocations.Location(l), false);
    }
  }
-diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools.cxx b/src/ModelingData/TKGeomBase/GeomTools/GeomTools.cxx
---- a/src/ModelingData/TKGeomBase/GeomTools/GeomTools.cxx
-+++ b/src/ModelingData/TKGeomBase/GeomTools/GeomTools.cxx
-@@ -16,6 +16,9 @@
- 
- #include <GeomTools.hxx>
- 
-+#include <cctype>
-+#include <string>
-+
- #include <Geom2d_Curve.hxx>
- #include <Geom_Surface.hxx>
- #include <GeomTools_Curve2dSet.hxx>
-@@ -106,5 +109,15 @@ void GeomTools::GetReal(Standard_IStream& IS, double& theValue)
-   std::streamsize anOldWide = IS.width(THE_BUFFER_SIZE - 1);
-   IS >> aBuffer;
-   IS.width(anOldWide);
-+  // the rest of a number longer than the buffer, or it is read as the next number
-+  const int aNext = IS.good() ? IS.rdbuf()->sgetc() : EOF;
-+  if (aNext != EOF && !std::isspace(aNext))
-+  {
-+    std::string aRest;
-+    IS >> aRest;
-+    aRest.insert(0, aBuffer);
-+    theValue = Strtod(aRest.c_str(), nullptr);
-+    return;
-+  }
-   theValue = Strtod(aBuffer, nullptr);
- }
 diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx
+index a10f6b1914674db20ebb209ecf5ea4984a943c00..9fd6b42a757888d2dda0441eb91863a3c8406ca1 100644
 --- a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx
 +++ b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx
-@@ -794,6 +794,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom2d_BSp
-     IS >> mults(i);
+@@ -830,6 +830,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom2d_BSp
+     }
    }
  
 +  // a failed stream leaves knots and multiplicities unread, and the constructor reads them
@@ -405,35 +382,35 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx b/sr
    if (rational)
    {
      B = new Geom2d_BSplineCurve(poles, weights, knots, mults, degree, periodic);
-@@ -814,6 +820,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom2d_Tri
-   GeomTools::GetReal(IS, p1);
-   GeomTools::GetReal(IS, p2);
-   occ::handle<Geom2d_Curve> BC = GeomTools_Curve2dSet::ReadCurve2d(IS);
+@@ -854,6 +860,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom2d_Tri
+   {
+     return IS;
+   }
 +  if (BC.IsNull())
 +  {
 +    // no basis was read: leave the result null, and the stream failed
 +    IS.setstate(std::ios::failbit);
 +    return IS;
 +  }
-   C                            = new Geom2d_TrimmedCurve(BC, p1, p2);
+   C = new Geom2d_TrimmedCurve(BC, p1, p2, true, false);
    return IS;
  }
-@@ -825,6 +837,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom2d_Off
-   double p = 0.;
-   GeomTools::GetReal(IS, p);
-   occ::handle<Geom2d_Curve> BC = GeomTools_Curve2dSet::ReadCurve2d(IS);
+@@ -869,6 +881,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom2d_Off
+   {
+     return IS;
+   }
 +  if (BC.IsNull())
 +  {
 +    // no basis was read: leave the result null, and the stream failed
 +    IS.setstate(std::ios::failbit);
 +    return IS;
 +  }
-   C                            = new Geom2d_OffsetCurve(BC, p);
+   C = new Geom2d_OffsetCurve(BC, p);
    return IS;
  }
-@@ -930,8 +948,9 @@ occ::handle<Geom2d_Curve> GeomTools_Curve2dSet::ReadCurve2d(Standard_IStream& IS
- void GeomTools_Curve2dSet::Read(Standard_IStream& IS, const Message_ProgressRange& theProgress)
- {
+@@ -985,8 +1003,9 @@ void GeomTools_Curve2dSet::Read(Standard_IStream& IS, const Message_ProgressRang
+     return;
+   }
    char buffer[255];
 -  IS >> buffer;
 -  if (strcmp(buffer, "Curve2ds"))
@@ -443,7 +420,7 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx b/sr
    {
      std::cout << "Not a Curve2d table" << '\n';
      return;
-@@ -940,7 +959,7 @@ void GeomTools_Curve2dSet::Read(Standard_IStream& IS, const Message_ProgressRang
+@@ -995,7 +1014,7 @@ void GeomTools_Curve2dSet::Read(Standard_IStream& IS, const Message_ProgressRang
    int i, nbcurve;
    IS >> nbcurve;
    Message_ProgressScope aPS(theProgress, "2D Curves", nbcurve);
@@ -451,12 +428,13 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx b/sr
 +  for (i = 1; i <= nbcurve && aPS.More() && !IS.fail(); i++, aPS.Next())
    {
      occ::handle<Geom2d_Curve> C = GeomTools_Curve2dSet::ReadCurve2d(IS);
-     myMap.Add(C);
+     if (IS.fail())
 diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx
+index 58c9cf4b5199a392a4e155bc12e2230a116edb62..bc83a1695a69ba58c447763a53aa2c2c3832aaf8 100644
 --- a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx
 +++ b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx
-@@ -822,6 +822,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_BSpli
-     IS >> mults(i);
+@@ -858,6 +858,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_BSpli
+     }
    }
  
 +  // a failed stream leaves knots and multiplicities unread, and the constructor reads them
@@ -468,35 +446,35 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx b/src/
    if (rational)
    {
      B = new Geom_BSplineCurve(poles, weights, knots, mults, degree, periodic);
-@@ -842,6 +848,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Trimm
-   GeomTools::GetReal(IS, p1);
-   GeomTools::GetReal(IS, p2);
-   occ::handle<Geom_Curve> BC = GeomTools_CurveSet::ReadCurve(IS);
+@@ -882,6 +888,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Trimm
+   {
+     return IS;
+   }
 +  if (BC.IsNull())
 +  {
 +    // no basis was read: leave the result null, and the stream failed
 +    IS.setstate(std::ios::failbit);
 +    return IS;
 +  }
-   C                          = new Geom_TrimmedCurve(BC, p1, p2);
+   C = new Geom_TrimmedCurve(BC, p1, p2, true, false);
    return IS;
  }
-@@ -855,6 +867,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Offse
-   gp_Dir D(gp_Dir::D::X);
-   IS >> D;
-   occ::handle<Geom_Curve> BC = GeomTools_CurveSet::ReadCurve(IS);
+@@ -903,6 +915,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Offse
+   {
+     return IS;
+   }
 +  if (BC.IsNull())
 +  {
 +    // no basis was read: leave the result null, and the stream failed
 +    IS.setstate(std::ios::failbit);
 +    return IS;
 +  }
-   C                          = new Geom_OffsetCurve(BC, p, D);
+   C = new Geom_OffsetCurve(BC, p, D);
    return IS;
  }
-@@ -959,8 +977,9 @@ occ::handle<Geom_Curve> GeomTools_CurveSet::ReadCurve(Standard_IStream& IS)
- void GeomTools_CurveSet::Read(Standard_IStream& IS, const Message_ProgressRange& theProgress)
- {
+@@ -1018,8 +1036,9 @@ void GeomTools_CurveSet::Read(Standard_IStream& IS, const Message_ProgressRange&
+     return;
+   }
    char buffer[255];
 -  IS >> buffer;
 -  if (strcmp(buffer, "Curves"))
@@ -506,7 +484,7 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx b/src/
    {
      std::cout << "Not a Curve table" << '\n';
      return;
-@@ -969,7 +988,7 @@ void GeomTools_CurveSet::Read(Standard_IStream& IS, const Message_ProgressRange&
+@@ -1028,7 +1047,7 @@ void GeomTools_CurveSet::Read(Standard_IStream& IS, const Message_ProgressRange&
    int i, nbcurve;
    IS >> nbcurve;
    Message_ProgressScope aPS(theProgress, "3D Curves", nbcurve);
@@ -514,38 +492,39 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx b/src/
 +  for (i = 1; i <= nbcurve && aPS.More() && !IS.fail(); i++, aPS.Next())
    {
      occ::handle<Geom_Curve> C = GeomTools_CurveSet::ReadCurve(IS);
-     myMap.Add(C);
+     if (IS.fail())
 diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx
+index b2b484c99e7f00b885f0133f63572b6506214b33..a06a05eac0f947c5d81b69ef20b42a3b70556227 100644
 --- a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx
 +++ b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx
-@@ -944,6 +944,12 @@ static Standard_IStream& operator>>(Standard_IStream&
-   gp_Dir D(gp_Dir::D::X);
-   IS >> D;
-   occ::handle<Geom_Curve> C = GeomTools_CurveSet::ReadCurve(IS);
+@@ -972,6 +972,12 @@ static Standard_IStream& operator>>(Standard_IStream&
+   {
+     return IS;
+   }
 +  if (C.IsNull())
 +  {
 +    // no basis was read: leave the result null, and the stream failed
 +    IS.setstate(std::ios::failbit);
 +    return IS;
 +  }
-   S                         = new Geom_SurfaceOfLinearExtrusion(C, D);
+   S = new Geom_SurfaceOfLinearExtrusion(C, D);
    return IS;
  }
-@@ -956,6 +962,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Surfa
-   gp_Dir D(gp_Dir::D::X);
-   IS >> P >> D;
-   occ::handle<Geom_Curve> C = GeomTools_CurveSet::ReadCurve(IS);
+@@ -988,6 +994,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Surfa
+   {
+     return IS;
+   }
 +  if (C.IsNull())
 +  {
 +    // no basis was read: leave the result null, and the stream failed
 +    IS.setstate(std::ios::failbit);
 +    return IS;
 +  }
-   S                         = new Geom_SurfaceOfRevolution(C, gp_Ax1(P, D));
+   S = new Geom_SurfaceOfRevolution(C, gp_Ax1(P, D));
    return IS;
  }
-@@ -1039,6 +1051,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_BSpli
-     IS >> vmults(i);
+@@ -1087,6 +1099,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_BSpli
+     }
    }
  
 +  // a failed stream leaves knots and multiplicities unread, and the constructor reads them
@@ -557,35 +536,35 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx b/sr
    if (urational || vrational)
    {
      S = new Geom_BSplineSurface(poles,
-@@ -1078,6 +1096,12 @@ static Standard_IStream& operator>>(Standard_IStream&
-   GeomTools::GetReal(IS, V1);
-   GeomTools::GetReal(IS, V2);
-   occ::handle<Geom_Surface> BS = GeomTools_SurfaceSet::ReadSurface(IS);
+@@ -1130,6 +1148,12 @@ static Standard_IStream& operator>>(Standard_IStream&
+   {
+     return IS;
+   }
 +  if (BS.IsNull())
 +  {
 +    // no basis was read: leave the result null, and the stream failed
 +    IS.setstate(std::ios::failbit);
 +    return IS;
 +  }
-   S                            = new Geom_RectangularTrimmedSurface(BS, U1, U2, V1, V2);
+   S = new Geom_RectangularTrimmedSurface(BS, U1, U2, V1, V2);
    return IS;
  }
-@@ -1089,6 +1113,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Offse
-   double O = 0.;
-   GeomTools::GetReal(IS, O);
-   occ::handle<Geom_Surface> BS = GeomTools_SurfaceSet::ReadSurface(IS);
+@@ -1145,6 +1169,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Offse
+   {
+     return IS;
+   }
 +  if (BS.IsNull())
 +  {
 +    // no basis was read: leave the result null, and the stream failed
 +    IS.setstate(std::ios::failbit);
 +    return IS;
 +  }
-   S                            = new Geom_OffsetSurface(BS, O, true);
+   S = new Geom_OffsetSurface(BS, O, true);
    return IS;
  }
-@@ -1208,8 +1238,9 @@ occ::handle<Geom_Surface> GeomTools_SurfaceSet::ReadSurface(Standard_IStream& IS
- void GeomTools_SurfaceSet::Read(Standard_IStream& IS, const Message_ProgressRange& theProgress)
- {
+@@ -1275,8 +1305,9 @@ void GeomTools_SurfaceSet::Read(Standard_IStream& IS, const Message_ProgressRang
+     return;
+   }
    char buffer[255];
 -  IS >> buffer;
 -  if (strcmp(buffer, "Surfaces"))
@@ -595,7 +574,7 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx b/sr
    {
      std::cout << "Not a surface table" << '\n';
      return;
-@@ -1218,7 +1249,7 @@ void GeomTools_SurfaceSet::Read(Standard_IStream& IS, const Message_ProgressRang
+@@ -1285,7 +1316,7 @@ void GeomTools_SurfaceSet::Read(Standard_IStream& IS, const Message_ProgressRang
    int i, nbsurf;
    IS >> nbsurf;
    Message_ProgressScope aPS(theProgress, "Surfaces", nbsurf);
@@ -603,4 +582,4 @@ diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx b/sr
 +  for (i = 1; i <= nbsurf && aPS.More() && !IS.fail(); i++, aPS.Next())
    {
      occ::handle<Geom_Surface> S = GeomTools_SurfaceSet::ReadSurface(IS);
-     myMap.Add(S);
+     if (IS.fail())
