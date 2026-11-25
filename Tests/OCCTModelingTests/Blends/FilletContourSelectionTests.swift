@@ -242,7 +242,9 @@ struct Issue612FilletContourSelection {
         // Each law in its own slot.
         #expect(abs(pairVolume - 10297.711861) < 1e-3)
         // The old idiom wrote both to slot 1, which measures exactly as filleting the line alone.
-        #expect(abs(lineVolume - 10273.238348) < 1e-3)
+        // 10273.238348 on OCCT 8.0.1; 8.0.2 moved the line-only fillet by 0.016 (1.6e-6 relative),
+        // from the fillet changes in 8.0.2 (#1501, #1708, #1710), while the pair did not move.
+        #expect(abs(lineVolume - 10273.254719) < 1e-3)
         #expect(abs(pairVolume - lineVolume) > 1.0)
     }
 

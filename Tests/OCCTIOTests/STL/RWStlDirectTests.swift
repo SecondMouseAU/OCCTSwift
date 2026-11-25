@@ -186,9 +186,10 @@ struct RWStlDirectTests {
         defer { try? FileManager.default.removeItem(atPath: path) }
         #expect(sphere.writeSTLBinary(to: path))
 
-        // 516 triangles at the default deflection on the pinned kernel (wasm-sensitive count).
+        // 522 triangles at the default deflection on the pinned kernel (wasm-sensitive count). It
+        // was 516 on OCCT 8.0.1: 8.0.2's #1741 changed BRepMesh.
         let data = try Data(contentsOf: URL(fileURLWithPath: path))
-        #expect(declaredTriangles(data) == 516)
+        #expect(declaredTriangles(data) == 522)
         #expect(data.count == 84 + declaredTriangles(data) * 50)
 
         // The read-back face spans the sphere: the poles are on the z axis, so z is exact, and

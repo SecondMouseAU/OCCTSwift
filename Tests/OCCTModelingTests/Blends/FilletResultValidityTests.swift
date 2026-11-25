@@ -190,11 +190,13 @@ struct Issue3200FilletResultValidityTests {
             ("slab chamfer all12 d=1", box.chamfered(distance: 1.0), 205.333333333),
         ]
         // The slab r=1.999 volume differs by 2.3e-8 (1e-10 relative) on wasm32, where WASILibc's
-        // transcendentals feed the numerical integration. Apple keeps the 1e-8 bound.
+        // transcendentals feed the numerical integration. OCCT 8.0.2 moves two of the slab frame
+        // volumes (r=1.999 and r=1.9999) by 1.2e-8 on Apple too (fillet spine closure, #1501), which
+        // is 5e-11 relative, so the Apple bound is 1e-7 now and not 1e-8.
         #if arch(wasm32)
             let tolerance = 1e-6
         #else
-            let tolerance = 1e-8
+            let tolerance = 1e-7
         #endif
         for (name, shape, expected) in cases {
             let result = try #require(shape, Comment(rawValue: name))

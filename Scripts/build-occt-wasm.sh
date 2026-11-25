@@ -371,14 +371,6 @@ package_build() {
     mkdir -p "$dst"
     # `$src/.` rather than `$src/*`: the same copy, without handing 7,000-odd paths to the shell.
     cp -R "$src"/. "$dst"/
-    # The kernel's own statement of which fixes it holds (see Scripts/build-occt.sh).
-    if [ "$FLAVOUR" = "carry" ]; then
-        python3 "$SCRIPT_DIR/emit-kernel-fixes-header.py" --flavour carry --occt-version "$OCCT_VERSION" \
-            --patches-dir "$SCRIPT_DIR/patches" --out "$dst/OCCTKernelFixes.h" || return 1
-    else
-        python3 "$SCRIPT_DIR/emit-kernel-fixes-header.py" --flavour vanilla --occt-version "$OCCT_VERSION" \
-            --out "$dst/OCCTKernelFixes.h" || return 1
-    fi
     local n_src n_dst
     n_src=$(find "$src" -type f | wc -l | tr -d ' ')
     n_dst=$(find "$dst" -type f | wc -l | tr -d ' ')
@@ -388,6 +380,16 @@ package_build() {
     if [ "$n_dst" -ne "$n_src" ] || [ "$n_dst" -eq 0 ]; then
         echo "ERROR: the header copy is not a copy: $n_src installed, $n_dst landed." >&2
         return 1
+    fi
+
+    # The kernel's own statement of which fixes it holds (see Scripts/build-occt.sh). After the count
+    # above, because it is the one file in the header tree that is not a copy of an installed one.
+    if [ "$FLAVOUR" = "carry" ]; then
+        python3 "$SCRIPT_DIR/emit-kernel-fixes-header.py" --flavour carry --occt-version "$OCCT_VERSION" \
+            --patches-dir "$SCRIPT_DIR/patches" --out "$dst/OCCTKernelFixes.h" || return 1
+    else
+        python3 "$SCRIPT_DIR/emit-kernel-fixes-header.py" --flavour vanilla --occt-version "$OCCT_VERSION" \
+            --out "$dst/OCCTKernelFixes.h" || return 1
     fi
 
     echo ""

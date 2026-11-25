@@ -72,9 +72,11 @@ struct Issue197MeshDeflectionTests {
         let coarse = try #require(
             CoherentTriangulation.createFromMesh(coarseShape, deflection: 0.2))
         let fine = try #require(CoherentTriangulation.createFromMesh(fineShape, deflection: 0.1))
-        // Within 1 percent and not exact: the wasm build's libm gives 978 for the fine mesh.
+        // Within 1 percent and not exact: the wasm build's libm gives 978 for the fine mesh. The
+        // coarse count was 516 on OCCT 8.0.1 and is 522 on 8.0.2 (#1741 changed BRepMesh); the
+        // fine count did not move.
         #expect(
-            abs(coarse.triangleCount - 516) <= 5, "coarse \(coarse.triangleCount), expected ~516")
+            abs(coarse.triangleCount - 522) <= 5, "coarse \(coarse.triangleCount), expected ~522")
         #expect(abs(fine.triangleCount - 976) <= 10, "fine \(fine.triangleCount), expected ~976")
     }
 }
