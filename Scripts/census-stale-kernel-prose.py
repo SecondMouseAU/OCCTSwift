@@ -521,7 +521,7 @@ def self_test():
     # The real manifest: a url reshaped so the pin cannot be read would otherwise make the bare run
     # a silent no-op, and CI only ever runs this self-test (Kilo, PR #3128).
     case("pin: this checkout's own Package.swift yields a pin tag",
-         (pinned_tags(DEFAULT_ROOT)[0] or "").startswith("v"))
+         tag_key(pinned_tags(DEFAULT_ROOT)[0] or "") is not None)
 
     # Parsing the pin out of a manifest's real shape.
     import tempfile
