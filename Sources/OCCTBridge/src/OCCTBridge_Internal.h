@@ -36,6 +36,27 @@
   #include "wasi-std-threading.hpp"
 #endif
 
+// Which kernel defects the OCCT this bridge links against holds a fix for (#3543). Each kernel
+// asset ships its own OCCTKernelFixes.h, generated from Scripts/kernel-fixes.tsv by the build, so a
+// guard written for a missing fix can name its ledger row and compile out where the fix is present:
+//
+//     // kernel-defect: F0080
+//     #if !OCCTSWIFT_KERNEL_HAS_F0080
+//     ...the guard...
+//     #endif
+//
+// A kernel built before the ledger has no such header. Every OCCTSWIFT_KERNEL_HAS_Fxxxx then reads
+// as 0, so every guard compiles in, which is the safe direction. The policy and the gate that fails
+// a guard that can never run are okf/policies/kernel-fix-ledger.md and
+// Scripts/check-kernel-fixes.py.
+#if __has_include(<OCCTKernelFixes.h>)
+  #include <OCCTKernelFixes.h>
+#else
+  #define OCCTSWIFT_KERNEL_FLAVOUR "unlabelled"
+  #define OCCTSWIFT_KERNEL_OCCT_VERSION "unknown"
+  #define OCCTSWIFT_KERNEL_FIX_LIST(X)
+#endif
+
 #include <algorithm>
 #include <atomic>
 #include <mutex>

@@ -339,6 +339,30 @@ int32_t OCCTDiagnosticsDroppedCount(void)
   return occtDiagnosticsState().dropped;
 }
 
+// MARK: - Kernel flavour (#3543)
+
+const char* OCCTKernelFlavour(void)
+{
+  return OCCTSWIFT_KERNEL_FLAVOUR;
+}
+
+const char* OCCTKernelOCCTVersion(void)
+{
+  return OCCTSWIFT_KERNEL_OCCT_VERSION;
+}
+
+int32_t OCCTKernelHasFix(const char* fixId)
+{
+  if (fixId == nullptr)
+    return -1;
+#define OCCT_KERNEL_FIX_CASE(id, present)                                                          \
+  if (std::strcmp(fixId, #id) == 0)                                                                \
+    return present;
+  OCCTSWIFT_KERNEL_FIX_LIST(OCCT_KERNEL_FIX_CASE)
+#undef OCCT_KERNEL_FIX_CASE
+  return -1;
+}
+
 OCCTDiagnosticKind OCCTDiagnosticsRecordKind(int32_t index)
 {
   const OCCTCaughtException* aRecord = occtDiagnosticRecordAt(index);

@@ -90,8 +90,22 @@ EXEMPT_MARKER = "kernel-prose-exempt:"
 # The census's own text quotes every shape it detects, so it is not a population member.
 SELF_SKIP = {"Scripts/census-stale-kernel-prose.py"}
 
-TAG_RE = re.compile(r"v(\d+)\.(\d+)\.(\d+)-kernel\.(\d+)")
-PIN_URL_RE = re.compile(r"releases/download/(v\d+\.\d+\.\d+-kernel\.\d+)/OCCT\.xcframework\.zip")
+# Two tag shapes name a kernel release. `v4.0.0-kernel.N` is the one the v4.0.0 window used; after the
+# 8.0.2 base move (#3543) a kernel asset lives on a NON-semver tag, `kernel-8.0.2-c1` (the carry
+# kernel, revision 1) or `kernel-8.0.2` (the vanilla kernel), so it never enters the version list
+# SwiftPM and the Swift Package Index read. Every new-shape tag is newer than every old-shape one.
+TAG_RE = re.compile(
+    r"v(\d+)\.(\d+)\.(\d+)-kernel\.(\d+)|(?<![\w.-])kernel-(\d+)\.(\d+)\.(\d+)(?:-c(\d+))?")
+TAG_TEXT = r"v\d+\.\d+\.\d+-kernel\.\d+|kernel-\d+\.\d+\.\d+(?:-c\d+)?"
+PIN_URL_RE = re.compile(r"releases/download/(" + TAG_TEXT + r")/OCCT\.xcframework\.zip")
+
+
+def match_key(match):
+    """The ordering key of one TAG_RE match: old shape sorts below new shape."""
+    g = match.groups()
+    if g[0] is not None:
+        return (0,) + tuple(int(x) for x in g[:4])
+    return (1, int(g[4]), int(g[5]), int(g[6]), int(g[7] or 0))
 
 
 def load_prose_helpers(root):
@@ -112,7 +126,7 @@ def load_prose_helpers(root):
 def tag_key(tag):
     """(version, kernel number) of a `vX.Y.Z-kernel.N` tag, or None."""
     match = TAG_RE.search(tag)
-    return tuple(int(g) for g in match.groups()) if match else None
+    return match_key(match) if match else None
 
 
 def pinned_tags(root):
@@ -181,7 +195,7 @@ def older_tag_matches(sentence, current_keys, pin_key):
     """
     found = []
     for match in TAG_RE.finditer(sentence):
-        key = tuple(int(g) for g in match.groups())
+        key = match_key(match)
         if key < pin_key and key not in current_keys:
             found.append(match)
     return found
@@ -247,7 +261,7 @@ TREE_COUNT_RE = re.compile(
 def tag_before(sentence, end):
     """The kernel tag that directly qualifies the word at offset `end` ("the v4.0.0-kernel.1 asset
     holds"), or None. An asset is immutable, so a count stated for an OLD tag's asset is a fact."""
-    found = re.search(r"(v\d+\.\d+\.\d+-kernel\.\d+)`?(?:\s+(?:pre-release|binary))*\s+$",
+    found = re.search(r"(" + TAG_TEXT + r")`?(?:\s+(?:pre-release|binary))*\s+$",
                       sentence[max(0, end - 60):end])
     return found.group(1) if found else None
 
@@ -398,6 +412,20 @@ def self_test():
 
     def case(name, ok):
         cases.append((name, bool(ok)))
+
+    # The non-semver tag shape the carry and vanilla kernels use from the 8.0.2 base move (#3543).
+    case("tag shape: a non-semver kernel tag sorts above every v4.0.0-kernel.N",
+         tag_key("kernel-8.0.2-c1") > tag_key("v9.9.9-kernel.99"))
+    case("tag shape: a later revision of the same base sorts above an earlier one",
+         tag_key("kernel-8.0.2-c2") > tag_key("kernel-8.0.2-c1") > tag_key("kernel-8.0.2"))
+    case("tag shape: the pin url is read out of a non-semver tag",
+         PIN_URL_RE.search("releases/download/kernel-8.0.2-c1/OCCT.xcframework.zip").group(1)
+         == "kernel-8.0.2-c1")
+    case("tag shape: a bare version number is not mistaken for a kernel tag",
+         tag_key("OCCT 8.0.2 and kernel-free prose") is None)
+    case("K1: the old pin is flagged once the pin is a non-semver tag",
+         len(k1_findings("f.md", "The pin below is now v4.0.0-kernel.9, built from V8_0_1.",
+                         "kernel-8.0.2-c1", None, units)) == 1)
 
     # K1 positives: each is the shape of a sentence #3054 had to rewrite, from the pre-fix tree.
     case("K1: 'the pin below is now <older tag>' is flagged",
