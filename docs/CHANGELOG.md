@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### OCCT 8.0.2 base, the kernel-fix ledger and the `Kernel` probe (#3543, #3535)
+
+The kernel build moves to OCCT 8.0.2: ten carried patches are retired as absorbed upstream, three are rebased, 51 remain, and the pinned kernel is `kernel-8.0.2-c1`. Adds `Kernel` (`flavour`, `occtVersion`, `hasFix(_:)`) to report which kernel flavour a build links against and which ledger fixes it holds. A few results move with 8.0.2 (HLR edge counts, a coarse mesh's triangle count, fillet volumes at the 1e-8 level); see `docs/occt-upgrades.md`, "8.0.1 to 8.0.2".
+
 ### Kernel repin to v4.0.0-kernel.9: patches 0079 and 0080 pinned (#3506, #3509)
 
 The pinned kernel is now `v4.0.0-kernel.9`, OCCT `V8_0_1` plus 61 carried patches, for both the Apple and the wasm kernels. Two patches that were merged but not in the previous asset are now shipped. `Shape.isValid`, and every entry that runs `BRepCheck_Analyzer` first, now returns `false` for a shape whose face has a wire holding a line and a pcurve circle of no radius (a radius of 0, 1e-20 or less, or an ellipse minor radius of 1e-300 or less, or an infinite domain parameter), where it never returned (`0079`, #3506). `BRepAlgoAPI_Check` and `BOPAlgo_CheckerSI` answer `false`, or no error, for a face with no surface that carries a wire, where they died with a SIGSEGV (`0080`, #3509). The OCCT 8.0.2 release (`V8_0_2`, 2026-11-21) does not change the files either patch touches.
