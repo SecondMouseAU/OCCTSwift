@@ -1304,6 +1304,45 @@ extension Shape {
         guard let h = result else { return nil }
         return Shape(handle: h)
     }
+
+    /// Fuse multiple shapes simultaneously, keeping the General Fuse history of every argument.
+    ///
+    /// The result is ``fuseAll(_:)``'s: both run one bridge implementation. The history answers for
+    /// a sub-shape of any of `shapes`, so it can be read after a split's history to carry a
+    /// sub-shape through both. Where two arguments touch on a face, the two faces become one face
+    /// of the result, and each argument's face is `modified` into it.
+    ///
+    /// ```swift
+    /// let a = Shape.box(origin: SIMD3(-10, 0, 0), width: 10, height: 10, depth: 10)!
+    /// let b = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
+    /// if let (result, history) = Shape.fuseAllWithFullHistory([a, b]) {
+    ///     // The face of `a` on x = 0 is now the one face the two solids share.
+    ///     let onBoundary = a.subShapes(ofType: .face).first { face in
+    ///         guard let box = face.bounds else { return false }
+    ///         return abs(box.min.x) < 1e-6 && abs(box.max.x) < 1e-6
+    ///     }!
+    ///     print(result.solids.count, history.record(of: onBoundary).modified.count)  // 2 1
+    /// }
+    /// ```
+    ///
+    /// - Parameter shapes: The shapes to fuse; at least two
+    /// - Returns: The result and its history, or nil where ``fuseAll(_:)`` returns nil
+    public static func fuseAllWithFullHistory(_ shapes: [Shape])
+        -> (result: Shape, history: ShapeHistoryRef)?
+    {
+        guard shapes.count >= 2 else { return nil }
+        let handles: [OCCTShapeRef] = shapes.map { $0.handle }
+        defer { withExtendedLifetime(shapes) {} }
+        var resultRef: OCCTShapeRef?
+        let h = handles.withUnsafeBufferPointer { buffer in
+            OCCTShapeFuseMultiWithHistory(buffer.baseAddress!, Int32(shapes.count), &resultRef)
+        }
+        // Wrapped before the guard, so whatever the bridge handed over is released.
+        let result = resultRef.map(Shape.init(handle:))
+        let history = h.map(ShapeHistoryRef.init)
+        guard let result, let history else { return nil }
+        return (result, history)
+    }
     /// Generate multiple parallel offset wires from a planar face boundary.
     ///
     /// More efficient than calling `Wire.offset` multiple times, and produces
@@ -1407,6 +1446,51 @@ extension Shape {
             pieces = []
         }
         return (pieces, ShapeHistoryRef(h))
+    }
+
+    /// Split the shape by a plane, keeping the splitter's history.
+    ///
+    /// The pieces are ``split(atPlane:normal:)``'s, in the same order: both run one bridge
+    /// implementation. A solid the plane misses therefore comes back as itself, not as its shells.
+    /// `cuttingFace` is the bounded face of the plane the splitter cut with, returned because it
+    /// is the one input the caller did not build: `history.record(of: cuttingFace).modified` is
+    /// the cap face and `.generated` the section edges and vertices. A face of `self` the plane
+    /// crosses is `modified` into its pieces; one the plane misses has an empty record and is in
+    /// a piece unchanged.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// if let (pieces, history, cuttingFace) = box.splitWithFullHistory(
+    ///     atPlane: SIMD3(0, 0, 1), normal: SIMD3(0, 0, 1))
+    /// {
+    ///     let cap = history.record(of: cuttingFace).modified
+    ///     print(pieces.count, cap.count)  // 2 1
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - point: A point on the cutting plane
+    ///   - normal: Normal vector of the cutting plane
+    /// - Returns: The pieces, the history and the cutting face, or nil where
+    ///   ``split(atPlane:normal:)`` returns nil
+    public func splitWithFullHistory(atPlane point: SIMD3<Double>, normal: SIMD3<Double>)
+        -> (pieces: [Shape], history: ShapeHistoryRef, cuttingFace: Shape)?
+    {
+        var piecesPtr: UnsafeMutablePointer<OCCTShapeRef?>?
+        var count: Int32 = 0
+        var faceRef: OCCTShapeRef?
+        let h = OCCTShapeSplitByPlaneWithHistory(
+            handle,
+            point.x, point.y, point.z,
+            normal.x, normal.y, normal.z,
+            &piecesPtr, &count, &faceRef)
+        defer { OCCTFreeShapeArrayOnly(piecesPtr) }
+        // Wrapped before any early return, so whatever the bridge handed over is released.
+        let pieces = (0..<Int(count)).compactMap { i in piecesPtr?[i].map(Shape.init(handle:)) }
+        let cuttingFace = faceRef.map(Shape.init(handle:))
+        let history = h.map(ShapeHistoryRef.init)
+        guard let history, let cuttingFace, !pieces.isEmpty else { return nil }
+        return (pieces, history, cuttingFace)
     }
     /// Apply a uniform-radius fillet to the given edges, returning the result
     /// shape and a `ShapeHistoryRef` queryable for `Modified` / `Generated` /

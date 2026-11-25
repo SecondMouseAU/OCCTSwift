@@ -2453,6 +2453,12 @@ public final class Shape: @unchecked Sendable {
 
     /// Split the shape by a plane.
     ///
+    /// The plane cuts the shape wherever `point` lies on it: the cutting face is centred on the
+    /// shape's projection onto the plane, not on `point` (#3559). The pieces are the solids of
+    /// the split, else its shells, else the whole result; a plane that misses the shape returns
+    /// it as one piece. ``splitWithFullHistory(atPlane:normal:)`` returns the same pieces with
+    /// the splitter's history.
+    ///
     /// - Parameters:
     ///   - point: A point on the cutting plane
     ///   - normal: Normal vector of the cutting plane
@@ -2462,9 +2468,9 @@ public final class Shape: @unchecked Sendable {
     /// ## Example
     ///
     /// ```swift
-    /// let cube = Shape.box(width: 20, height: 20, depth: 20)!
-    /// // Split horizontally at Z=10
-    /// let halves = cube.split(atPlane: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1))
+    /// let cube = Shape.box(width: 20, height: 20, depth: 20)!  // centred: z in [-10, 10]
+    /// // Split horizontally at Z=5, into a 2000 and a 6000 mm^3 piece
+    /// let pieces = cube.split(atPlane: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1))
     /// ```
     public func split(atPlane point: SIMD3<Double>, normal: SIMD3<Double>) -> [Shape]? {
         var count: Int32 = 0

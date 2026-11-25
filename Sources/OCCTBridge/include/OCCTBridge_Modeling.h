@@ -544,6 +544,26 @@ OCCTShapeRef* OCCTShapeSplitByPlane(OCCTShapeRef shape,
                                     double       normalZ,
                                     int32_t*     outCount);
 
+/// Split a shape by a plane, keeping the splitter's history (#3559). The pieces are
+/// OCCTShapeSplitByPlane's, in its order: the two share one implementation.
+/// @param outPieces Receives an array of `*outCount` pieces; the caller owns each, and frees the
+/// array itself with OCCTFreeShapeArrayOnly
+/// @param outCount Receives the number of pieces
+/// @param outCuttingFace Receives the bounded plane face the splitter cut with, the input whose
+/// record holds the cap face and the section edges (caller owns)
+/// @return History handle on success; NULL on failure, with every out-parameter cleared
+OCCTBooleanHistoryRef _Nullable OCCTShapeSplitByPlaneWithHistory(
+  OCCTShapeRef _Nonnull shape,
+  double planeX,
+  double planeY,
+  double planeZ,
+  double normalX,
+  double normalY,
+  double normalZ,
+  OCCTShapeRef _Nullable* _Nullable* _Nonnull outPieces,
+  int32_t* _Nonnull outCount,
+  OCCTShapeRef _Nullable* _Nonnull outCuttingFace);
+
 /// Free an array of shapes returned by split operations
 /// @param shapes Array of shape references
 /// @param count Number of shapes in the array
@@ -1163,6 +1183,16 @@ OCCTShapeRef OCCTShapeSplitByWire(OCCTShapeRef shape, OCCTWireRef wire, int32_t 
 /// @param count Number of shapes
 /// @return Fused shape, or NULL on failure
 OCCTShapeRef OCCTShapeFuseMulti(const OCCTShapeRef* shapes, int32_t count);
+
+/// OCCTShapeFuseMulti, keeping the General Fuse history of every argument (#3560). The result is
+/// OCCTShapeFuseMulti's: the two share one implementation.
+/// @param outResult If non-null, set to the result shape on success (caller owns; free with
+/// OCCTShapeRelease).
+/// @return History handle on success, NULL on failure.
+OCCTBooleanHistoryRef _Nullable OCCTShapeFuseMultiWithHistory(
+  const OCCTShapeRef _Nonnull* _Nonnull shapes,
+  int32_t count,
+  OCCTShapeRef _Nullable* _Nullable outResult);
 
 // MARK: - Multi-Offset Wire (v0.35.0)
 
