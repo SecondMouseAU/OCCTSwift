@@ -179,6 +179,7 @@ Tests/OCCTModelingTests/ShapeSplittingTests.swift	Tests/OCCTModelingTests/Splitt
 Tests/OCCTModelingTests/SimpleOffsetTests.swift	Tests/OCCTModelingTests/Offsets/SimpleOffsetTests.swift	Offsets	-	simple offset of a face
 Tests/OCCTModelingTests/SplitByAngleTests.swift	Tests/OCCTModelingTests/Splitting/SplitByAngleTests.swift	Splitting	-	split a shape by angle
 Tests/OCCTModelingTests/SplitByWireTests.swift	Tests/OCCTModelingTests/Splitting/SplitByWireTests.swift	Splitting	-	split a face by a wire
+Tests/OCCTModelingTests/Splitting/SplitAtPlaneHistoryTests.swift	Tests/OCCTModelingTests/Splitting/SplitAtPlaneHistoryTests.swift	Splitting	-	split by a plane far from the shape's point, and the history-keeping variant's pieces and records
 Tests/OCCTModelingTests/SweepTests.swift	Tests/OCCTModelingTests/Sweeps/SweepTests.swift	Sweeps	-	extrude, pipe sweep and revolution
 Tests/OCCTModelingTests/ThickSolidTests.swift	Tests/OCCTModelingTests/Offsets/ThickSolidTests.swift	Offsets	-	hollowing a solid into a thick solid
 Tests/OCCTModelingTests/ThruSectionsBuilderTests.swift	Tests/OCCTModelingTests/Lofts/ThruSectionsBuilderTests.swift	Lofts	-	ThruSections builder basic, ruled and settings

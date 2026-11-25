@@ -280,20 +280,31 @@ public func split(by tool: Shape) -> [Shape]?
 
 ### `split(atPlane:normal:)`
 
-Splits the shape by an infinite plane.
+Splits the shape by a plane.
 
 ```swift
 public func split(atPlane point: SIMD3<Double>, normal: SIMD3<Double>) -> [Shape]?
 ```
 
+The cutting face is the plane trimmed to a square reaching twice the shape's bounding-box diagonal
+each way from the projection of the box centre onto the plane, so it covers the shape wherever
+`point` lies on the plane. Until #3559 the square was centred on `point`, and a shape whose
+projection lay farther than that reach from it came back whole: a 4 x 4 x 4 box at X = 100 against
+the plane z = 0.5 through the origin. The plane keeps `point` as its origin, so a cap face's
+surface and UV parametrisation are what they were.
+
 - **Parameters:** `point`, a point on the cutting plane; `normal`, plane normal direction.
-- **Returns:** Array of result shapes, or `nil` on failure.
+- **Returns:** The solids of the split, else its shells, else the whole result, or `nil` on
+  failure. A plane that misses the shape returns it as one piece.
+- **History:** `splitWithFullHistory(atPlane:normal:)` returns the same pieces in the same order,
+  with the splitter's history and the cutting face (see
+  [Shape-Healing.md](Shape-Healing.md#splitwithfullhistoryatplanenormal)).
 - **OCCT:** `BRepBuilderAPI_MakeFace` (build the cutting face) + `BRepAlgoAPI_Splitter`, the same
   splitter `split(by:)` uses, not `BRepAlgoAPI_BuilderAlgo`.
 - **Example:**
   ```swift
-  let cube = Shape.box(width: 20, height: 20, depth: 20)!
-  let halves = cube.split(atPlane: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1))
+  let cube = Shape.box(width: 20, height: 20, depth: 20)!  // centred: z in [-10, 10]
+  let pieces = cube.split(atPlane: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1))  // 2000 and 6000 mm^3
   ```
 
 ---
