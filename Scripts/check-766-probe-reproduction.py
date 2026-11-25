@@ -268,6 +268,8 @@ ACKNOWLEDGED = {
     },
     (PINNED_KEY, "766-geom2d-evidence-fix/probe.mm"): {
         "explained_by": ("0075",),
+        # Matches both transcripts: the unpatched one (`R18.a.x: hang (killed by signal 14)`) and the
+        # patched one (`EF R19.b.y = no_points (the sequence raised (the bridge catch returns 0))`).
         "covers": (
             r"^(EF )?R(1[89]|2[0-6])\.[a-z_]+( inputs .*: | = )"
             r"(hang \(killed by signal 14\)|\"hang\""

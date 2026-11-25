@@ -305,7 +305,7 @@ records citing them read as verified (#2934).
 that is the evidence of a kernel defect (a hang, a SIGSEGV, a cone area off by `cos(a)`) keeps
 recording what the unpatched kernel did, and the carried patch that fixes it is what makes the
 hardened kernel print something else; re-recording it would erase the only record of the defect.
-The script's `ACKNOWLEDGED` table says so for the machine: per asset read, the probe, the carried
+The `ACKNOWLEDGED` table in `Scripts/check-766-probe-reproduction.py` says so for the machine: per asset read, the probe, the carried
 patches (or `environment`) that explain the difference, which changed lines the row covers, and
 why. An acknowledged probe is printed with its reason on every run and does not fail it; a probe
 that differs beyond what its row covers, or on an asset no row is keyed to, fails as before; a row

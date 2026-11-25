@@ -243,9 +243,10 @@ struct Issue612FilletContourSelection {
         #expect(abs(pairVolume - 10297.711861) < 1e-3)
         // The old idiom wrote both to slot 1, which measures exactly as filleting the line alone.
         // 10273.238348 on OCCT 8.0.1; 8.0.2 moved the line-only fillet by 0.016 (1.6e-6 relative)
-        // while the pair did not move. The cause was not isolated. Swapping upstream's fillet units
-        // (#1501, #1708, #1710) into the 8.0.1 kernel did not reproduce the fillet volume shifts
-        // the repro corpus showed; #1741 (ProjLib_CompProjectedCurve) did.
+        // while the pair did not move. This model was not swapped, so its cause is not measured.
+        // On the repro corpus, swapping upstream's fillet units (#1501, #1708, #1710) into the
+        // 8.0.1 kernel did not reproduce the volume shifts, and swapping the
+        // ProjLib_CompProjectedCurve hunk of #1741 did.
         #expect(abs(lineVolume - 10273.221977) < 1e-3)
         #expect(abs(pairVolume - lineVolume) > 1.0)
     }
