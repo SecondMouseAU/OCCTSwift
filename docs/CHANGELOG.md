@@ -21,6 +21,35 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `ChamferBuilder.simulatedSurfaceCount(contour:)` answers 0 for a contour with no surface data (#3522)
+
+`simulatedSurfaceCount(contour:)` faulted the process, uncatchably, on a contour that was never
+built or simulated, on any builder after `reset()`, and on a contour that a `simulate` of another
+contour never reached. OCCT reads the count from a per-contour sequence that only `build()` or
+`simulate(contour:)` creates and `reset()` discards, with no null test. It now answers `0` in those
+states, the answer it already gave after a declined build or simulation, and keeps answering the
+count that a completed `build()` or `simulate(contour:)` left. It is the chamfer counterpart of the
+#3519 fix for `FilletBuilder.simulatedSurfaceCount(contour:)`.
+
+The bridge asks OCCT whether the contour holds surface data, through `NbComputedSurfaces`, the
+null-tested read the fillet side already uses; `BRepFilletAPI_MakeChamfer` does not expose it, and the
+bridge reaches it through the one construct C++ allows to name a private member, so there is no
+kernel change. An index past `contourCount` answers `0`, where OCCT read a corner stripe (three
+chamfers meeting at a vertex leave one) as a contour. `simulate(contour:)` and
+`FilletBuilder.simulatedSurfaceCount(contour:)` convert the index with `Int32(clamping:)`, so an
+`Int` past 32 bits is an ordinary out-of-range index and not a trap.
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let builder = ChamferBuilder(shape: box)!
+builder.addEdge(box.edges()[0], distance: 1)
+print(builder.simulatedSurfaceCount(contour: 1))   // 0: nothing has run on it yet
+builder.simulate(contour: 1)
+print(builder.simulatedSurfaceCount(contour: 1))   // 1
+builder.reset()
+print(builder.simulatedSurfaceCount(contour: 1))   // 0
+```
+
 ### OCCT 8.0.2 base, the kernel-fix ledger and the `Kernel` probe (#3543, #3535)
 
 The kernel build moves to OCCT 8.0.2: ten carried patches are retired as absorbed upstream, three are rebased, 51 remain, and the pinned kernel is `kernel-8.0.2-c1`. Adds `Kernel` (`flavour`, `occtVersion`, `hasFix(_:)`) to report which kernel flavour a build links against and which ledger fixes it holds. A few results move with 8.0.2 (HLR edge counts, a coarse mesh's triangle count, fillet volumes at the 1e-8 level); see `docs/occt-upgrades.md`, "8.0.1 to 8.0.2".
