@@ -11,6 +11,7 @@ Documents breaking changes and migration steps for each OCCT version upgrade.
 
 | OCCTSwift | OCCT Version | Date | Notes |
 |-----------|-------------|------|-------|
+| Unreleased | 8.0.2 | Nov 2026 | Surveyed 2026-11-23, not yet the source pin: retires ten carried patches, rebases three |
 | Unreleased | 8.0.1 | Aug 2026 | Current source pin: first 8.0 maintenance release, retired ten carried patches |
 | v1.15.x | 8.0.0p1 | Jun 2026 | Hot-patch tag; the kernel every v1.15–v1.17 release was built from |
 | v1.0.0 | 8.0.0 GA | May 2026 | SemVer-stable; PointSetLib removed, EdgeRegularity consolidated |
@@ -20,6 +21,115 @@ Documents breaking changes and migration steps for each OCCT version upgrade.
 | v0.27.0 | 8.0.0-rc4 | Feb 2026 | 111 improvements, 4 breaking changes |
 | v0.26.0 | 8.0.0-rc3 | Feb 2026 | Initial OCCT 8.0 adoption |
 | v0.16.0 | 7.8.1 | Feb 2026 | Original release |
+
+---
+
+## 8.0.1 to 8.0.2 (surveyed, not yet the pin)
+
+[OCCT 8.0.2](https://github.com/Open-Cascade-SAS/OCCT/releases/tag/V8_0_2) (tag `V8_0_2`, 2026-11-21,
+a lightweight tag on `83f9abe947`) is the second 8.0 maintenance release. `V8_0_1` is an ancestor
+of it: **36 commits, 184 files**. It is a selective backport from upstream `IR`, and several pull
+requests were taken in part (#1470, #1472, #1512, #1514, #1611, #1620, #1634, #1640, #1644, #1647,
+#1653, #1741), so a pull request number in the release notes does not say which files reached the
+tag. Every verdict below was taken from the files, not from the notes.
+
+This section is the survey that [`v4.0.0-plan.md`](v4.0.0-plan.md) family E requires before any
+build. The kernel is still `V8_0_1`; nothing here has been built yet, apart from the two
+translation units measured under "Upstream's forms, measured".
+
+### No API or ABI break
+
+No public header was added, removed or renamed, and no `Standard_DEPRECATED` was added. Six public
+headers changed, and only one in code: `gp_Hypr`'s default constructor sets the minor radius to
+`RealLast()` instead of `RealFirst()` (#1538). The bridge's one default-built `gp_Hypr` is an unused
+local. The others are comment changes in `BRepTools.hxx`, `Extrema_ExtCS.hxx`, `Extrema_ExtSS.hxx`,
+`GeomTools.hxx` and `NCollection_UtfIterator.lxx`. The XCAF stream I/O (#1611) and companion stream
+(#1647) APIs were not backported; only fixes inside existing `.cxx` files were. **No migration is
+required for the OCCT API.**
+
+Two existing calls now behave differently:
+
+- `Extrema_ExtCS::Points` and `Extrema_ExtSS::Points` throw `StdFail_NotDone` when the extremum is
+  not done. The merged form of #1596 has that check; patch `0044`, our submitted form, did not.
+  `NbExt()` already threw in that state, so a caller that reads `NbExt()` first is unaffected.
+- `BRepTools::Read` returns `false` when the stream fails (#1786).
+
+### Build
+
+`adm/cmake/version.cmake` moves to maintenance version 2. The static-link licence warning moved
+into a new `adm/cmake/OpenCASCADELicense.cmake` with new text. Install destinations became relative,
+which is equivalent here because `CMakeLists.txt` forces `CMAKE_INSTALL_PREFIX` to `INSTALL_DIR`.
+Neither build script reads any of these. `OCCT_VERSION` is set separately in `build-occt.sh` and
+`build-occt-wasm.sh`, and both must move.
+
+### Carried patches: ten retire, three rebase, 48 unchanged
+
+Checked by applying every patch to a pristine `V8_0_2` checkout, alone and as the ordered stack.
+The ten retirements were then confirmed against their upstream commits, each an ancestor of the tag.
+The 51 patches that remain, with the three rebased ones in place, apply in order to pristine
+`V8_0_2` with plain `git apply`. The result is identical to the patch-by-patch replay, and all 11
+`Scripts/patches-wasi/` patches apply on top of it. The patched files they touch are byte-identical
+between the two tags.
+
+| Patch | Verdict | Evidence |
+|---|---|---|
+| `0019` | retire | #1418, `eb9e347af9`; reverse-applies to `V8_0_2` |
+| `0029` | retire | #1483, `784c1ad96d`; reverse-applies |
+| `0045` | retire | #1593, `1fdabe7c7e`; reverse-applies |
+| `0034` | retire | #1550, `d241c9fa88`; patched source equals `V8_0_2` with comments and blank lines removed |
+| `0043` | retire | #1587, `00e6b907ac`; same code |
+| `0048` | retire | #1601, `3958f18267`; same code, both files |
+| `0044` | retire | #1596, `55ff78f397`; same code plus the `StdFail_NotDone` check above |
+| `0054` | retire, take upstream's form | #1708, `406228f881`, where GeeBee2's fix sets `ChFiDS_StartsolFailure` and throws; ours dropped the obstacle and returned. Measured below |
+| `0064` | retire, take upstream's form | #1787, `d58691494b`, which advances the iterator before `Remove`; ours collected the edges first. Measured below |
+| `0052` | retire | Doc comment only (#1602, on `IR`, not in `V8_0_2`); it changes no binary |
+| `0053` | rebase | Source hunk unchanged. The GTest hunk now sits beside the tests #1453 added to the same file; both sides kept |
+| `0073` | rebase | Its `GetReal` hunk is superseded by #1786, which reads a long real into a 512-byte buffer; dropped, so the patch no longer touches `GeomTools.cxx`. Where #1786 returns on a failed stream before building a trimmed or offset curve or surface, `0073`'s null-basis check stays beside it: an unknown type record yields a null basis without failing the stream. Three-way merged otherwise |
+| `0074` | rebase | Three-way merge onto the rebased `0073`, no hand edits |
+| `0076` | unchanged | Conflicted only because `0074` had not applied; applies as it is on the rebased `0074` |
+| the other 47 | unchanged | Apply as they are, in order |
+
+`0028` stays. Its file is unchanged in `V8_0_2`. Upstream fixed the uninitialised members on `IR`
+in #1620 with a different contract for a plate built from point constraints alone (zero, where
+`0028` reports the measured deviation). No OCCTSwift entry point builds such a plate: the
+deviations reach the Swift API only through `BRepFill_Filling`, which always has a curve
+constraint, so the two forms answer the same for every caller. It retires with the move to 8.1.
+
+`Scripts/lib/apply-patches.sh` treats a patch that reverse-applies as already applied, so leaving an
+absorbed patch in place would not fail the build. The retirements are therefore recorded here and
+in `Scripts/patches/README.md`, not inferred from a build log.
+
+### Upstream's forms, measured
+
+`ChFi3d_Builder_2.cxx` and `TopOpeBRepBuild_Merge.cxx` are each changed by one commit between the
+tags (#1708 and #1787) and by one carried patch (`0054` and `0064`). So the `V8_0_2` source of each
+file is exactly the `kernel.9` source with our patch replaced by upstream's. Both were compiled with
+`kernel.9`'s own flags and swapped into its macOS archive (symbol sets identical), which was
+restored afterwards. The test binaries were relinked after the swap and carry #1708's new error
+string.
+
+- **OCCTSwift's fillet, chamfer and blend suites** (259 tests, including `FilletObstacleTests` and
+  `FilletMergeWireRemovalTests`): all pass on both. The obstacle model still fillets 20 of 42
+  edges at radius 1.0 and 12 of 42 at 1.5.
+- **The 43 cases of [`Scripts/repro/fillet-open-set`](../Scripts/repro/fillet-open-set/README.md)**:
+  42 identical. OCCT#1421's model (#3336) changes from done but invalid (two solids, 139
+  `bopcheck` faults) to not done with one faulty contour, a refusal where the caller used to be
+  handed a broken solid.
+
+### Behaviour changes to watch
+
+None of these breaks compilation. Each changes results, and the repin classifies every test whose
+expectation moves against both kernels.
+
+| Upstream | Change | Reaches us through |
+|---|---|---|
+| #1708, #1710, #1501 | Fillet: a missing obstacle edge refuses; the two-corner check moved; knots on a G2-closed spine are kept | `Shape.filleted`, `FilletBuilder` |
+| #1453 | A circular wire offset that collapses is not done, where it fell through to the general algorithm | `Shape.offsetWire` and its family |
+| #1783, #1784, #1785 | Closed lofts keep the last section's history; an unbounded section is refused; a null auxiliary spine throws `Standard_ConstructionError` | `ThruSections`, `PipeShell` |
+| #1620 (part) | Booleans: section splits limited to common vertices, a 2D intersection length fixed | Boolean, section and mesh-boolean counts |
+| #1634, #1640, #1741 (parts) | HLR sampling and B-spline handling, projection knots, `BRepMesh` and `GCPnts_TangentialDeflection` | exact mesh, HLR and sampling counts |
+| #1786 | Long reals in BREP text, readers stop on a failed stream | the BREP readers; the bridge's #3487 stream guards stay, since #1786 bounds only `GetReal` |
+| #1470, #1514, #1611, #1647, #1644 (parts) | STEP writer field kinds, cyclic oriented edges, PMI units, tessellated vertex order | STEP read and write |
 
 ---
 
