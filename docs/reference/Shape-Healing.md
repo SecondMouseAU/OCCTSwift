@@ -1977,9 +1977,51 @@ More robust than sequential pairwise `union(with:)` calls, processes all interse
   `BRepAlgoAPI_Fuse`, which this entry used to name and which is never constructed here:
   `BuilderAlgo` is the general-fuse base, and passing every shape as an argument with no tools is
   what makes this one pass rather than a chain of pairwise fuses. (#808)
+- **History:** [`fuseAllWithFullHistory(_:)`](#shapefuseallwithfullhistory_) returns the same
+  result with the history of every argument.
 - **Example:**
   ```swift
   if let merged = Shape.fuseAll([a, b, c, d]) { }
+  ```
+
+---
+
+### `Shape.fuseAllWithFullHistory(_:)`
+
+Fuse multiple shapes simultaneously, keeping the General Fuse history of every argument.
+
+```swift
+public static func fuseAllWithFullHistory(_ shapes: [Shape]) -> (result: Shape, history: ShapeHistoryRef)?
+```
+
+The result is exactly `fuseAll(_:)`'s, because both run one bridge implementation (#3560): General
+Fuse, a compound of the split parts rather than one merged solid. The history answers
+`record(of:)` for a sub-shape of any of `shapes`, so it can be read after a split's history to
+carry a sub-shape through both, and a `BRepGraph` absorbing it walks every argument's sub-shapes.
+
+What OCCT records, measured on two 10 mm cubes touching on the plane x = 0:
+
+| Input sub-shape | `modified` | `generated` | `isDeleted` |
+|---|---|---|---|
+| either cube's face on x = 0 | the one face the two solids of the result now share | empty | `false` |
+| a face away from x = 0 | empty: it is in the result unchanged | empty | `false` |
+
+- **Parameters:** `shapes`, the shapes to fuse (at least two).
+- **Returns:** The result and its history, or nil where `fuseAll(_:)` returns nil.
+- **OCCT:** `BRepAlgoAPI_BuilderAlgo`, the history read through `Modified` / `Generated` /
+  `IsDeleted` (via `OCCTShapeFuseMultiWithHistory`).
+- **Example:**
+  ```swift
+  let a = Shape.box(origin: SIMD3(-10, 0, 0), width: 10, height: 10, depth: 10)!
+  let b = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
+  if let (result, history) = Shape.fuseAllWithFullHistory([a, b]) {
+      // The face of `a` on x = 0 is now the one face the two solids share.
+      let onBoundary = a.subShapes(ofType: .face).first { face in
+          guard let box = face.bounds else { return false }
+          return abs(box.min.x) < 1e-6 && abs(box.max.x) < 1e-6
+      }!
+      print(result.solids.count, history.record(of: onBoundary).modified.count)  // 2 1
+  }
   ```
 
 ---

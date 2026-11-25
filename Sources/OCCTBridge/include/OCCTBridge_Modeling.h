@@ -1164,6 +1164,16 @@ OCCTShapeRef OCCTShapeSplitByWire(OCCTShapeRef shape, OCCTWireRef wire, int32_t 
 /// @return Fused shape, or NULL on failure
 OCCTShapeRef OCCTShapeFuseMulti(const OCCTShapeRef* shapes, int32_t count);
 
+/// OCCTShapeFuseMulti, keeping the General Fuse history of every argument (#3560). The result is
+/// OCCTShapeFuseMulti's: the two share one implementation.
+/// @param outResult If non-null, set to the result shape on success (caller owns; free with
+/// OCCTShapeRelease).
+/// @return History handle on success, NULL on failure.
+OCCTBooleanHistoryRef _Nullable OCCTShapeFuseMultiWithHistory(
+  const OCCTShapeRef _Nonnull* _Nonnull shapes,
+  int32_t count,
+  OCCTShapeRef _Nullable* _Nullable outResult);
+
 // MARK: - Multi-Offset Wire (v0.35.0)
 
 /// Generate multiple parallel offset wires from a face boundary.
