@@ -2,6 +2,25 @@ import OCCTBridge
 import OCCTPlatform
 
 /// Builder for creating chamfers on edges of a shape, wrapping BRepFilletAPI_MakeChamfer.
+///
+/// ## Contour and edge indices (#3523)
+///
+/// Every method that takes a contour index takes it 1-based, in `1...contourCount`; the edge index
+/// inside a contour is `1...edgeCount(contour:)`. An index outside its range, `0` and the negatives
+/// included, is refused with the answer each method documents (`0`, `-1`, `false`, `nil` or no
+/// effect) and never reaches the kernel. OCCT range-checks neither end reliably: an index past the
+/// end, or any index on a builder with no contour, faulted the process uncatchably, and `0` or a
+/// negative read, or wrote, contour 1.
+///
+/// ```swift
+/// let box = Shape.box(width: 10, height: 10, depth: 10)!
+/// let builder = ChamferBuilder(shape: box)!
+/// print(builder.edgeCount(contour: 1))        // 0: no contour yet, and not a crash
+/// builder.addEdge(box.edges()[0], distance: 1)
+/// print(builder.edgeCount(contour: 1))        // 1
+/// print(builder.edgeCount(contour: 0))        // 0, not contour 1
+/// print(builder.edgeCount(contour: 2))        // 0
+/// ```
 public final class ChamferBuilder: @unchecked Sendable {
     private let handle: OCCTChamferBuilderRef
     private let input: Shape
@@ -48,62 +67,191 @@ public final class ChamferBuilder: @unchecked Sendable {
     /// Number of contours.
     public var contourCount: Int { Int(OCCTChamferBuilderNbContours(handle)) }
 
-    /// Whether a contour uses distance-angle mode (1-based index).
+    /// Whether a contour uses distance-angle mode.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`.
+    /// - Returns: The flag, or `false` for a contour that does not exist (#3523).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = ChamferBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], distance: 1)
+    /// print(builder.isDistanceAngle(contour: 1))   // false: a symmetric chamfer
+    /// print(builder.isDistanceAngle(contour: 2))   // false: no such contour
+    /// ```
     public func isDistanceAngle(contour: Int) -> Bool {
-        OCCTChamferBuilderIsDistAngle(handle, Int32(contour))
+        OCCTChamferBuilderIsDistAngle(handle, Int32(clamping: contour))
     }
 }
 
 extension ChamferBuilder {
-    /// Number of edges in contour (1-based index).
+    /// Number of edges in a contour.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`. An index outside that
+    ///   range, `0` and the negatives included, answers `0` (#3523).
+    /// - Returns: The number of edges in the contour, or `0` for a contour that does not exist.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = ChamferBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], distance: 1)
+    /// print(builder.edgeCount(contour: 1))   // 1
+    /// print(builder.edgeCount(contour: 2))   // 0: past contourCount, not a crash
+    /// ```
     public func edgeCount(contour: Int) -> Int {
-        Int(OCCTChamferBuilderNbEdges(handle, Int32(contour)))
+        Int(OCCTChamferBuilderNbEdges(handle, Int32(clamping: contour)))
     }
 
-    /// Get the symmetric distance for a contour (1-based).
+    /// Get the symmetric distance for a contour.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`.
+    /// - Returns: The distance, or `-1` for a contour that does not exist, the value OCCT documents
+    ///   for an index outside its table (#3523).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = ChamferBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], distance: 2)
+    /// print(builder.getDistance(contour: 1))   // 2.0
+    /// print(builder.getDistance(contour: 0))   // -1.0, not contour 1
+    /// ```
     public func getDistance(contour: Int) -> Double {
         var dist: Double = -1.0
-        OCCTChamferBuilderGetDist(handle, Int32(contour), &dist)
+        OCCTChamferBuilderGetDist(handle, Int32(clamping: contour), &dist)
         return dist
     }
 
-    /// Get the two distances for a contour (1-based).
+    /// Get the two distances for a contour.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`.
+    /// - Returns: The two distances, or `(-1, -1)` for a contour that does not exist (#3523). A
+    ///   contour that was not built with two distances answers `(-1, -1)` as well, because OCCT
+    ///   refuses it with an exception.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let edge = box.edges()[0]
+    /// let face = edge.adjacentFaces(in: box)![0]
+    /// let builder = ChamferBuilder(shape: box)!
+    /// builder.addEdge(edge, face: face, distance1: 1, distance2: 2)
+    /// print(builder.getDistances(contour: 1))   // (d1: 1.0, d2: 2.0)
+    /// print(builder.getDistances(contour: 2))   // (d1: -1.0, d2: -1.0)
+    /// ```
     public func getDistances(contour: Int) -> (d1: Double, d2: Double) {
         var d1: Double = -1.0
         var d2: Double = -1.0
-        OCCTChamferBuilderGetDists(handle, Int32(contour), &d1, &d2)
+        OCCTChamferBuilderGetDists(handle, Int32(clamping: contour), &d1, &d2)
         return (d1, d2)
     }
 
-    /// Get distance and angle for a contour (1-based).
+    /// Get distance and angle for a contour.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`.
+    /// - Returns: The distance and angle, or `(-1, -1)` for a contour that does not exist (#3523).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let edge = box.edges()[0]
+    /// let face = edge.adjacentFaces(in: box)![0]
+    /// let builder = ChamferBuilder(shape: box)!
+    /// builder.addEdge(edge, face: face, distance: 1, angle: 0.5)
+    /// print(builder.getDistAngle(contour: 1))   // (distance: 1.0, angle: 0.5)
+    /// print(builder.getDistAngle(contour: 2))   // (distance: -1.0, angle: -1.0)
+    /// ```
     public func getDistAngle(contour: Int) -> (distance: Double, angle: Double) {
         var dist: Double = -1.0
         var angle: Double = -1.0
-        OCCTChamferBuilderGetDistAngle(handle, Int32(contour), &dist, &angle)
+        OCCTChamferBuilderGetDistAngle(handle, Int32(clamping: contour), &dist, &angle)
         return (dist, angle)
     }
 
-    /// Set symmetric distance on a contour (1-based, requires face for orientation).
+    /// Set the symmetric distance on a contour.
+    ///
+    /// - Parameters:
+    ///   - dist: The new distance.
+    ///   - contour: The 1-based contour index, `1...contourCount`.
+    ///   - face: A face the contour's edges lie on, which orients the chamfer.
+    /// - Returns: `false`, and changes nothing, for a contour that does not exist. `0` and the
+    ///   negatives used to rewrite contour 1, and an index past the end answered `true` for a write
+    ///   that never happened (#3523). Also `false` when `face` is not common to any edge of the
+    ///   contour.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let edge = box.edges()[0]
+    /// let face = edge.adjacentFaces(in: box)![0]
+    /// let builder = ChamferBuilder(shape: box)!
+    /// builder.addEdge(edge, distance: 1)
+    /// print(builder.setDistance(3, contour: 1, face: face))   // true
+    /// print(builder.setDistance(3, contour: 0, face: face))   // false: no contour 0
+    /// ```
     @discardableResult
     public func setDistance(_ dist: Double, contour: Int, face: Face) -> Bool {
-        OCCTChamferBuilderSetDist(handle, dist, Int32(contour), face.handle)
+        OCCTChamferBuilderSetDist(handle, dist, Int32(clamping: contour), face.handle)
     }
 
-    /// Set two distances on a contour (1-based, requires face for orientation).
+    /// Set two distances on a contour.
+    ///
+    /// - Parameters:
+    ///   - d1: The distance on `face`.
+    ///   - d2: The distance on the other face.
+    ///   - contour: The 1-based contour index, `1...contourCount`.
+    ///   - face: A face the contour's edges lie on, which orients the chamfer.
+    /// - Returns: `false`, and changes nothing, for a contour that does not exist (#3523).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let edge = box.edges()[0]
+    /// let face = edge.adjacentFaces(in: box)![0]
+    /// let builder = ChamferBuilder(shape: box)!
+    /// builder.addEdge(edge, distance: 1)
+    /// print(builder.setDistances(1, 2, contour: 1, face: face))    // true
+    /// print(builder.setDistances(1, 2, contour: 5, face: face))    // false: no contour 5
+    /// ```
     @discardableResult
     public func setDistances(_ d1: Double, _ d2: Double, contour: Int, face: Face) -> Bool {
-        OCCTChamferBuilderSetDists(handle, d1, d2, Int32(contour), face.handle)
+        OCCTChamferBuilderSetDists(handle, d1, d2, Int32(clamping: contour), face.handle)
     }
 
-    /// Set distance and angle on a contour (1-based, requires face for orientation).
+    /// Set distance and angle on a contour.
+    ///
+    /// - Parameters:
+    ///   - distance: The distance on `face`.
+    ///   - angle: The angle, in radians.
+    ///   - contour: The 1-based contour index, `1...contourCount`.
+    ///   - face: A face the contour's edges lie on, which orients the chamfer.
+    /// - Returns: `false`, and changes nothing, for a contour that does not exist (#3523).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let edge = box.edges()[0]
+    /// let face = edge.adjacentFaces(in: box)![0]
+    /// let builder = ChamferBuilder(shape: box)!
+    /// builder.addEdge(edge, distance: 1)
+    /// print(builder.setDistAngle(distance: 1, angle: 0.5, contour: 1, face: face))   // true
+    /// print(builder.setDistAngle(distance: 1, angle: 0.5, contour: -1, face: face))   // false
+    /// ```
     @discardableResult
     public func setDistAngle(distance: Double, angle: Double, contour: Int, face: Face) -> Bool {
-        OCCTChamferBuilderSetDistAngle(handle, distance, angle, Int32(contour), face.handle)
+        OCCTChamferBuilderSetDistAngle(
+            handle, distance, angle, Int32(clamping: contour), face.handle)
     }
 
-    /// Length of contour (1-based).
+    /// Length of a contour.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`.
+    /// - Returns: The length, or `-1` for a contour that does not exist, the value OCCT documents
+    ///   for an index outside its table. `0` and the negatives used to answer contour 1 (#3523).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = ChamferBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], distance: 1)
+    /// print(builder.length(contour: 1))   // 10.0
+    /// print(builder.length(contour: 2))   // -1.0
+    /// ```
     public func length(contour: Int) -> Double {
-        OCCTChamferBuilderLength(handle, Int32(contour))
+        OCCTChamferBuilderLength(handle, Int32(clamping: contour))
     }
 
     /// Remove the contour containing the given edge.
@@ -117,43 +265,130 @@ extension ChamferBuilder {
         OCCTChamferBuilderReset(handle)
     }
 
-    /// Whether contour (1-based) is closed.
+    /// Whether a contour is closed.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`.
+    /// - Returns: The flag, or `false` for a contour that does not exist (#3523).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = ChamferBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], distance: 1)
+    /// print(builder.isClosed(contour: 1))   // false: one open edge
+    /// print(builder.isClosed(contour: 0))   // false: no such contour
+    /// ```
     public func isClosed(contour: Int) -> Bool {
-        OCCTChamferBuilderClosed(handle, Int32(contour))
+        OCCTChamferBuilderClosed(handle, Int32(clamping: contour))
     }
 
-    /// Whether contour (1-based) is closed and tangent at closure.
+    /// Whether a contour is closed and tangent at closure.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`.
+    /// - Returns: The flag, or `false` for a contour that does not exist (#3523).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = ChamferBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], distance: 1)
+    /// print(builder.isClosedAndTangent(contour: 1))   // false: one open edge
+    /// print(builder.isClosedAndTangent(contour: 9))   // false: no such contour
+    /// ```
     public func isClosedAndTangent(contour: Int) -> Bool {
-        OCCTChamferBuilderClosedAndTangent(handle, Int32(contour))
+        OCCTChamferBuilderClosedAndTangent(handle, Int32(clamping: contour))
     }
 
-    /// Whether contour (1-based) is symmetric.
+    /// Whether a contour is symmetric.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`.
+    /// - Returns: The flag, or `false` for a contour that does not exist (#3523).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = ChamferBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], distance: 1)
+    /// print(builder.isSymmetric(contour: 1))   // true
+    /// print(builder.isSymmetric(contour: 2))   // false: no such contour
+    /// ```
     public func isSymmetric(contour: Int) -> Bool {
-        OCCTChamferBuilderIsSymmetric(handle, Int32(contour))
+        OCCTChamferBuilderIsSymmetric(handle, Int32(clamping: contour))
     }
 
-    /// Whether contour (1-based) uses two distances.
+    /// Whether a contour uses two distances.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`.
+    /// - Returns: The flag, or `false` for a contour that does not exist (#3523).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = ChamferBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], distance: 1)
+    /// print(builder.isTwoDistances(contour: 1))   // false: a symmetric chamfer
+    /// print(builder.isTwoDistances(contour: 0))   // false: no such contour
+    /// ```
     public func isTwoDistances(contour: Int) -> Bool {
-        OCCTChamferBuilderIsTwoDists(handle, Int32(contour))
+        OCCTChamferBuilderIsTwoDists(handle, Int32(clamping: contour))
     }
 
-    /// Get edge J in contour I (both 1-based).
+    /// Get edge `index` in a contour.
+    ///
+    /// - Parameters:
+    ///   - contour: The 1-based contour index, `1...contourCount`.
+    ///   - index: The 1-based position of the edge inside the contour, `1...edgeCount(contour:)`.
+    /// - Returns: The edge, or `nil` when either index is outside its range (#3523).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = ChamferBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], distance: 1)
+    /// print(builder.edge(contour: 1, index: 1) != nil)   // true
+    /// print(builder.edge(contour: 1, index: 2) != nil)   // false: the contour holds one edge
+    /// print(builder.edge(contour: 2, index: 1) != nil)   // false: no second contour
+    /// ```
     public func edge(contour: Int, index: Int) -> Shape? {
-        guard let ref = OCCTChamferBuilderEdge(handle, Int32(contour), Int32(index)) else {
+        guard
+            let ref = OCCTChamferBuilderEdge(
+                handle, Int32(clamping: contour), Int32(clamping: index))
+        else {
             return nil
         }
         return Shape(handle: ref)
     }
 
-    /// Get first vertex of contour (1-based).
+    /// Get the first vertex of a contour.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`.
+    /// - Returns: The vertex, or `nil` for a contour that does not exist (#3523).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = ChamferBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], distance: 1)
+    /// print(builder.firstVertex(contour: 1) != nil)   // true
+    /// print(builder.firstVertex(contour: 0) != nil)   // false
+    /// ```
     public func firstVertex(contour: Int) -> Shape? {
-        guard let ref = OCCTChamferBuilderFirstVertex(handle, Int32(contour)) else { return nil }
+        guard let ref = OCCTChamferBuilderFirstVertex(handle, Int32(clamping: contour)) else {
+            return nil
+        }
         return Shape(handle: ref)
     }
 
-    /// Get last vertex of contour (1-based).
+    /// Get the last vertex of a contour.
+    ///
+    /// - Parameter contour: The 1-based contour index, `1...contourCount`.
+    /// - Returns: The vertex, or `nil` for a contour that does not exist (#3523).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = ChamferBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], distance: 1)
+    /// print(builder.lastVertex(contour: 1) != nil)   // true
+    /// print(builder.lastVertex(contour: 2) != nil)   // false
+    /// ```
     public func lastVertex(contour: Int) -> Shape? {
-        guard let ref = OCCTChamferBuilderLastVertex(handle, Int32(contour)) else { return nil }
+        guard let ref = OCCTChamferBuilderLastVertex(handle, Int32(clamping: contour)) else {
+            return nil
+        }
         return Shape(handle: ref)
     }
 
@@ -162,14 +397,43 @@ extension ChamferBuilder {
         Int(OCCTChamferBuilderContour(handle, edge.handle))
     }
 
-    /// Curvilinear abscissa of vertex on contour (1-based).
+    /// Curvilinear abscissa of a vertex on a contour.
+    ///
+    /// - Parameters:
+    ///   - contour: The 1-based contour index, `1...contourCount`.
+    ///   - vertex: A vertex of the contour.
+    /// - Returns: The abscissa, or `-1` for a contour that does not exist, the value OCCT
+    ///   documents for an index outside its table (#3523).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = ChamferBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], distance: 1)
+    /// let end = builder.lastVertex(contour: 1)!
+    /// print(builder.abscissa(contour: 1, vertex: end))   // 10.0
+    /// print(builder.abscissa(contour: 0, vertex: end))   // -1.0
+    /// ```
     public func abscissa(contour: Int, vertex: Shape) -> Double {
-        OCCTChamferBuilderAbscissa(handle, Int32(contour), vertex.handle)
+        OCCTChamferBuilderAbscissa(handle, Int32(clamping: contour), vertex.handle)
     }
 
-    /// Relative abscissa (0..1) of vertex on contour (1-based).
+    /// Relative abscissa (0 to 1) of a vertex on a contour.
+    ///
+    /// - Parameters:
+    ///   - contour: The 1-based contour index, `1...contourCount`.
+    ///   - vertex: A vertex of the contour.
+    /// - Returns: The relative abscissa, or `-1` for a contour that does not exist (#3523).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let builder = ChamferBuilder(shape: box)!
+    /// builder.addEdge(box.edges()[0], distance: 1)
+    /// let end = builder.lastVertex(contour: 1)!
+    /// print(builder.relativeAbscissa(contour: 1, vertex: end))   // 1.0
+    /// print(builder.relativeAbscissa(contour: 2, vertex: end))   // -1.0
+    /// ```
     public func relativeAbscissa(contour: Int, vertex: Shape) -> Double {
-        OCCTChamferBuilderRelativeAbscissa(handle, Int32(contour), vertex.handle)
+        OCCTChamferBuilderRelativeAbscissa(handle, Int32(clamping: contour), vertex.handle)
     }
 }
 

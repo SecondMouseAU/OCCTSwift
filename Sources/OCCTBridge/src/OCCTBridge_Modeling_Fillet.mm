@@ -1097,12 +1097,58 @@ void OCCTFilletBuilderRelease(OCCTFilletBuilderRef builder)
   delete builder;
 }
 
+// === #3524: a contour that holds a build or a simulation refuses a radius at a vertex ===
+//
+// ChFiDS_FilSpine::SetRadius(UandR, IinC) inserts the (abscissa, radius) pair and then, when the
+// spine is already split (`splitdone`), replays the radius law: it reads the first element of the
+// spine's elementary-spine list through an iterator with no emptiness test
+// (ChFiDS_FilSpine.cxx:193-215). `splitdone` is set at the end of
+// ChFi3d_Builder::PerformSetOfKPart, which Build() runs on every stripe and Simulate(IC) runs on
+// one, and cleared by ChFiDS_Spine::Reset, which ChFi3d_Builder::Reset (and so
+// BRepFilletAPI_MakeFillet::Reset) runs on every stripe. The list is empty when an analytic blend
+// (plane and plane, plane and cylinder, ...) covered the whole spine, so the read is a null
+// dereference: an uncatchable SIGSEGV.
+//
+// Four public setters end in that function, which makes them the same defect: SetRadius(R, IC,
+// vertex) and SetRadius(R1, R2, IC, IinC) directly, and Add(R, E) and Add(R1, R2, E) for an edge
+// that already belongs to a contour, because they resolve the contour with Contains(E, IinC) and
+// then call SetRadius(R, IC, IinC). SetRadius(R, IC, edge) clears `splitdone` first and never
+// reaches the replay.
+//
+// IsDone() alone is not the predicate. A Simulate(IC) leaves IsDone() false and faults the same
+// way, and so does contour 1 of a Build() that completed contour 1 and declined contour 2, which is
+// IsDone() false as well. NbComputedSurfaces(IC) reads the stripe's own surface data behind a null
+// test, and it is above 0 for every contour that a Build or a Simulate completed; it is the same
+// predicate #3519 uses for NbSurf. A declined build or simulation assigns an empty sequence and
+// reads 0, and the setters still work there, as they always did. IsDone() stays in the test
+// because it is the stated rule, "refuse once the build is over"; no builder state measured needs
+// it beyond the surface count, and its one extra effect is that a contour added after a completed
+// build is refused too until Reset().
+//
+// OCCT's own callers never meet this: BRepTest_FilletCommands (:176-198), DNaming_FilletDriver
+// (:129-158), QABugs_17 (:515-580) and ViewerTest_FilletCommands (:103-125) add the edges with
+// their radii and Build() once, and none sets a radius afterwards. BRepFilletAPI_MakeFillet.hxx
+// says how to change a built fillet: Reset() "allows modifications to be made to the contours and
+// fillet parameters in order to rebuild the shape". So the refusal is the contract, not a
+// restriction on top of it. Scripts/repro/3524/ measured every setter in ten builder states on
+// three fixtures.
+static bool occtFilletContourHoldsResult(const BRepFilletAPI_MakeFillet& fillet,
+                                         int32_t                         contourIndex)
+{
+  return fillet.IsDone() || fillet.NbComputedSurfaces(contourIndex) > 0;
+}
+
 bool OCCTFilletBuilderAddEdge(OCCTFilletBuilderRef builder, OCCTEdgeRef edge, double radius)
 {
   if (!builder || !edge)
     return false;
   try
   {
+    // #3524: an edge that already belongs to a contour that holds a result reaches the replay.
+    // An edge in no contour (Contour answers 0) opens a new one, whose spine is not split.
+    const int32_t existing = builder->fillet.Contour(edge->edge);
+    if (existing > 0 && occtFilletContourHoldsResult(builder->fillet, existing))
+      return false;
     builder->fillet.Add(radius, edge->edge);
     return true;
   }
@@ -1122,6 +1168,10 @@ bool OCCTFilletBuilderAddEdgeEvolving(OCCTFilletBuilderRef builder,
     return false;
   try
   {
+    // #3524: as AddEdge.
+    const int32_t existing = builder->fillet.Contour(edge->edge);
+    if (existing > 0 && occtFilletContourHoldsResult(builder->fillet, existing))
+      return false;
     builder->fillet.Add(r1, r2, edge->edge);
     return true;
   }
@@ -1396,6 +1446,10 @@ bool OCCTFilletBuilderSetRadiusAtVertex(OCCTFilletBuilderRef builder,
     // #3518: as SetRadiusOnEdge.
     if (!occtFilletContourInRange(builder->fillet, contourIndex))
       return false;
+    // #3524: false, and the radius is not changed, while the contour holds a build or a
+    // simulation. reset() lifts it.
+    if (occtFilletContourHoldsResult(builder->fillet, contourIndex))
+      return false;
     builder->fillet.SetRadius(radius, contourIndex, TopoDS::Vertex(vertex->shape));
     return true;
   }
@@ -1420,6 +1474,9 @@ bool OCCTFilletBuilderSetTwoRadii(OCCTFilletBuilderRef builder,
     // abscissa table unchecked (0 is OCCT's absolute-abscissa spelling, not an edge, and a bus
     // error for the extremes).
     if (!occtFilletEdgeInContourInRange(builder->fillet, contourIndex, edgeInContour))
+      return false;
+    // #3524: as SetRadiusAtVertex.
+    if (occtFilletContourHoldsResult(builder->fillet, contourIndex))
       return false;
     builder->fillet.SetRadius(r1, r2, contourIndex, edgeInContour);
     return true;
