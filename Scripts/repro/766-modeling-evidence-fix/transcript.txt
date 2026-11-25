@@ -1,4 +1,8 @@
-offsetArc (+1): done=1 valid=1 volume=1698.436569847848 input=999.99999999999977
+# Re-recorded against kernel-8.0.2-c1 (OCCT V8_0_2 plus 51 carried patches), #3537. Only the lines that moved were rewritten.
+# Moved: offsetArc volume 1698.436569847848 to 1698.4365698478464 (last digits), fuseFourSpheres volume 1269.5229087135415 to 1269.5229087132996 (2.4e-10).
+# Cause: OCCT commit 36d7686389 (V8_0_2, "Coding - Migrate remaining fixes"), AppCont_LeastSquare.cxx, which centres the least-squares equations on the first point so curves far from the origin keep their accuracy.
+# Verified by linking that one translation unit into the v4.0.0-kernel.9 archive: the probe then prints exactly the lines below.
+offsetArc (+1): done=1 valid=1 volume=1698.4365698478464 input=999.99999999999977
 offsetInward (-1): done=1 valid=1 volume=511.99999999999989 input=999.99999999999977
 offsetIntersection (+1): done=1 valid=1 volume=1728 input=999.99999999999977
 offsetCylinder (+1): done=1 valid=1 volume=1341.5898001820481 input=785.39816339744823
@@ -8,7 +12,7 @@ offsetFace (2): null=0 area=399.99999999999994 centre z=2
 blendMultipleEdges: done=1 valid=1 faces=9 volume=7969.6283004954985
 blendSingleEdge: done=1 valid=1 faces=7 volume=997.85398163397429
 fuseThreeBoxes: type=0 solids=6 volume=1999.9999999999984
-fuseFourSpheres: type=0 solids=13 volume=1269.5229087135415
+fuseFourSpheres: type=0 solids=13 volume=1269.5229087132996
 fuseNonOverlapping: type=0 solids=2 volume=249.99999999999989
 multipleInwardOffsets: [offset -1: wire length 72] [offset -2: wire length 64] [offset -3: wire length 56] total wires=3
 outwardOffset: [offset 1: wire length 46.283185307179593] [offset 2: wire length 52.566370614359172] total wires=2

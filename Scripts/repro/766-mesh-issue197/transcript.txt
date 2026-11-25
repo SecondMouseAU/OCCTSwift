@@ -1,3 +1,7 @@
+# Re-recorded against kernel-8.0.2-c1 (OCCT V8_0_2 plus 51 carried patches), #3537. Only the lines that moved were rewritten.
+# Moved: the coarse sphere face, nbNodes 273 to 276 and nbTriangles and coherent NTriangles 516 to 522.
+# Cause: OCCT #1741 (be4e040483), BRepMesh_Delaun.cxx, "preserve insertion near constrained edges": a sphere meshed at this deflection gets 276 nodes and 522 triangles where it got 273 and 516.
+# Verified by linking that one translation unit (BRepMesh_Delaun.cxx.o) into the v4.0.0-kernel.9 archive: the probe then prints exactly the lines below.
 stlBinaryDeflection:
   deflection=1 write=1 size=15384 triangles=306
   deflection=0.050000000000000003 write=1 size=100284 triangles=2004
@@ -5,5 +9,5 @@ stlBinaryDeflection:
 stlDefaultUnchanged:
   deflection=0.10000000000000001 write=1 size=48884 triangles=976
 coherentTriangulationDeflection:
-  deflection=0.20000000000000001 firstFace nbNodes=273 nbTriangles=516 coherent NTriangles=516
+  deflection=0.20000000000000001 firstFace nbNodes=276 nbTriangles=522 coherent NTriangles=522
   deflection=0.10000000000000001 firstFace nbNodes=506 nbTriangles=976 coherent NTriangles=976

@@ -72,9 +72,11 @@ An index is out of range when it is not in `1..NbContours()` (`nc`), or for `J` 
   marker in the cell, so the setter itself faults. `ChFiDS_FilSpine::SetRadius(UandR, IinC)` replays
   the law when `splitdone` is true and reads `elspines`' first element, and the list is empty once
   the build is over. `SetRadius(R, IC, edge)` resets `splitdone` first and does not. Not an index
-  defect, so no range check helps.
+  defect, so no range check helps. Guarded by #3524 (`Scripts/repro/3524/`), which found that
+  `Add(R, E)` for an edge already in a contour ends in the same function.
 - `BRepFilletAPI_MakeChamfer` shares the base class and has the same defect, with a larger surface:
   `NbEdges`, `Edge`, `Length`, `Closed`, `ClosedAndTangent`, `FirstVertex`, `LastVertex`,
   `Abscissa`, `RelativeAbscissa` and `ResetContour` as in the table, plus `GetDist`, `Dists`,
   `GetDistAngle`, `IsTwoDistances` and `IsDistanceAngle`, which SEGV for any `IC > nc` and answer
-  contour 1 for `IC <= 0`. The `ChamferBuilder` bridge functions are unchanged by this fix.
+  contour 1 for `IC <= 0`. The `ChamferBuilder` bridge functions are unchanged by this fix; #3523
+  guards them (`Scripts/repro/3523/`).

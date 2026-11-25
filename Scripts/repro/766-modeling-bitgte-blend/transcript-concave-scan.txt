@@ -1,3 +1,7 @@
+# Re-recorded against kernel-8.0.2-c1 (OCCT V8_0_2 plus 51 carried patches), #3537. Only the lines that moved were rewritten.
+# Moved: edge 22 volume from 24076.815240690972 to 24076.81524066042 (1.3e-12 relative).
+# Cause: OCCT commit 36d7686389 (V8_0_2, "Coding - Migrate remaining fixes"), AppCont_LeastSquare.cxx, which centres the least-squares equations on the first point so curves far from the origin keep their accuracy.
+# Verified by linking that one translation unit into the v4.0.0-kernel.9 archive: the probe then prints exactly the lines below.
 input: faces=14 volume=24000 edges=28
 edge 0: done=true faces=14 volume=24000 unchanged
 edge 1: done=true faces=14 volume=24000 unchanged
@@ -21,7 +25,7 @@ edge 18: done=true faces=14 volume=24000 unchanged
 edge 19: done=true faces=14 volume=24000 unchanged
 edge 20: done=true faces=14 volume=24000 unchanged
 edge 21: done=true faces=14 volume=24000 unchanged
-edge 22: done=true faces=17 volume=24076.815240690972 CHANGED
+edge 22: done=true faces=17 volume=24076.81524066042 CHANGED
 edge 23: done=true faces=14 volume=24000 unchanged
 edge 24: done=true faces=14 volume=24000 unchanged
 edge 25: done=true faces=14 volume=24000 unchanged

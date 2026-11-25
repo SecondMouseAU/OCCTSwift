@@ -3891,12 +3891,14 @@ OCCTFilletBuilderRef _Nullable OCCTFilletBuilderCreate(OCCTShapeRef _Nonnull sha
 /// Release a fillet builder.
 void OCCTFilletBuilderRelease(OCCTFilletBuilderRef _Nonnull builder);
 
-/// Add an edge with constant radius.
+/// Add an edge with constant radius. False, and nothing changes, for an edge that already belongs
+/// to a contour holding a Build or Simulate result (#3524); Reset lifts it.
 bool OCCTFilletBuilderAddEdge(OCCTFilletBuilderRef _Nonnull builder,
                               OCCTEdgeRef _Nonnull edge,
                               double radius);
 
-/// Add an edge with evolving radius (r1 at start, r2 at end).
+/// Add an edge with evolving radius (r1 at start, r2 at end). False, and nothing changes, for an
+/// edge that already belongs to a contour holding a Build or Simulate result (#3524).
 bool OCCTFilletBuilderAddEdgeEvolving(OCCTFilletBuilderRef _Nonnull builder,
                                       OCCTEdgeRef _Nonnull edge,
                                       double r1,
@@ -3985,52 +3987,59 @@ OCCTShapeRef _Nullable OCCTChamferBuilderBuild(OCCTChamferBuilderRef _Nonnull bu
 /// Number of contours.
 int32_t OCCTChamferBuilderNbContours(OCCTChamferBuilderRef _Nonnull builder);
 
-/// Whether a contour uses distance-angle mode (1-based index).
+// Contour indices below are 1..OCCTChamferBuilderNbContours(). Every function that takes one
+// answers its refusal for an index outside that range, 0 and the negatives included (#3523): OCCT
+// checks neither end reliably, so an index past the end faulted the process and 0 or a negative
+// read, or wrote, contour 1. The edge index inside a contour (Edge) is 1..NbEdges(contour).
+
+/// Whether a contour uses distance-angle mode (1-based index). False outside 1..NbContours().
 bool OCCTChamferBuilderIsDistAngle(OCCTChamferBuilderRef _Nonnull builder, int32_t contourIndex);
 
 // --- ChamferBuilder completions (v0.124.0) ---
 
-/// Number of edges in a contour (1-based index).
+/// Number of edges in a contour (1-based index). 0 outside 1..NbContours().
 int32_t OCCTChamferBuilderNbEdges(OCCTChamferBuilderRef _Nonnull builder, int32_t contourIndex);
 
-/// Get the symmetric distance for contour IC (1-based).
+/// Get the symmetric distance for contour IC (1-based). -1 outside 1..NbContours().
 void OCCTChamferBuilderGetDist(OCCTChamferBuilderRef _Nonnull builder,
                                int32_t contourIndex,
                                double* _Nonnull dist);
 
-/// Get the two distances for contour IC (1-based).
+/// Get the two distances for contour IC (1-based). Both -1 outside 1..NbContours().
 void OCCTChamferBuilderGetDists(OCCTChamferBuilderRef _Nonnull builder,
                                 int32_t contourIndex,
                                 double* _Nonnull d1,
                                 double* _Nonnull d2);
 
-/// Get distance and angle for contour IC (1-based).
+/// Get distance and angle for contour IC (1-based). Both -1 outside 1..NbContours().
 void OCCTChamferBuilderGetDistAngle(OCCTChamferBuilderRef _Nonnull builder,
                                     int32_t contourIndex,
                                     double* _Nonnull dist,
                                     double* _Nonnull angle);
 
-/// Set symmetric distance on a contour (requires face for orientation).
+/// Set symmetric distance on a contour (requires face for orientation). False outside
+/// 1..NbContours().
 bool OCCTChamferBuilderSetDist(OCCTChamferBuilderRef _Nonnull builder,
                                double  dist,
                                int32_t contourIndex,
                                OCCTFaceRef _Nonnull face);
 
-/// Set two distances on a contour (requires face for orientation).
+/// Set two distances on a contour (requires face for orientation). False outside 1..NbContours().
 bool OCCTChamferBuilderSetDists(OCCTChamferBuilderRef _Nonnull builder,
                                 double  d1,
                                 double  d2,
                                 int32_t contourIndex,
                                 OCCTFaceRef _Nonnull face);
 
-/// Set distance and angle on a contour (requires face for orientation).
+/// Set distance and angle on a contour (requires face for orientation). False outside
+/// 1..NbContours().
 bool OCCTChamferBuilderSetDistAngle(OCCTChamferBuilderRef _Nonnull builder,
                                     double  dist,
                                     double  angle,
                                     int32_t contourIndex,
                                     OCCTFaceRef _Nonnull face);
 
-/// Length of contour IC (1-based).
+/// Length of contour IC (1-based). -1 outside 1..NbContours().
 double OCCTChamferBuilderLength(OCCTChamferBuilderRef _Nonnull builder, int32_t contourIndex);
 
 /// Remove the contour containing the given edge.
@@ -4040,29 +4049,29 @@ bool OCCTChamferBuilderRemoveEdge(OCCTChamferBuilderRef _Nonnull builder,
 /// Reset all contours, canceling effects of Build.
 void OCCTChamferBuilderReset(OCCTChamferBuilderRef _Nonnull builder);
 
-/// Whether contour IC (1-based) is closed.
+/// Whether contour IC (1-based) is closed. False outside 1..NbContours().
 bool OCCTChamferBuilderClosed(OCCTChamferBuilderRef _Nonnull builder, int32_t contourIndex);
 
-/// Whether contour IC (1-based) is closed and tangent at closure.
+/// Whether contour IC (1-based) is closed and tangent at closure. False outside 1..NbContours().
 bool OCCTChamferBuilderClosedAndTangent(OCCTChamferBuilderRef _Nonnull builder,
                                         int32_t contourIndex);
 
-/// Whether contour IC is symmetric.
+/// Whether contour IC is symmetric. False outside 1..NbContours().
 bool OCCTChamferBuilderIsSymmetric(OCCTChamferBuilderRef _Nonnull builder, int32_t contourIndex);
 
-/// Whether contour IC uses two distances.
+/// Whether contour IC uses two distances. False outside 1..NbContours().
 bool OCCTChamferBuilderIsTwoDists(OCCTChamferBuilderRef _Nonnull builder, int32_t contourIndex);
 
-/// Get edge J in contour I (both 1-based).
+/// Get edge J in contour I (both 1-based). Null outside 1..NbContours() or 1..NbEdges(I).
 OCCTShapeRef _Nullable OCCTChamferBuilderEdge(OCCTChamferBuilderRef _Nonnull builder,
                                               int32_t contourIndex,
                                               int32_t edgeIndex);
 
-/// Get first vertex of contour IC (1-based).
+/// Get first vertex of contour IC (1-based). Null outside 1..NbContours().
 OCCTShapeRef _Nullable OCCTChamferBuilderFirstVertex(OCCTChamferBuilderRef _Nonnull builder,
                                                      int32_t contourIndex);
 
-/// Get last vertex of contour IC (1-based).
+/// Get last vertex of contour IC (1-based). Null outside 1..NbContours().
 OCCTShapeRef _Nullable OCCTChamferBuilderLastVertex(OCCTChamferBuilderRef _Nonnull builder,
                                                     int32_t contourIndex);
 
@@ -4070,12 +4079,12 @@ OCCTShapeRef _Nullable OCCTChamferBuilderLastVertex(OCCTChamferBuilderRef _Nonnu
 int32_t OCCTChamferBuilderContour(OCCTChamferBuilderRef _Nonnull builder,
                                   OCCTEdgeRef _Nonnull edge);
 
-/// Curvilinear abscissa of vertex on contour IC (1-based).
+/// Curvilinear abscissa of vertex on contour IC (1-based). -1 outside 1..NbContours().
 double OCCTChamferBuilderAbscissa(OCCTChamferBuilderRef _Nonnull builder,
                                   int32_t contourIndex,
                                   OCCTShapeRef _Nonnull vertex);
 
-/// Relative abscissa (0..1) of vertex on contour IC (1-based).
+/// Relative abscissa (0..1) of vertex on contour IC (1-based). -1 outside 1..NbContours().
 double OCCTChamferBuilderRelativeAbscissa(OCCTChamferBuilderRef _Nonnull builder,
                                           int32_t contourIndex,
                                           OCCTShapeRef _Nonnull vertex);
@@ -4088,14 +4097,15 @@ bool OCCTFilletBuilderSetRadiusOnEdge(OCCTFilletBuilderRef _Nonnull builder,
                                       int32_t contourIndex,
                                       OCCTEdgeRef _Nonnull edge);
 
-/// Set radius at a specific vertex in a contour (1-based index). False outside 1..NbContours().
+/// Set radius at a specific vertex in a contour (1-based index). False outside 1..NbContours(), and
+/// while the contour holds a Build or Simulate result (#3524): Reset lifts it.
 bool OCCTFilletBuilderSetRadiusAtVertex(OCCTFilletBuilderRef _Nonnull builder,
                                         double  radius,
                                         int32_t contourIndex,
                                         OCCTShapeRef _Nonnull vertex);
 
 /// Set two radii (evolving) on a contour edge (1-based indices). False outside 1..NbContours() or
-/// 1..NbEdges(contour).
+/// 1..NbEdges(contour), and while the contour holds a Build or Simulate result (#3524).
 bool OCCTFilletBuilderSetTwoRadii(OCCTFilletBuilderRef _Nonnull builder,
                                   double  r1,
                                   double  r2,
@@ -4522,7 +4532,9 @@ void OCCTChamferBuilderSetMode(OCCTChamferBuilderRef _Nonnull builder, int32_t m
 /// Simulate the chamfer on a contour (1-based) to prepare surface data.
 bool OCCTChamferBuilderSimulate(OCCTChamferBuilderRef _Nonnull builder, int32_t contourIndex);
 
-/// Get the number of simulated surfaces for a contour (1-based). Call after Simulate.
+/// Get the number of simulated surfaces for a contour (1-based). Call after Simulate. 0 while the
+/// contour holds no surface data (never built or simulated, reset since, declined) and outside
+/// 1..NbContours() (#3522).
 int32_t OCCTChamferBuilderNbSurf(OCCTChamferBuilderRef _Nonnull builder, int32_t contourIndex);
 
 /// Create a section builder with default initialization.

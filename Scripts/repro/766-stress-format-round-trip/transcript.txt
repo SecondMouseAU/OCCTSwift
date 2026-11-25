@@ -1,3 +1,7 @@
+# Re-recorded against kernel-8.0.2-c1 (OCCT V8_0_2 plus 51 carried patches), #3537. Only the lines that moved were rewritten.
+# Moved: the STL sphere face count 514 to 520, and the OBJ round trip of the sphere, 273 nodes and 516 elements to 276 and 522 (three lines).
+# Cause: OCCT #1741 (be4e040483), BRepMesh_Delaun.cxx, "preserve insertion near constrained edges": a sphere meshed at this deflection gets 276 nodes and 522 triangles where it got 273 and 516.
+# Verified by linking that one translation unit (BRepMesh_Delaun.cxx.o) into the v4.0.0-kernel.9 archive: the probe then prints exactly the lines below.
 == originals
 box: volume=1000 area=600 faces=6 edges=12 valid=1 size=(10, 10, 10)
 cylinder: volume=785.3981634 area=471.238898 faces=3 edges=3 valid=1 size=(10, 10, 10)
@@ -93,7 +97,7 @@ compound: string length=5689 valid=1 volume=1392.699082 faces=11
 == STL (BRepMesh 0.1, binary)
 box: faces=12 valid=1 size=(10, 10, 10) original size.x=10
 cylinder: faces=100 valid=1 size=(10, 9.92709, 10) original size.x=10.0729
-sphere: faces=514 valid=1 size=(9.91697, 9.97669, 10) original size.x=10.1552
+sphere: faces=520 valid=1 size=(9.91697, 9.97669, 10) original size.x=10.1552
 cone: faces=196 valid=1 size=(10, 9.92709, 10) original size.x=10.2088
 torus: faces=1864 valid=1 size=(26, 26, 5.95625) original size.x=26.2693
 filletedBox: faces=620 valid=1 size=(10, 10, 10) original size.x=10.0427
@@ -107,9 +111,9 @@ Mesh /tmp/occt766_fmt_probe_cylinder.obj
 [read in 0.00015 s]
 cylinder: null=0 faces=1 triangles=100 size=(10, 9.92709, 10)
 Mesh /tmp/occt766_fmt_probe_sphere.obj
-[273 nodes] [516 2d elements]
+[276 nodes] [522 2d elements]
 [read in 0.000395 s]
-sphere: null=0 faces=1 triangles=516 size=(9.91697, 9.97669, 10)
+sphere: null=0 faces=1 triangles=522 size=(9.91697, 9.97669, 10)
 Mesh /tmp/occt766_fmt_probe_filletedBox.obj
 [536 nodes] [628 2d elements]
 [read in 0.000627 s]

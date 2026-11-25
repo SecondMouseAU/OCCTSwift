@@ -1043,6 +1043,10 @@ bool OCCTChamferBuilderIsDistAngle(OCCTChamferBuilderRef builder, int32_t contou
     return false;
   try
   {
+    // #3523: IsDistanceAngle(IC) reads Value(IC) with no test of either end (see
+    // occtBlendContourInRange). false is this function's refusal.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return false;
     return builder->chamfer.IsDistanceAngle(contourIndex);
   }
   catch (...)
@@ -1058,6 +1062,10 @@ int32_t OCCTChamferBuilderNbEdges(OCCTChamferBuilderRef builder, int32_t contour
     return 0;
   try
   {
+    // #3523: NbEdges(I) walks the stripe list with no range test; the header documents 0 for an
+    // index outside the table of contours, and that is the refusal.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return 0;
     return builder->chamfer.NbEdges(contourIndex);
   }
   catch (...)
@@ -1073,6 +1081,13 @@ void OCCTChamferBuilderGetDist(OCCTChamferBuilderRef builder, int32_t contourInd
     return;
   try
   {
+    // #3523: GetDist(IC) reads Value(IC) unchecked. -1 is the sentinel the catch below, and the
+    // header for Dists, give for an index outside the table of contours.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+    {
+      *dist = -1.0;
+      return;
+    }
     builder->chamfer.GetDist(contourIndex, *dist);
   }
   catch (...)
@@ -1091,6 +1106,13 @@ void OCCTChamferBuilderGetDists(OCCTChamferBuilderRef builder,
     return;
   try
   {
+    // #3523: as GetDist.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+    {
+      *d1 = -1.0;
+      *d2 = -1.0;
+      return;
+    }
     builder->chamfer.Dists(contourIndex, *d1, *d2);
   }
   catch (...)
@@ -1110,6 +1132,13 @@ void OCCTChamferBuilderGetDistAngle(OCCTChamferBuilderRef builder,
     return;
   try
   {
+    // #3523: as GetDist.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+    {
+      *dist  = -1.0;
+      *angle = -1.0;
+      return;
+    }
     builder->chamfer.GetDistAngle(contourIndex, *dist, *angle);
   }
   catch (...)
@@ -1129,6 +1158,10 @@ bool OCCTChamferBuilderSetDist(OCCTChamferBuilderRef builder,
     return false;
   try
   {
+    // #3523: SetDist tests only IC <= NbElements(), so 0 and the negatives rewrote contour 1 (or
+    // faulted with none), and an IC past the end reported success for a write that never happened.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return false;
     builder->chamfer.SetDist(dist, contourIndex, face->face);
     return true;
   }
@@ -1149,6 +1182,9 @@ bool OCCTChamferBuilderSetDists(OCCTChamferBuilderRef builder,
     return false;
   try
   {
+    // #3523: as SetDist.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return false;
     builder->chamfer.SetDists(d1, d2, contourIndex, face->face);
     return true;
   }
@@ -1169,6 +1205,9 @@ bool OCCTChamferBuilderSetDistAngle(OCCTChamferBuilderRef builder,
     return false;
   try
   {
+    // #3523: as SetDist.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return false;
     builder->chamfer.SetDistAngle(dist, angle, contourIndex, face->face);
     return true;
   }
@@ -1185,6 +1224,10 @@ double OCCTChamferBuilderLength(OCCTChamferBuilderRef builder, int32_t contourIn
     return -1.0;
   try
   {
+    // #3523: -1 is the value the header documents for an index outside the table of contours; 0
+    // and the negatives used to answer contour 1's length, and any index faulted with no contour.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return -1.0;
     return builder->chamfer.Length(contourIndex);
   }
   catch (...)
@@ -1230,6 +1273,9 @@ bool OCCTChamferBuilderClosed(OCCTChamferBuilderRef builder, int32_t contourInde
     return false;
   try
   {
+    // #3523: false, as the header documents for an index outside the table of contours.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return false;
     return builder->chamfer.Closed(contourIndex);
   }
   catch (...)
@@ -1245,6 +1291,9 @@ bool OCCTChamferBuilderClosedAndTangent(OCCTChamferBuilderRef builder, int32_t c
     return false;
   try
   {
+    // #3523: as Closed.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return false;
     return builder->chamfer.ClosedAndTangent(contourIndex);
   }
   catch (...)
@@ -1260,6 +1309,9 @@ bool OCCTChamferBuilderIsSymmetric(OCCTChamferBuilderRef builder, int32_t contou
     return false;
   try
   {
+    // #3523: as IsDistanceAngle.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return false;
     return builder->chamfer.IsSymetric(contourIndex);
   }
   catch (...)
@@ -1275,6 +1327,9 @@ bool OCCTChamferBuilderIsTwoDists(OCCTChamferBuilderRef builder, int32_t contour
     return false;
   try
   {
+    // #3523: as IsDistanceAngle.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return false;
     return builder->chamfer.IsTwoDistances(contourIndex);
   }
   catch (...)
@@ -1292,6 +1347,11 @@ OCCTShapeRef OCCTChamferBuilderEdge(OCCTChamferBuilderRef builder,
     return nullptr;
   try
   {
+    // #3523: Edge(I, J) checks neither index. I walks the stripe list unchecked, and J indexes the
+    // spine's edge sequence unchecked: 0 faults, and past the end it answers a stale node. The
+    // header documents a null shape for either index outside its table.
+    if (!occtBlendEdgeInContourInRange(builder->chamfer, contourIndex, edgeIndex))
+      return nullptr;
     const TopoDS_Edge& e = builder->chamfer.Edge(contourIndex, edgeIndex);
     if (e.IsNull())
       return nullptr;
@@ -1310,6 +1370,9 @@ OCCTShapeRef OCCTChamferBuilderFirstVertex(OCCTChamferBuilderRef builder, int32_
     return nullptr;
   try
   {
+    // #3523: nullptr, as the header documents for an index outside the table of contours.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return nullptr;
     TopoDS_Vertex v = builder->chamfer.FirstVertex(contourIndex);
     if (v.IsNull())
       return nullptr;
@@ -1328,6 +1391,9 @@ OCCTShapeRef OCCTChamferBuilderLastVertex(OCCTChamferBuilderRef builder, int32_t
     return nullptr;
   try
   {
+    // #3523: as FirstVertex.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return nullptr;
     TopoDS_Vertex v = builder->chamfer.LastVertex(contourIndex);
     if (v.IsNull())
       return nullptr;
@@ -1363,6 +1429,9 @@ double OCCTChamferBuilderAbscissa(OCCTChamferBuilderRef builder,
     return -1.0;
   try
   {
+    // #3523: -1, as the header documents for an index outside the table of contours.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return -1.0;
     return builder->chamfer.Abscissa(contourIndex, TopoDS::Vertex(vertex->shape));
   }
   catch (...)
@@ -1380,6 +1449,9 @@ double OCCTChamferBuilderRelativeAbscissa(OCCTChamferBuilderRef builder,
     return -1.0;
   try
   {
+    // #3523: as Abscissa.
+    if (!occtBlendContourInRange(builder->chamfer, contourIndex))
+      return -1.0;
     return builder->chamfer.RelativeAbscissa(contourIndex, TopoDS::Vertex(vertex->shape));
   }
   catch (...)
@@ -1467,12 +1539,65 @@ bool OCCTChamferBuilderSimulate(OCCTChamferBuilderRef builder, int32_t contourIn
   }
 }
 
+// === #3522: NbSurf needs OCCT's own stripe test, and it sits behind a private member ===
+//
+// ChFi3d_ChBuilder::NbSurf(IC) is `stripe->SetOfSurfData()->Length()` with no null test, and a
+// stripe's sequence is null until Build or Simulate reaches the stripe and null again after
+// Reset(), so NbSurf faults the process on a contour never run, after reset(), and on a contour a
+// Simulate of another contour never reached (Scripts/repro/3522/, the chamfer half of
+// Scripts/repro/3519/). ChFi3d_Builder::NbComputedSurfaces(IC) reads the same length behind
+// `if (hd.IsNull()) return 0;` (ChFi3d_Builder_1.cxx:460-465), which is the null test OCCT ships,
+// and BRepFilletAPI_MakeFillet exposes it, which is how the fillet side was guarded (#3519).
+// BRepFilletAPI_MakeChamfer has no such member and keeps its ChFi3d_ChBuilder in a private field.
+//
+// The state cannot be tracked from outside instead: whether a stripe holds a sequence depends on
+// Build, Simulate, Reset, Add and Remove together, and Remove renumbers contours. So the bridge
+// asks OCCT. C++ allows exactly one spelling of a private member's name outside its class, the
+// argument of an explicit instantiation ([temp.spec], access checking does not apply to it), and
+// the instantiation below uses it to take a pointer to the member. That is standard C++, not a
+// macro over `private`, it reads the object through its own member function, and it changes no
+// layout. A rename of the field upstream is a compile error here, not a silent miss.
+namespace
+{
+struct OCCTChamferInnerBuilderTag
+{
+  typedef ChFi3d_ChBuilder BRepFilletAPI_MakeChamfer::* Type;
+  friend Type occtChamferInnerBuilderOf(OCCTChamferInnerBuilderTag);
+};
+
+template <class Tag, typename Tag::Type Member>
+struct OCCTChamferInnerBuilderOpener
+{
+  friend typename Tag::Type occtChamferInnerBuilderOf(Tag) { return Member; }
+};
+
+template struct OCCTChamferInnerBuilderOpener<OCCTChamferInnerBuilderTag,
+                                              &BRepFilletAPI_MakeChamfer::myBuilder>;
+} // namespace
+
+// Equals NbSurf(IC) in every state where NbSurf answers for a contour (1..NbContours()), and 0
+// where it would fault. Also 0 for an IC with no stripe and for a corner stripe (one with no spine,
+// past NbContours()), which NbSurf(IC) reads as a contour.
+static int32_t occtChamferComputedSurfaces(const BRepFilletAPI_MakeChamfer& chamfer,
+                                           int32_t                          contourIndex)
+{
+  const ChFi3d_ChBuilder& inner = chamfer.*occtChamferInnerBuilderOf(OCCTChamferInnerBuilderTag());
+  return inner.NbComputedSurfaces(contourIndex);
+}
+
 int32_t OCCTChamferBuilderNbSurf(OCCTChamferBuilderRef builder, int32_t contourIndex)
 {
   if (!builder)
     return 0;
   try
   {
+    // #3522: 0 is this function's answer for a contour with no simulation, as after a declined
+    // build or simulation (the sequence is then set and empty). NbSurf is read only for a contour
+    // that holds surface data, so a completed build keeps the count it always answered. The
+    // predicate is also 0 for an index with no stripe and for a corner stripe, which has no spine
+    // and sits past NbContours() where NbSurf(IC) would read it as a contour.
+    if (occtChamferComputedSurfaces(builder->chamfer, contourIndex) <= 0)
+      return 0;
     return builder->chamfer.NbSurf(contourIndex);
   }
   catch (...)

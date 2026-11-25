@@ -1,15 +1,20 @@
+# Re-recorded against kernel-8.0.2-c1 (OCCT V8_0_2 plus 51 carried patches), #3537. Only the lines that moved were rewritten.
+# Moved: 571b area 375.61576034560267 to 375.615760478553 (3.5e-10 relative) and the eight 571b corner distances (1.3e-10 absolute at most).
+# Cause: two upstream changes acting together, OCCT #1512 (2b89267484, BSplCLib.cxx, direct B-spline curve evaluation) and OCCT #1741 (be4e040483, ProjLib_CompProjectedCurve.cxx).
+# Verified by linking exactly those two translation units into the v4.0.0-kernel.9 archive (the second compiled from be4e040483, which is V8_0_1 plus the #1741 hunk of that file): the probe then prints exactly the lines below.
+# BSplCLib.cxx.o alone, or the V8_0_2 ProjLib_CompProjectedCurve.cxx.o alone, prints a third set of values, so neither is sufficient by itself.
 1017 order=2 IsDone=1 Evaluate(0,0).z=5.8749999796388019 refit(0,0).z=5.8749999796388011
 1017 order=8 IsDone=1 Evaluate(0,0).z=4.9999997926789597 refit(0,0).z=-16.934887119340363
 571a through=581.04091996296415 named=581.04091996296415
-571b area=375.61576034560267
-571b corner=0 dist=0.00079757372026483322
-571b corner=1 dist=0.0015956809876816658
-571b corner=2 dist=0.00022411194096326028
-571b corner=3 dist=0.0010131765294800615
-571b corner=4 dist=0.00072052259823217725
-571b corner=5 dist=0.00095844012527905847
-571b corner=6 dist=0.00046589730636547943
-571b corner=7 dist=6.9311306072801626e-05
+571b area=375.615760478553
+571b corner=0 dist=0.00079757362415990496
+571b corner=1 dist=0.0015956810284314081
+571b corner=2 dist=0.00022411187183394451
+571b corner=3 dist=0.0010131763965316634
+571b corner=4 dist=0.00072052256271286949
+571b corner=5 dist=0.00095844014734669774
+571b corner=6 dist=0.0004658973160115739
+571b corner=7 dist=6.9311297320483325e-05
 620 j=0 one=6.1232339957367663e-16,0,-10 many=6.1232339957367663e-16,0,-10
 620 j=1 one=2.8173255684142977,0,-9.594929736144973 many=2.8173255684142977,0,-9.594929736144973
 620 j=2 one=5.4064081745559767,0,-8.4125353283118116 many=5.4064081745559767,0,-8.4125353283118116
