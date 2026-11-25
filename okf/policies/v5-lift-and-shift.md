@@ -3,7 +3,7 @@ type: policy
 title: Lifting work off v5.0.0-766-execution
 description: The #766 execution branch is drained onto main by lifting each PR's work as a fresh PR, never by merging the branch. The unit of the backlog is the path and the test inside it, never the open PR, because 84 percent of the available work is in PRs already merged into the branch. The delta is taken against the PR's own base, tests and probes cross while the evidence records stay, three screens triage what is worth lifting, and the batch ends by closing what it lifted.
 tags: [policy, process, v5, 766, lift, branches, agents]
-timestamp: 2026-10-02
+timestamp: 2026-11-25
 ---
 
 # Lifting work off `v5.0.0-766-execution`
@@ -299,6 +299,20 @@ argv file by substituting the whole `probe` token, so `probe-evidence-fix.mm` is
 pairs with nothing and is reported `MISSING`, which is deliberate: while the script opened
 `probe.mm` and `transcript.txt` by name, thirty-nine such pairs were re-run by nothing while the
 records citing them read as verified (#2934).
+
+**A transcript that records the unpatched kernel on purpose is acknowledged, not re-recorded.**
+`check-766-probe-reproduction.py` does not demand that every transcript reproduce. A transcript
+that is the evidence of a kernel defect (a hang, a SIGSEGV, a cone area off by `cos(a)`) keeps
+recording what the unpatched kernel did, and the carried patch that fixes it is what makes the
+hardened kernel print something else; re-recording it would erase the only record of the defect.
+The script's `ACKNOWLEDGED` table says so for the machine: per asset read, the probe, the carried
+patches (or `environment`) that explain the difference, which changed lines the row covers, and
+why. An acknowledged probe is printed with its reason on every run and does not fail it; a probe
+that differs beyond what its row covers, or on an asset no row is keyed to, fails as before; a row
+whose probe now reproduces its transcript is `STALE-ACK` and fails, because the unpatched output
+reappearing means a patch stopped taking effect or the row outlived what it described. The rules
+are in the script's docstring, and a repin changes the key, so the next reader re-adjudicates
+rather than inherits (#3537).
 
 **"Evidence-fix" in a commit message is not itself a tell.** Batch 5 examined a third such pass and
 found it clean: it changed `"equal": false` to `"equal": null` with a written reason, on records
