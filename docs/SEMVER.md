@@ -47,15 +47,19 @@ A major bump is reserved for two events, either of which alone is sufficient:
 The cohort moved to v1.0.0 on 2026-05-07 alongside [OCCT 8.0.0 GA](https://github.com/Open-Cascade-SAS/OCCT/releases/tag/V8_0_0),
 and to v2.0.0 under Rule 2, on the accumulated breaks recorded below. v3.0.0 is a further
 Rule 2 major on a much smaller set: the kernel does not move, and the breaks are listed
-below. v4.0.0 is a third Rule 2 major, on the breaks tabulated under it below, and is in
-pre-release as `v4.0.0-beta.7`.
+below. v4.0.0 is a third Rule 2 major, on the breaks tabulated under it below, and is assembled
+here for the release candidate `v4.0.0-rc.1`.
 
 #### v4.0.0
 
-**A major by Rule 2, on a much larger set than v3.0.0.** OCCT does not move: the kernel stays at
-`V8_0_1`, rebuilt as `v4.0.0-kernel.8` to carry every patch in `Scripts/patches/` where the v3.0.0
-asset carried seventeen. A kernel rebuild is a MINOR trigger at most and forces nothing on its own.
-What forces the major is Rule 2, carried by the breaking changes tabulated below.
+**A major by Rule 2, on a much larger set than v3.0.0.** The kernel moves from OCCT `V8_0_1` to
+`V8_0_2`, an OCCT patch release, and is rebuilt as `kernel-8.0.2-c1`, the carry kernel, which holds
+fifty-one of the patches in `Scripts/patches/` where the v3.0.0 asset carried seventeen. Rule 1 is
+about an OCCT major, so a patch bump is a MINOR trigger at most and forces nothing on its own, as the
+rebuild as `v4.0.0-kernel.1` did not. What forces the major is Rule 2, carried by the breaking changes
+tabulated below. The three kernel-pin paragraphs that follow, for beta.5, beta.6 and beta.7, are
+frozen measurements of those betas and are kept as they were; the pin of the release candidate is the
+fourth.
 
 **The kernel pin of `v4.0.0-beta.5`, a frozen measurement of 2026-10-10.** `Package.swift` pins
 `v4.0.0-kernel.6` (#3260). That release carries forty-five patches in the native asset and the same
@@ -88,6 +92,30 @@ the two clean with no acknowledgement standing. Nine patches are new since `v4.0
 `0076` (#3495). The `url:` and `checksum:` in `Package.swift` are the `OCCT.xcframework.zip` asset
 of that release, whose published digest is the checksum recorded there. What each patch changes for
 a caller is recorded under "What `v4.0.0-beta.7` adds to the picture" below.
+
+**The kernel pin of `v4.0.0-rc.1`, a frozen measurement of 2026-11-25.** `Package.swift` pins the
+`kernel-8.0.2-c1` pre-release of this repository, published 2026-11-25, whose asset URL is
+independent of any semver tag. It is OCCT `V8_0_2` (tagged 2026-11-21, 36 commits and 184 files after
+`V8_0_1`, per `docs/occt-upgrades.md`) plus the fifty-one patches in `Scripts/patches/`:
+`ls Scripts/patches/*.patch | wc -l` reports 51, the manifest comment in `Package.swift` enumerates
+51, and the native asset lacks none of them. The wasm asset is `libOCCT-wasm.tar.gz` on the same
+release, and `Scripts/check-wasm-kernel-parity.py` reports the two clean at fifty-one carried patches
+(`0010` to `0080`, the retired numbers absent) and eleven WASI patches, with no acknowledgement
+standing. Against `v4.0.0-kernel.9`, the last kernel before this one (sixty-one patches), ten patches
+retire because `V8_0_2` absorbed them (`0019`, `0029`, `0034`, `0043`, `0044`, `0045`, `0048`,
+`0052`, `0054` and `0064`), three are rebased onto it (`0053`, `0073` and `0074`), and none is new:
+`0079` and `0080` (#3506, #3509), which `kernel.9` added, are kept. `kernel.9` was pinned on `main`
+(#3532) without a beta being cut and is superseded here, which is why no `v4.0.0-beta.8` exists.
+What the move from `V8_0_1` to `V8_0_2` changes for a caller is recorded under "What `v4.0.0-rc.1`
+adds to the picture" below.
+
+**Only the carry kernel exists as an asset.** The plan ships two kernel flavours, the hardened carry
+kernel and a vanilla kernel for an LTS opt-in (#3544, #3545). No `kernel-8.0.2` release exists
+(`gh release view kernel-8.0.2` answers "release not found" on 2026-11-25) and `Package.swift`
+carries no trait that would select one, so a build today links the carry kernel and the vanilla
+flavour is not shipped. `Kernel.flavour` is how a program asks which kernel it has. Whether the LTS
+flavour is in v4.0.0 or in v4.1.0 is decided at the release candidate against its own exit criteria
+(`docs/v4.0.0-plan.md`), and this section is written for the carry kernel alone.
 
 Many of these breaks share one shape, and it is worth naming because it explains the release:
 **a function that could not fail, and did, gains the ability to say so.**
@@ -582,6 +610,139 @@ touches skills, agent definitions, `CLAUDE.md`, a script under `Scripts/occt-sta
 `okf/`, and no file under `Sources/`. #3480, #3482 and #3484 state None and touch CI workflows,
 scripts, a test file and policy pages.
 
+**What `v4.0.0-rc.1` adds to the picture.** No beta was cut after `v4.0.0-beta.7`, so this
+assembly covers fifteen pull requests merged since it (#3507, #3508, #3510, #3513, #3515, #3517,
+#3520, #3521, #3528, #3530, #3532, #3533, #3542, #3546 and #3547): eight state NONE, six state PATCH
+and one states MINOR. It also records the kernel move from `V8_0_1` to `V8_0_2`, which no pull
+request graded, since #3547 defers it to this assembly, and the result of a mechanical comparison of the public
+API against `v4.0.0-beta.6` and against `v3.0.0` (#3539), which found breaks the register above did
+not list. Those are in
+[their own table](#found-by-the-mechanical-api-comparison-3539-breaks-the-register-did-not-list)
+below, each with a migration. The only public Swift declaration added since `v4.0.0-beta.6` is
+`Kernel`; none is removed or changed since then.
+
+**Additive API, MINOR.**
+
+- `Kernel`, `Kernel.Flavour` (`carry`, `vanilla`, `unlabelled`), `Kernel.flavour`,
+  `Kernel.occtVersion` and `Kernel.hasFix(_:)`: which OCCT kernel the build links against, which
+  OCCT version it was built from, and whether it holds the fix for a row of the kernel-fix ledger
+  (#3547). `hasFix(_:)` answers `nil` for an id the kernel cannot speak to, which is not `false`.
+- In the C bridge, `OCCTKernelFlavour`, `OCCTKernelOCCTVersion` and `OCCTKernelHasFix` (#3547),
+  and `OCCTShapeGetEdges` and `OCCTFreeEdgeArrayOnly` (#3528), the last two with no Swift declaration
+  of their own. `OCCTBridge` is not a product.
+
+**The move to OCCT 8.0.2, MINOR at most: no signature moves, and results do.** `docs/occt-upgrades.md`
+("8.0.1 to 8.0.2") records no public OCCT header added, removed or renamed and no deprecation added.
+The changes a consumer can see are values. The rows marked measured were measured by this tree's tests
+or by the parity run of #3552 (still open) against `kernel-8.0.2-c1`; the rows marked surveyed come from the 8.0.2 survey
+(#3542) and were not measured here.
+
+| What moves | From, to | Cause | Basis |
+|---|---|---|---|
+| The coarse triangulation of the test sphere at deflection 0.2 | 273 nodes and 516 triangles, to 276 and 522; the STL sphere's face count 514 to 520; the fine mesh at deflection 0.1 stays at 976 triangles | `BRepMesh_Delaun` (OCCT#1741) | measured |
+| A sphere-and-box intersection volume | 955.41968829692473 to 955.41968829692485 | `BRepMesh_CircleTool` (OCCT#1741) | measured |
+| `hlrPolyEdges` counts on the thread model viewed along +X | at deflection 0.05, visible sharp 1873 to 1851 and visible outline 17041 to 9597 (down 44 percent); at 0.8, 2089 to 2170 and 3578 to 3656 | HLR changes OCCT#1634 and OCCT#1640, not bisected to one of the two | measured |
+| A point-projection HLR probe's hidden edge extent, same edge count | `(9.99452306, -0.316756843)..(10.0000001, 9.99999976e-08)` to `(9.99452306, -1.00000002e-07)..(10.0000001, 0.316756843)` | `BRepMesh_CircleTool.cxx` (OCCT#1741) alone reproduces it | measured |
+| Volumes and areas that depend on an approximated curve: fillet, offset, shell, Boolean chain and pipe-shell fixtures | between 1e-16 and 1e-8 relative, for example a fillet volume 3951.5634099876793 to 3951.5634099531976 | OCCT commit `36d7686389` (`AppCont_LeastSquare`, "Center least-squares equations to retain accuracy for translated curves") | measured, 10 transcripts re-recorded in #3552 |
+| A filling surface's area and `G0Error` | 1038.9910066176521 to 1038.991011958994 (5e-9 relative), 1.0162211e-4 to 1.0162360e-4 | OCCT#1512 and OCCT#1741 together, neither alone | measured |
+| A line-only fillet in the contour-selection fixture | 10273.238348 to 10273.221977 (1.6e-6 relative); two slab fillet volumes move 1.2e-8 absolute (5e-11 relative) | fillet and spine-closure changes OCCT#1501, OCCT#1708, OCCT#1710 | measured |
+| A fillet whose blend reaches a vertex with no edge to follow | refused (`faultyContourCount` 1, not done) where it was done and invalid: OCCT#1421's model went from two solids with 139 `bopcheck` faults to a refusal; the other 42 cases of the open-set corpus are identical | OCCT#1708 sets `ChFiDS_StartsolFailure` and throws, replacing carried patch `0054` | measured |
+| A circular wire offset that collapses, closed-loft history, an unbounded loft section, a null pipe-shell auxiliary spine, Boolean section splits, STEP writer field kinds and PMI units, long reals in BREP text | not done, kept, refused, thrown and caught, limited to common vertices, and so on | OCCT#1453, OCCT#1783 to OCCT#1785, OCCT#1620, OCCT#1470, OCCT#1514, OCCT#1611, OCCT#1647, OCCT#1644, OCCT#1786 | surveyed; #3550 read every bridge site that now throws and found each inside a function-level catch |
+
+A caller that asserts an exact triangle count, an exact HLR edge count or a volume to more than eight
+digits will see these, and the retest is the migration. The ten retired patches change nothing for a
+caller except where upstream's form differs from ours: `0054` (above), `0044`, where upstream's
+`Extrema_ExtCS::Points` and `Extrema_ExtSS::Points` throw `StdFail_NotDone` when not done (OCCT#1596)
+and the bridge reads only after `IsDone()` and not parallel, so the Swift answers are unchanged
+(measured in #3550), and `0064`, where upstream advances the iterator before removing an edge
+(OCCT#1787) and the suites pass on both forms.
+
+**Crash to refusal, PATCH.** Calls that killed the process or never returned now return their
+documented failure value, so no caller can have depended on the old behaviour.
+
+- `Shape.isValid`, and every entry that runs `BRepCheck_Analyzer` first, returns `false` for a shape
+  whose face has a wire holding a line and a pcurve circle of no radius (a radius of 0 or 1e-20 or
+  less, an ellipse minor radius of 1e-300 or less, an infinite domain parameter), where it never
+  returned. `BRepTools::Read` builds such a circle from a well-formed BREP (patch `0079`, #3506,
+  PR #3530).
+- `Shape.isBooleanValid` and `isBooleanValidWith` answered `false` for a face with no surface through
+  a bridge guard, because `BRepAlgoAPI_Check` died on it in `IntTools_FaceFace`. The kernel now
+  answers the same (patch `0080`, #3509, PR #3530), and the guard is retired (#3533). The answers do
+  not change.
+- `FilletBuilder.surfaceCount` answers `0` unless the last build completed, where it faulted on a
+  builder that never built, had no contour or was declined (#3516, PR #3517).
+  `simulatedSurfaceCount(contour:)` answers `0` for a contour with no surface data, where it faulted
+  (#3519, PR #3520).
+- Sixteen `FilletBuilder` contour accessors answer their refusal for a contour index past the last
+  one, where `edgeCount(contour:)`, `stripeStatus(contour:)` and others faulted the process (#3518,
+  PR #3521). What it changes for an index of `0` or below, and for `surfaceCount` after `reset()`, is
+  in the break table below.
+
+**Speed, PATCH.** `Shape.edges()` and `Shape.measure()` map the shape once instead of once per edge,
+so enumeration is linear (#3526, #3527, PR #3528). The same array and the same values.
+
+**Internal.** The BREP readers' documentation caveat is retired on `kernel.8` (#3507), the native and
+wasm build scripts share one patch-apply helper (#3508), the analyzer guards whose answer is the
+kernel's own are retired (#3510, no answer changes at a retired site), the repin to `kernel.9` is
+superseded by the repin to `kernel-8.0.2-c1` (#3532, #3547), and the plan, the upgrade survey and two
+policy pages under `okf/` record the move to 8.0.2 and the state of the upstream pull requests (#3513,
+#3515, #3542, #3546). None of it changes anything a consumer compiles against.
+
+**Pending, not merged when this section was assembled.** Each is read here against its diff, and
+anything that merges before the tag is assessed at that point.
+
+- #3550 states NONE. Its diff touches no declaration: doc comments on `FilletBuilder.simulate(contour:)`,
+  `simulatedSurfaceCount(contour:)` and `Surface.extrema`, a bridge comment and a new test. What it
+  documents is a behaviour of OCCT 8.0.2 that is in the break table below: a simulation that fails
+  partway keeps its surfaces and sets `stripeStatus(contour:)` to 3.
+- #3552 states NONE. It re-records probe transcripts and touches no file under `Sources/`.
+- #3553 states PATCH. Its Swift edits are `Int32(clamping:)` conversions, so no declaration changes. It
+  carries behaviour changes under that grade, recorded in the break table below with #3521's: eighteen
+  `ChamferBuilder` accessors and setters refuse an index outside the contour range where they
+  faulted or read contour 1, `setDistance`, `setDistances` and `setDistAngle` answer `false` for an
+  index past the end where they answered `true`, and `FilletBuilder`'s `setRadius(_:contour:vertex:)`,
+  `setTwoRadii` and `addEdge` for an edge already in a contour answer `false` once the contour holds a
+  build or a simulation, including a non-analytic blend where they used to succeed.
+
+**How the rc.1 set was checked.** Every `## SemVer impact` statement was read, and every statement
+of anything above NONE was read against its diff. Then the public API was compared mechanically, in
+three ways. `swift package diagnose-api-breaking-changes v3.0.0 --products OCCTSwift` reports 190
+breaking changes, of which 74 lines were already in the register above and 116 were not (104
+distinct declarations, grouped into the rows of the next table). The same command against
+`v4.0.0-beta.6` reports none. An independent run of `swift-api-digester` over the modules compiled
+directly from each tree reproduced the SwiftPM list for `v3.0.0` line for line, and reports 13 for
+`v4.0.0-beta.5` (all of them the `simd` types and `CuttingPlaneLine.init` of #3291, which the beta.6
+table lists). And a comparison of the public symbol graphs by name, which sees what the digester does
+not: against `v3.0.0` it found 139 symbols no longer present under the same name (94 after
+collapsing the members of eight removed types; the difference from the digester's count is members
+that moved to a base class under #1178, the synthesized members of an enum that lost its raw type,
+and two structs that became one alias under #1185), 72 whose declaration text changed, four changes
+of default value under an unchanged signature, in five functions (`Shape.distanceSS`,
+`Shape.encodingRegularity`, `Shape.isBooleanValidWith`, `EdgeAnalysis.checkVerticesWithCurve3d` and
+`checkVerticesWithPCurve`), two tuple labels that moved (already registered under #2901), and 672
+symbols added; against `v4.0.0-beta.6` it found none gone, none changed and 14 added, all of them
+`Kernel`. This is a screen over declarations and cannot see a
+changed value behind an unchanged signature: those are the pull requests' own statements, read
+against their diffs.
+
+**Where the assembly disagreed with a PR's own grade.**
+
+- #3521 states PATCH. It is recorded PATCH for what it stops from crashing, and as a behaviour row
+  for what it changes the answer of: a contour index of `0` or below used to read, and in the setters
+  to write, contour 1, and the three radius setters answered `true` for a write that did not happen.
+  The signatures are unchanged and the result is not. The old documentation said "1-based", but
+  `contour(for:)` answers `0` for an edge that is in no contour, so passing its result straight in was
+  an easy mistake the old code answered with contour 1's value.
+- #3517 states PATCH and names its one behaviour change beyond the fault: after a completed build and
+  a `reset()`, `surfaceCount` answered the stale count and now answers `0`. It is in the same row.
+- #3553 (pending) states PATCH and is treated as #3521 is.
+- #3520 and #3528 state PATCH and stay PATCH. #3547 states MINOR, which holds for `Kernel`; the kernel
+  move it mentions is the table above.
+- #3530 and #3532 state PATCH, and #3533 states NONE, for kernel and guard changes whose only visible
+  effect is a call that could not return returning, or an answer that stays the same.
+
+**Pull requests with no `## SemVer impact` section.** None: all fifteen carry the heading.
+
 ##### Every break, and what a caller does
 
 | Break | Kind | Detail |
@@ -673,7 +834,9 @@ from the old cases, because they did not correspond to real states.
 ##### v4.0.0: two enums' raw values now match the OCCT enum they mirror (#1604, #1605)
 
 `AssemblyGraph.NodeType` changes both case names and raw values. `ViewObject.ProjectionType`
-changes raw values only. Both previously disagreed with the OCCT enum they mirror.
+changes raw values and gains the case `.noCamera` (found by the mechanical comparison, #3539, and
+listed in the table at the end of this section). Both previously disagreed with the OCCT enum they
+mirror.
 
 **This is the one break in this release that can corrupt data rather than fail a build.** A raw
 value persisted by an earlier version, or exchanged with another tool, means something different
@@ -1129,6 +1292,140 @@ wrong location without saying so.
 that trims a stored BREP (a text field, a JSON or database value, an editor that removes the last
 space) should stop trimming it, or append a newline or a space after the root reference before
 loading: the reader accepts any whitespace there.
+
+##### New in v4.0.0-rc.1: every break, and what a caller does
+
+Breaks recorded after beta.7. The tables above are unchanged. Each row links to its section, or to the
+paragraph above that records it.
+
+| Break | Kind | Detail |
+|---|---|---|
+| `FilletBuilder`'s contour accessors answer a refusal for an index of `0` or below, where they read or wrote contour 1; its three radius setters answer `false` for a write that did not happen; `surfaceCount` answers `0` after a completed build and `reset()` | different result, no signature change | [#3518, #3516](#v400-filletbuilder-answers-a-refusal-for-an-index-or-a-state-it-used-to-misread-3518-3516) |
+| `FilletBuilder.simulate(contour:)` for a simulation OCCT declines partway keeps the surfaces it computed and sets `stripeStatus(contour:)` to `3`, where it read `0` | different result, no signature change | [#3550](#v400-a-simulation-occt-declines-partway-keeps-its-surfaces-3550-occt1708) |
+| Mesh triangle counts, HLR edge counts and volumes that depend on an approximated curve move with OCCT 8.0.2 | different result, no signature change | "The move to OCCT 8.0.2" above, measured in #3552 |
+| `ChamferBuilder`'s contour accessors and setters refuse an index outside their range, and `FilletBuilder` refuses a radius change on a built or simulated contour (pending) | different result, no signature change | [#3523, #3524](#v400-filletbuilder-answers-a-refusal-for-an-index-or-a-state-it-used-to-misread-3518-3516), in the same section |
+
+##### v4.0.0: `FilletBuilder` answers a refusal for an index or a state it used to misread (#3518, #3516)
+
+OCCT's `ChFi3d_Builder::Value(I)` walks its list of contours `I - 1` times and uses the node it ends
+on, so an index of `1` or less runs no steps and answers contour 1, and an index past the end
+steps onto a null node. The bridge passed the caller's integer straight through. PR #3521 (stated
+PATCH) gates sixteen accessors on `1 <= index <= contourCount`, and answers the refusal each one
+already used for a failed call, or OCCT's own documented sentinel where it documents one. Past the
+end that is a crash becoming a refusal and needs no migration. For `0` and the negatives it is not:
+those indices read contour 1's value and, in the setters, wrote it.
+
+| Swift method | outside the range now | before, an index of `0` or below |
+|---|---|---|
+| `edgeCount(contour:)` | `0` | contour 1's count |
+| `stripeStatus(contour:)` | `-1` | faulted |
+| `edge(contour:index:)` | `nil` | contour 1's edge |
+| `radius(contour:)`, `length(contour:)`, `abscissa(contour:vertex:)`, `relativeAbscissa(contour:vertex:)` | `-1` | contour 1's value |
+| `isConstant(contour:)`, `isClosed(contour:)`, `isClosedAndTangent(contour:)` | `false` | contour 1's flag |
+| `firstVertex(contour:)`, `lastVertex(contour:)` | `nil` | contour 1's vertex |
+| `setRadius(_:contour:edge:)`, `setRadius(_:contour:vertex:)`, `setTwoRadii(_:_:contour:edgeInContour:)` | `false`, nothing written | wrote contour 1 |
+| `resetContour(_:)` | no effect | reset contour 1 |
+
+The three setters also answered `true` for an index past the last contour, where nothing was
+written. They now answer `false`. Separately, `surfaceCount` after a completed build and a
+`reset()` answered the stale count of the build that no longer exists (#3516, PR #3517, stated
+PATCH) and now answers `0`, as it does for a builder that never built.
+
+**Why this is recorded as a break and not as a crash fix.** The signatures do not change, and the
+digester and the symbol-graph comparison both report nothing for these methods. What changes is an
+answer, in a pattern a caller can reach by accident: the previous documentation said "1-based", but
+`contour(for:)` answers `0` for an edge that is in no contour, so `radius(contour: builder.contour(for: edge))`
+for a declined edge answered contour 1's radius and now answers `-1`. v4.0.0 is a major, so the grade
+does not move the version number, and a reader who disagrees can downgrade the row to a note without
+touching a signature.
+
+**Pending, #3553.** The same refusal reaches `ChamferBuilder`: eighteen accessors and setters answer
+the value `BRepFilletAPI_MakeChamfer.hxx` documents (`0`, `-1`, `false` or `nil`) for a contour index
+outside `1...contourCount` and an edge index outside `1...edgeCount(contour:)`, where they faulted or
+read contour 1, and `setDistance`, `setDistances` and `setDistAngle` answer `false` for an index past
+the end where they answered `true`. And `FilletBuilder.setRadius(_:contour:vertex:)`,
+`setTwoRadii(_:_:contour:edgeInContour:)` and `addEdge` for an edge already in a contour answer
+`false` and change nothing once that contour holds a `build()` or a `simulate(contour:)` result,
+where they faulted for an analytic blend and succeeded for a non-analytic one. `reset()` lifts the
+refusal.
+
+**Migration.** Pass a 1-based contour index within `1...contourCount`, and an edge index within
+`1...edgeCount(contour:)`. A caller that passed `0` expecting the first contour, which the old
+behaviour allowed by accident, should pass `1`. A caller that treated `true` from a radius setter as
+proof that the radius was set can now rely on it: `false` means nothing was written. Read
+`surfaceCount` after `build()` has completed and before `reset()`. Call `reset()` before changing the
+radii of a contour that has been built or simulated.
+
+##### v4.0.0: a simulation OCCT declines partway keeps its surfaces (#3550, OCCT#1708)
+
+OCCT 8.0.2 made `ChFi3d_Builder::StartSol` set the spine's `ChFiDS_StartsolFailure` status and throw
+`Standard_Failure("StartSol: no matching obstacle edge")` where it returned `false`. `build()` runs
+inside `Compute`, which catches it around every stripe and reports the contour as faulty, as before.
+`BRepFilletAPI_MakeFillet::Simulate` has no such catch, so the exception reaches the bridge, where
+`OCCTFilletBuilderSimulate`'s function-level `catch (...)` returns normally. What a caller sees
+is that a simulation that fails partway keeps the surfaces it had computed (4 to 7 on the eight
+declined edges of the OCCT#1568 model at radius 1.5, measured) and sets `stripeStatus(contour:)` to
+`3`, where `simulatedSurfaceCount(contour:)` read `0` and `stripeStatus(contour:)` read `0`. The owner
+accepted this and the behaviour is documented, not hidden (#3550). OCCT resets the status only in
+`Compute`, never on `reset()` or on a later `simulate(contour:)`, so after one declined simulation a
+later successful one on the same builder reads `0` surfaces; that is read from the source and was not
+probed.
+
+**Migration.** Read `stripeStatus(contour:)` before `simulatedSurfaceCount(contour:)`: a status of `3`
+means the simulation was declined and the count is partial. A caller that treated a nonzero
+`simulatedSurfaceCount(contour:)` as a completed simulation should test the status as well.
+
+##### Found by the mechanical API comparison (#3539): breaks the register did not list
+
+Found by `swift package diagnose-api-breaking-changes v3.0.0` and a comparison of the public symbol
+graphs by name, and checked against the source and `docs/CHANGELOG.md`, where every row but the
+`TrigRoots` labels has an entry with its migration. None was in the register. The assembly reads each
+pull request's own statement, and a statement that does not name a signature change cannot reveal
+one, which is the failure mode [`semver-at-release.md`](../okf/policies/semver-at-release.md)
+names. Nothing here is new in this candidate: all of it is already in `v4.0.0-beta.6`, and the
+comparison against `v4.0.0-beta.6` finds none. A consumer pinned to `v4.0.0-beta.6` has met these
+already, and one moving from `v3.0.0` meets them now. The first rows are the likeliest to be written
+by a caller.
+
+| Break | Kind | Detail |
+|---|---|---|
+| `DimensionInfo`, `GeomToleranceInfo` and `DatumInfo` removed; `Document.dimension(at:)`, `geomTolerance(at:)`, `datum(at:)`, `dimensions`, `geomTolerances` and `datums` return `Document.Dimension`, `Document.GeomTolerance` and `Document.Datum`; `typedDimension(at:)`, `typedGeomTolerance(at:)`, `typedDatum(at:)`, `typedDimensions`, `typedGeomTolerances` and `typedDatums` removed; `Document.Dimension.value`, `lowerTolerance` and `upperTolerance` are `Double?` | compile error | #996, #1004. Drop the `typed` prefix, name the nested types, unwrap `value` and the tolerances, and read `bounds` for a range dimension, which used to read back as `value` equal to its lower bound with zero tolerances. The four flat accessors survive as `lowerBound`, `upperBound`, `lowerTolerance` and `upperTolerance`, each `Double?` |
+| `Shape.splitDrafts(faceIndex:wire:direction:planeOrigin:planeNormal:angle:)` removed | compile error | #1393. Every valid call returned `nil`, and OCCT deleted `LocOpe_SplitDrafts` upstream (OCCT#1442). No replacement |
+| `DraftInfo` removed | compile error | #1000. Its six members never read the caller's input, so each had a fixed answer, and no OCCT API exposes `Draft_*Info`. No replacement; delete the calls |
+| `Shape.revolutionToElementary()` removed | compile error | #1634. It ran `ShapeCustom::ConvertToRevolution`, the inverse of its name. Use `withSurfacesAsRevolution()` for what it ran, and `sweptToElementary()` for what its name promised |
+| `ExtremaElSS.planeToSphere` and `sphereToSphere` removed; `planeToPlane` returns `(isParallel: Bool, squareDistance: Double?)` where it returned `results: [ExtremaResult]` | compile error | #1632. `Extrema_ExtElSS` implements only plane to plane and throws `Standard_NotImplemented` for the rest. Use `Surface.extremaSS(other:)` for either pair, and read `squareDistance` for planes |
+| `Surface.plateErrors(points:tolerance:maxDegree:maxSegments:)` removed | compile error | #999. Every value it returned was uninitialised memory. No replacement |
+| `Surface.nlPlateDeformedG2` and `nlPlateDeformedG3` lose `maxIterations`; `nlPlateDeformed` and `nlPlateDeformedG1` rename it `resolutionOrder`, and an order outside `[2, 9]` returns `nil` | compile error, and `nil` where an undeformed surface came back | #999, #1017, #1019, #1020. The parameter was never an iteration count. `nlPlateDeformedIncremental` is the incremental solver |
+| `Curve2D.toBSpline(tolerance:)` is `toBSpline(_:)` taking a `Curve2D.Parameterisation`; `Curve2D.bisector(withPoint:origin:side:)` is `bisector(withPoint:maxDistance:side:)` with a `Double`; `MedialAxis.init?(of:tolerance:)` is `init?(of:)`; `ExtremaElC.lineToEllipse` and `Curve3D.locateNearestPoint` drop `tolerance` | compile error | #999. None of the underlying OCCT calls accepts the dropped argument. `maxDistance` trims the bisector and defaults to OCCT's 500 |
+| `Color.toHex(sRGB:)` and `toHexRGBA(sRGB:)` are `toHex(includeHashPrefix:)` and `toHexRGBA(includeHashPrefix:)` | compile error for a caller passing the label | #1571. The old parameter was OCCT's prefix switch, negated on the way in: the default answered `#FF0000` and `sRGB: true` stripped the prefix. A caller passing `sRGB: true` now passes `includeHashPrefix: false`; one on the default sees the same string |
+| `Geom2dEval`'s `D0` and `D1` evaluators (eight) and the ten `GeomEval` evaluators return optionals | compile error | #1646, #1669. Unwrap. `nil` means the call was refused, which used to read as the origin |
+| `GeneralTransform2D.affinity(axisOrigin:axisDirection:ratio:)` returns `GeneralTransform2D?` | compile error | #1407. Unwrap; `nil` is an `axisDirection` shorter than `gp::Resolution()`, which used to abort the process |
+| `Document.assemblyItemCount(maxDepth:)` returns `Int?` | compile error | #964. Unwrap; `nil` means the walk stopped at 100,000 items and the number would be a floor |
+| `Curve3D.extremaCSPoint(range:surface:index:)` returns `Curve3D.CurveSurfaceExtremaPoint`; `Shape.fixedFreeBounds` returns `Shape.FreeBoundsRepair?` where it returned `(shape:, fixedCount:)?`; `Shape.updateEdgeTolerance(edge:tolerance:)` returns `Shape.EdgeToleranceUpdate?` and takes `maxToleranceToCheck` | compile error | #1514, #1636, #1639. Read `u2` and `v2` for the surface side of an extremum; read `shape` of the repair for the repaired shape (it used to be a compound of the free-bound wires); read the update's fields for what moved |
+| `MathSolver.eigenvalues(diagonal:subdiagonal:)` and `eigenvaluesAndVectors(diagonal:subdiagonal:)` take `offDiagonal:`, and the array holds `n - 1` entries where it held `n` | compile error, and a wrong-length array if only the label is renamed | #1643. Pass the `n - 1` off-diagonal entries in matrix order; the first entry of the old array was discarded |
+| `TrigRoots.solve` and `hasInfiniteRoots` take `a:` to `e:` where they took `A:` to `E:` | compile error | #1103, undeclared, the swift-format rollout, with `PaperSize` above. Lowercase the labels |
+| `Drawing.ProjectionType.perspective` is `.perspective(focus:)`, and the enum is no longer `RawRepresentable`, so `rawValue`, `init(rawValue:)` and `RawValue` are gone | compile error | #999. Pass the focal distance the perspective constructor needs; store the case with your own encoding |
+| `DrawingAnnotation.ArcSegment` removed, `DrawingAnnotation.cosmeticThreadEndView(centre:majorDiameter:pitch:)` returns `[DrawingAnnotation]`, and `DrawingAnnotation` gains `.arc` | compile error, and an exhaustive `switch` over `DrawingAnnotation` | #1179. Use `DrawingAnnotation.Arc`, and add a `.arc` arm |
+| `DrawingAnnotation.TextLabel` is `DrawingAnnotation.DrawingTextLabel` | compile error | #1175. Rename the type; the `.textLabel` case and `Drawing.addTextLabel()` are unchanged |
+| `DrawingDimension.Radial` and `.Diameter` are aliases of one `DrawingDimension.Circular`, and their struct-level `value` is removed | compile error where `Radial.value` or `Diameter.value` is read, or where the two are extended or overloaded separately | #1185. Read `DrawingDimension.value`, which still computes `radius` and `2 * radius` |
+| `DrawingLineStyle.boldWidth` and `defaultWidth` removed | compile error | #1170. They were unused; the writers take line widths from the ISO 128-20 table internally. No replacement |
+| `DXFError.drawingEmpty` and `PDFError.drawingEmpty` removed | compile error in an exhaustive `switch` | #1229. Neither writer ever threw it; delete the arm |
+| `ImportError.readFailed(path:status:)`, `Exporter.ExportError.writeFailed(path:status:)` and `DocumentError.exchangeFailed(url:status:)` added; `ViewObject.ProjectionType.noCamera` added | compile error in an exhaustive `switch` | #1644, #1574. The STEP and IGES loaders and the STEP writers throw the new cases, with an `IOStatus`, where they threw `importFailed` or `exportFailed`. Add arms. `ViewObject.ProjectionType`'s raw-value change (#1605, above) also adds `.noCamera = 0`, which that row does not say |
+| `BRepGraph.setCoEdgeUVBox`, `setVertexRefLocalLocation`, `setCoEdgeRefLocalLocation`, `setWireRefLocalLocation`, `setFaceRefLocalLocation`, `setShellRefLocalLocation`, `setSolidRefLocalLocation` and `repSetPolygonOnTriTriangulationId` removed | compile error | #1652. Each was a no-op on the pinned kernel, so deleting a call changes no behaviour. Use `setOccurrenceRefLocalLocation(_:matrix:)` or `setChildRefLocalLocation(_:matrix:)` to place topology, `coEdgeSetPCurve` or `coEdgeAddPCurve` to move UV endpoints, and `setFaceTriangulationRep(_:triRepId:)` for a polygon-on-triangulation |
+| `Shape.distanceSS(to:deflection:)` defaults `deflection` to `1e-7`, not `100`; `Shape.encodingRegularity(toleranceDegrees:)` defaults to `1.0e-10 * 180 / Double.pi`, not `1e-10`; `Shape.isBooleanValidWith(_:operation:...)` defaults `operation` to `5`, not `0`; `EdgeAnalysis.checkVerticesWithCurve3d` and `checkVerticesWithPCurve` default `precision` to `-1.0`, not `1e-6` | silent value change, no signature change the digester sees | #1544, #1545, #1540, #1577. Each old default was the wrong constant for what the parameter means in OCCT. A caller that relied on the old behaviour passes the old value explicitly; a caller on the default gets OCCT's own default |
+
+**Added parameters with a default value are not rows above**, because a call site compiles unchanged.
+The digester reports each as a rename, and it is a break only for a caller that takes the method as a
+function value or overrides it: `Shape.bsplineRestriction(...parameters:)` (#1637),
+`circularPatternCut(...timeout:)` (#1067), `composeShell(precision:uPatches:vPatches:)` (#1638),
+`hlrEdges(direction:category:nbIso:)` and `hlrCompoundOfEdges(...nbIso:)` (#1500),
+`HatchPattern.generate(...islands:)` (#1172), `EdgeAnalysis.checkOverlapping(_:_:tolerance:)`
+(#1438) and `Shape.fillet2dEdges(...planeOrigin:...)` (#1459). Likewise the four dimension classes
+(`LengthDimension`, `RadiusDimension`, `AngleDimension` and `DiameterDimension`) now inherit `value`,
+`geometry`, `isValid` and `setCustomValue(_:)` from a shared `DimensionMeasurement` (#1178), which a
+by-name comparison reports as removed and which no caller can see. `Sheet.render(into:)`,
+`StandardLayout.render(into:)` and `ProjectionSymbol.render(_:at:into:)` gain `PDFWriter` and
+`SVGWriter` overloads through a new `DrawingWriter` protocol, which is additive.
 
 #### v3.0.0
 
