@@ -23,7 +23,7 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ### The LTS preview v4.0.0-lts.1 pins the vanilla kernel (release/4.0.0-lts.1)
 
-A pre-release of the LTS flavour, tagged from the `release/4.0.0-lts.1` branch and not merged to `main`. The API is that of `main` at `60bb2f79a`; the only differences are the two kernel pins and the docs. `Package.swift` pins the `kernel-8.0.2` pre-release (OCCT `V8_0_2` exactly as Open Cascade tagged it, no carried patch) and `Scripts/wasm-kernel-pin.txt` pins its wasm counterpart (`V8_0_2` plus only the 11 WASI port patches). `Kernel.flavour` is `.vanilla` and the kernel holds 9 of the 60 ledger fixes.
+A pre-release of the LTS flavour, tagged from the `release/4.0.0-lts.1` branch and not merged to `main`. The API is that of `main` at `60bb2f79a`; the only differences are the two kernel pins, one gate self-test fixture and the docs. `Package.swift` pins the `kernel-8.0.2` pre-release (OCCT `V8_0_2` exactly as Open Cascade tagged it, no carried patch) and `Scripts/wasm-kernel-pin.txt` pins its wasm counterpart (`V8_0_2` plus only the 11 WASI port patches). `Kernel.flavour` is `.vanilla` and the kernel holds 9 of the 60 ledger fixes.
 
 It makes no ThreadSanitizer-clean claim, is not safe for untrusted BREP, STEP or OCAF input, has no crash-guard promise, does not reinstate the bridge guards retired at earlier repins (#3533, #3503, #1030, #603), and has not had its full test suite run. Consumers pin it exactly (`exact: "4.0.0-lts.1"`). The hardened kernel remains the default and is what `v4.0.0` ships. See [`reference/Kernel.md`](reference/Kernel.md).
 

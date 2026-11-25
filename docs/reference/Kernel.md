@@ -17,7 +17,7 @@ The ledger the answers come from is [`Scripts/kernel-fixes.tsv`](../../Scripts/k
 
 ## The LTS preview (v4.0.0-lts.1)
 
-`v4.0.0-lts.1` is the first preview of the `vanilla` flavour. It pins the `kernel-8.0.2` pre-release: `V8_0_2` exactly as Open Cascade tagged it, with no carried patch on macOS and iOS, and with only the 11 WASI port patches on wasm. Its `Kernel.flavour` is `.vanilla`, its `Kernel.occtVersion` is `"8.0.2"`, and it holds 9 of the 60 ledger fixes (`Kernel.hasFix("F0019")` is `true`, `Kernel.hasFix("F0080")` is `false`). The hardened kernel, with its 51 carried patches, stays the default and is what `v4.0.0` ships. A pre-release is never resolved by a version range, so a consumer of the preview pins it exactly, with `.package(url: "https://github.com/SecondMouseAU/OCCTSwift", exact: "4.0.0-lts.1")`.
+`v4.0.0-lts.1` is the first preview of the `vanilla` flavour. It pins the `kernel-8.0.2` pre-release: `V8_0_2` exactly as Open Cascade tagged it, with no carried patch on macOS and iOS, and with only the 11 WASI port patches on wasm. Its `Kernel.flavour` is `.vanilla`, its `Kernel.occtVersion` is `"8.0.2"`, and it holds 9 of the 60 ledger fixes (`Kernel.hasFix("F0019")` is `true`, `Kernel.hasFix("F0080")` is `false`). The hardened kernel, with its 51 carried patches, stays the default and is what `v4.0.0` ships. A range such as `from: "4.0.0"` never resolves a pre-release, so a consumer of the preview pins it exactly, with `.package(url: "https://github.com/SecondMouseAU/OCCTSwift", exact: "4.0.0-lts.1")`.
 
 Beyond what the `vanilla` row above already says, the preview does not promise:
 
