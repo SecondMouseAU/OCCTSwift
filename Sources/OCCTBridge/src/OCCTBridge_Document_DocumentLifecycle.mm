@@ -439,7 +439,7 @@ OCCTDocumentRef OCCTDocumentLoadSTEP(const char* path, OCCTReturnStatus* _Nullab
     reader.SetMatMode(Standard_True); // Enable material reading
 
     // Read the file
-    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
+    if (!occtRecordReturnStatus(occtStepReadFile(reader, path), outStatus))
     {
       delete document;
       return nullptr;

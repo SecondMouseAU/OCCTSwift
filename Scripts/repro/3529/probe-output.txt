@@ -1,0 +1,14 @@
+plain:  15416 bytes, starts with ISO-10303-21;
+marked: 15419 bytes, starts with EF BB BF
+  STEPControl_Reader     ReadFile(plain)              RetDone  roots=1  volume=6000
+**** ERR StepFile : Undefined Parsing: Line 2: Incorrect syntax: unexpected QUID, expecting STEP    ****
+  STEPControl_Reader     ReadFile(marked)             RetFail
+  STEPControl_Reader     ReadStream(marked, skip 3)   RetDone  roots=1  volume=6000
+**** ERR StepFile : Undefined Parsing: Line 2: Incorrect syntax: unexpected QUID, expecting STEP    ****
+  STEPControl_Reader     ReadStream(marked, skip 0)   RetFail
+  STEPCAFControl_Reader  ReadFile(plain)              RetDone  transfer=1  freeShapes=1
+**** ERR StepFile : Undefined Parsing: Line 2: Incorrect syntax: unexpected QUID, expecting STEP    ****
+  STEPCAFControl_Reader  ReadFile(marked)             RetFail
+  STEPCAFControl_Reader  ReadStream(marked, skip 3)   RetDone  transfer=1  freeShapes=1
+**** ERR StepFile : Undefined Parsing: Line 2: Incorrect syntax: unexpected QUID, expecting STEP    ****
+  STEPCAFControl_Reader  ReadStream(marked, skip 0)   RetFail

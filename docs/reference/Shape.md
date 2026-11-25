@@ -1530,6 +1530,9 @@ public static func load(from url: URL, progress: ImportProgress? = nil) throws -
 
 Convenience alias for `loadSTEP(fromPath:progress:)`.
 
+A file that starts with a UTF-8 byte order mark (`EF BB BF`) is read from the byte after it (#3529),
+as it is by `Document.load(from:progress:)`; see that entry for what is and is not skipped.
+
 - **Parameters:** `url`, URL to the STEP file; `progress`, optional progress/cancellation channel.
 - **Returns:** Imported shape.
 - **Throws:** `ImportError.cancelled` if cancelled; `ImportError.readFailed(path:status:)`, carrying OCCT's own

@@ -29,6 +29,9 @@ public final class Document: @unchecked Sendable {
 
     /// Load a STEP file with full XDE support (assembly structure, names, colors, materials).
     ///
+    /// A file that starts with a UTF-8 byte order mark (`EF BB BF`) is read from the byte after it,
+    /// as an editor that saves one would expect (#3529).
+    ///
     /// - Parameters:
     ///   - url: URL to the STEP file.
     ///   - progress: Optional reporter for read progress and cancellation. Pass `nil` to

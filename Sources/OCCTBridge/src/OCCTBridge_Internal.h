@@ -143,6 +143,7 @@
 #include <CPnts_AbscissaPoint.hxx>     // occtArcQuadrature's per-span integrator (#603)
 #include <TColStd_Array1OfReal.hxx>    // the GeomAbs_CN interval array the same helpers walk
 #include <IFSelect_ReturnStatus.hxx>   // occtRecordReturnStatus (#1644)
+#include <OSD_FileSystem.hxx>          // occtStepReadFile (#3529)
 #include <Aspect_TypeOfDeflection.hxx> // occtDrawerGetEffectiveDeflection (#1418)
 #include <Prs3d.hxx>        // occtDrawerGetEffectiveDeflection: Prs3d::GetDeflection (#1418)
 #include <Prs3d_Drawer.hxx> // occtDrawerGetEffectiveDeflection (#1418)
@@ -4332,6 +4333,48 @@ inline bool occtRecordReturnStatus(IFSelect_ReturnStatus theStatus, OCCTReturnSt
 {
   occtSetReturnStatus(theOut, static_cast<OCCTReturnStatus>(static_cast<int>(theStatus)));
   return theStatus == IFSelect_RetDone;
+}
+
+// === #3529: a STEP file that starts with a UTF-8 byte order mark ===
+//
+// STEPControl_Reader::ReadFile and STEPCAFControl_Reader::ReadFile open the file through
+// OSD_FileSystem::DefaultFileSystem()->OpenIStream and hand the stream to the scanner
+// (StepSelect_WorkLibrary.cxx:63, StepFile_Read.cxx:77-89 and :105-108), which expects
+// `ISO-10303-21;` first. A UTF-8 mark (EF BB BF) in front of it is a syntax error, and the
+// kernel's only word on it is `Incorrect syntax: unexpected QUID, expecting STEP`. A mark in front
+// of a text file is ordinary, since some Windows editors add one on save, and a producer that
+// writes one would have every file it writes refused (Scripts/repro/3529/).
+//
+// ReadStream(name, stream) is the same read with the stream given by the caller
+// (StepSelect_WorkLibrary.cxx:78), so a file with a mark is opened exactly as ReadFile opens it,
+// its first three bytes are read, and the stream goes to ReadStream positioned after them. A file
+// that does not start with the mark goes through ReadFile unchanged, so nothing that loaded before
+// reads differently now. All fifteen STEP readers in OCCTBridge_IO_StepFormat.mm and
+// OCCTBridge_Document_DocumentLifecycle.mm go through this one function, which is what places it
+// here and not in either .mm (okf/policies/helper-placement-by-reach.md).
+//
+// Only the UTF-8 mark is skipped, and only one: OCCT does not read UTF-16 or UTF-32 STEP, and a
+// second mark is as much a syntax error as the first was.
+template <class Reader>
+inline IFSelect_ReturnStatus occtStepReadFile(Reader& reader, const char* path)
+{
+  {
+    const occ::handle<OSD_FileSystem>& fileSystem = OSD_FileSystem::DefaultFileSystem();
+    std::shared_ptr<std::istream>      stream =
+      fileSystem->OpenIStream(path, std::ios::in | std::ios::binary);
+    if (stream && !stream->fail())
+    {
+      char mark[3] = {0, 0, 0};
+      stream->read(mark, 3);
+      if (stream->gcount() == 3 && static_cast<unsigned char>(mark[0]) == 0xEF
+          && static_cast<unsigned char>(mark[1]) == 0xBB
+          && static_cast<unsigned char>(mark[2]) == 0xBF)
+      {
+        return reader.ReadStream(path, *stream);
+      }
+    }
+  }
+  return reader.ReadFile(path);
 }
 
 // MARK: - Helpers hoisted out of the .mm splits, because more than one file reaches them (#1628)
