@@ -548,7 +548,7 @@ extension FilletBuilder {
     /// print(builder.simulatedSurfaceCount(contour: 1))   // 0: reset discards the surface data
     /// ```
     public func simulatedSurfaceCount(contour: Int) -> Int {
-        Int(OCCTFilletBuilderNbSimulatedSurf(handle, Int32(contour)))
+        Int(OCCTFilletBuilderNbSimulatedSurf(handle, Int32(clamping: contour)))
     }
 }
 

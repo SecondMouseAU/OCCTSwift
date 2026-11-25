@@ -123,4 +123,6 @@ simulation; 1 after `Simulate(1)` or a build. `ChamferBuilder.simulatedSurfaceCo
 same fault and is **not** changed by this directory's fix, because the predicate is not reachable:
 `BRepFilletAPI_MakeChamfer` has no `NbComputedSurfaces` or `StripeStatus`, and its `myBuilder` is
 private. A bridge-side flag does not work either: which stripes hold a sequence after a *declined*
-multi-contour `Build()` depends on how far `Compute` got, and `Remove` renumbers contours. Left open.
+multi-contour `Build()` depends on how far `Compute` got, and `Remove` renumbers contours. Left open here;
+guarded by #3522 (`Scripts/repro/3522/`), which reads the predicate through the private member and
+finds no state where it differs from `NbSurf`.

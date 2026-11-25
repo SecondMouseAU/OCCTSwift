@@ -4522,7 +4522,9 @@ void OCCTChamferBuilderSetMode(OCCTChamferBuilderRef _Nonnull builder, int32_t m
 /// Simulate the chamfer on a contour (1-based) to prepare surface data.
 bool OCCTChamferBuilderSimulate(OCCTChamferBuilderRef _Nonnull builder, int32_t contourIndex);
 
-/// Get the number of simulated surfaces for a contour (1-based). Call after Simulate.
+/// Get the number of simulated surfaces for a contour (1-based). Call after Simulate. 0 while the
+/// contour holds no surface data (never built or simulated, reset since, declined) and outside
+/// 1..NbContours() (#3522).
 int32_t OCCTChamferBuilderNbSurf(OCCTChamferBuilderRef _Nonnull builder, int32_t contourIndex);
 
 /// Create a section builder with default initialization.
