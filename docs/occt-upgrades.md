@@ -11,7 +11,7 @@ Documents breaking changes and migration steps for each OCCT version upgrade.
 
 | OCCTSwift | OCCT Version | Date | Notes |
 |-----------|-------------|------|-------|
-| Unreleased | 8.0.2 | Nov 2026 | Surveyed 2026-11-23, not yet the source pin: retires ten carried patches, rebases three |
+| Unreleased | 8.0.2 | Nov 2026 | Surveyed 2026-11-23, not yet the source pin: retires ten carried patches, rebases three; ships as two kernel flavours (hardened default, LTS opt-in), see "Kernel flavours" |
 | Unreleased | 8.0.1 | Aug 2026 | Current source pin: first 8.0 maintenance release, retired ten carried patches |
 | v1.15.x | 8.0.0p1 | Jun 2026 | Hot-patch tag; the kernel every v1.15–v1.17 release was built from |
 | v1.0.0 | 8.0.0 GA | May 2026 | SemVer-stable; PointSetLib removed, EdgeRegularity consolidated |
@@ -130,6 +130,33 @@ expectation moves against both kernels.
 | #1634, #1640, #1741 (parts) | HLR sampling and B-spline handling, projection knots, `BRepMesh` and `GCPnts_TangentialDeflection` | exact mesh, HLR and sampling counts |
 | #1786 | Long reals in BREP text, readers stop on a failed stream | the BREP readers; the bridge's #3487 stream guards stay, since #1786 bounds only `GetReal` |
 | #1470, #1514, #1611, #1647, #1644 (parts) | STEP writer field kinds, cyclic oriented edges, PMI units, tessellated vertex order | STEP read and write |
+
+### Kernel flavours (planned for v4.0.0)
+
+Decided 2026-11-24, and not shipped yet: the carry kernel is #3535, the vanilla kernel #3544 and the
+trait that selects it #3545. The plan is in [`v4.0.0-plan.md`](v4.0.0-plan.md) family E. This table is
+the contract skeleton; once the fix ledger exists (#3543) it is generated from the ledger rather
+than written by hand, so it cannot go stale.
+
+| Flavour | Kernel | Selected |
+|---|---|---|
+| **Hardened** | `V8_0_2` plus 51 carried patches (native), and the 11 WASI patches on wasm | By default |
+| **LTS** | `V8_0_2` with no carried patches (native), and the 11 WASI patches on wasm | An explicit opt-in |
+
+LTS means provenance, not robustness: exactly what Open Cascade ships, so a defect is upstream's. On
+a vanilla kernel the results-neutral patches below become races and crashes where the hardened
+kernel refuses or serialises.
+
+| Patch group | Patches | Hardened | LTS |
+|---|---|---|---|
+| Thread safety and races | 14 | Fixed; the ThreadSanitizer claim in [`thread-safety.md`](thread-safety.md) holds | Not fixed; no ThreadSanitizer-clean claim |
+| Damaged-input hardening | 12 | Damaged BREP, STEP and OCAF input is refused | Not safe for untrusted input |
+| Crash and hang guards | 13 | The call refuses or returns | The process can crash or hang; no guard promise |
+| Wrong-answer fixes | 11 | The answer is right | The answer is upstream's, which can be wrong where the patch says so |
+| Behaviour ahead of upstream (`0059`) | 1 | Fillets that meet exactly are built | Upstream's behaviour |
+
+An upstream release shrinks the difference: a fix in 8.0.3 or 8.1 retires its patch from the
+hardened flavour and its guard from LTS, and the generated table loses the row.
 
 ---
 
