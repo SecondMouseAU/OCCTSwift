@@ -72,6 +72,8 @@ struct FilletObstacleSimulationTests {
             "every edge the builder holds a contour for simulates to completion")
     }
 
+    /// A simulation that reaches the obstacle branch returns to its caller.
+    ///
     /// At the exact-tangent radius the obstacle branch is reached on eight edges. Each simulation
     /// returns to its caller, and the contour says why it stopped.
     ///

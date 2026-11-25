@@ -53,10 +53,17 @@ struct Issue196PolyHLRTests {
     //     0.05         1851            9597
     //     0.8          2170            3656
     //
-    // OCCT 8.0.2 moved all four (HLR changes #1634 and #1640): on 8.0.1 they were 1873 and 17041 at
-    // 0.05 and 2089 and 3578 at 0.8. The fine outline count fell by 44 percent and the other three
-    // moved by 1 to 4 percent. The two relations below held on both versions. It was not bisected to
-    // one of the two commits.
+    // OCCT 8.0.2 moved all four: on 8.0.1 they were 1873 and 17041 at 0.05 and 2089 and 3578 at 0.8.
+    // The fine outline count fell by 44 percent and the other three moved by 1 to 4 percent. The two
+    // relations below held on both versions.
+    //
+    // The cause is the mesher, not the HLR code: upstream's #1741 changed BRepMesh_CircleTool and
+    // BRepMesh_Delaun, and the fine mesh has 34 percent fewer triangles. HLR run on one stored mesh
+    // gives the same counts on both kernels, and swapping those two files into the 8.0.1 kernel
+    // reproduces the 8.0.2 counts. The true silhouette of this thread (about 113 mm) is complete on
+    // both. 75 to 88 percent of the outline length counted on either version is off that silhouette,
+    // short fragments between the helical edges, and the new mesh has about 40 percent of them. So
+    // these counts pin the mesher's tie-breaking, not the fidelity of the silhouette.
     //
     // The silhouette count does what the old name claimed: the coarse mesh draws fewer of the fine
     // one's outline edges (now about 38 percent of them). The sharp count goes the other way, 17%
