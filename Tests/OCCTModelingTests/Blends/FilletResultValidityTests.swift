@@ -191,8 +191,11 @@ struct Issue3200FilletResultValidityTests {
         ]
         // The slab r=1.999 volume differs by 2.3e-8 (1e-10 relative) on wasm32, where WASILibc's
         // transcendentals feed the numerical integration. OCCT 8.0.2 moves two of the slab frame
-        // volumes (r=1.999 and r=1.9999) by 1.2e-8 on Apple too (fillet spine closure, #1501), which
-        // is 5e-11 relative, so the Apple bound is 1e-7 now and not 1e-8.
+        // volumes (r=1.999 and r=1.9999) by 1.2e-8 on Apple too, which is 5e-11 relative, so the
+        // Apple bound is 1e-7 now and not 1e-8. The cause was not isolated for these two. Shifts of
+        // this size (1e-16 to 1e-8 relative) in fillet, offset and pipe volumes across the repro
+        // corpus traced to upstream 36d7686389 (AppCont_LeastSquare, least-squares equations
+        // centred), which is the likely one here.
         #if arch(wasm32)
             let tolerance = 1e-6
         #else
