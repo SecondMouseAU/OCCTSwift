@@ -109,13 +109,16 @@ retire because `V8_0_2` absorbed them (`0019`, `0029`, `0034`, `0043`, `0044`, `
 What the move from `V8_0_1` to `V8_0_2` changes for a caller is recorded under "What `v4.0.0-rc.1`
 adds to the picture" below.
 
-**Only the carry kernel exists as an asset.** The plan ships two kernel flavours, the hardened carry
-kernel and a vanilla kernel for an LTS opt-in (#3544, #3545). No `kernel-8.0.2` release exists
-(`gh release view kernel-8.0.2` answers "release not found" on 2026-11-25) and `Package.swift`
-carries no trait that would select one, so a build today links the carry kernel and the vanilla
-flavour is not shipped. `Kernel.flavour` is how a program asks which kernel it has. Whether the LTS
-flavour is in v4.0.0 or in v4.1.0 is decided at the release candidate against its own exit criteria
-(`docs/v4.0.0-plan.md`), and this section is written for the carry kernel alone.
+**Two kernel flavours exist, and v4.0.0 ships the hardened one.** The plan has a hardened carry
+kernel as the default and a vanilla kernel as an LTS opt-in (#3544, #3545). The vanilla kernel is the
+`kernel-8.0.2` pre-release (OCCT `V8_0_2` with no carried patch; on wasm only the eleven WASI
+patches), published 2026-11-25, and a preview of that flavour is released as the pre-release
+`v4.0.0-lts.1`, which a consumer pins with `exact: "4.0.0-lts.1"` because a range such as
+`from: "4.0.0"` never resolves a pre-release. The preview is not v4.0.0: this tree's `Package.swift`
+pins the carry kernel and carries no trait that selects a flavour, so a build of it links the carry
+kernel. `Kernel.flavour` is how a program asks which kernel it has. How the LTS flavour is carried
+after v4.0.0 is not decided and waits until the hardened release is out (`docs/v4.0.0-plan.md`,
+#3545). This section is written for the carry kernel alone.
 
 Many of these breaks share one shape, and it is worth naming because it explains the release:
 **a function that could not fail, and did, gains the ability to say so.**
