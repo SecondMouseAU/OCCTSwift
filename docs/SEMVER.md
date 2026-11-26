@@ -618,8 +618,9 @@ request graded, since #3547 defers it to this assembly, and the result of a mech
 API against `v4.0.0-beta.6` and against `v3.0.0` (#3539), which found breaks the register above did
 not list. Those are in
 [their own table](#found-by-the-mechanical-api-comparison-3539-breaks-the-register-did-not-list)
-below, each with a migration. The only public Swift declaration added since `v4.0.0-beta.6` is
-`Kernel`; none is removed or changed since then.
+below, each with a migration. The public Swift declarations added since `v4.0.0-beta.6` are
+`Kernel` and two methods that return a history, `Shape.splitWithFullHistory(atPlane:normal:)` (#3561)
+and `Shape.fuseAllWithFullHistory(_:)` (#3562); none is removed or changed since then.
 
 **Additive API, MINOR.**
 
@@ -627,9 +628,15 @@ below, each with a migration. The only public Swift declaration added since `v4.
   `Kernel.occtVersion` and `Kernel.hasFix(_:)`: which OCCT kernel the build links against, which
   OCCT version it was built from, and whether it holds the fix for a row of the kernel-fix ledger
   (#3547). `hasFix(_:)` answers `nil` for an id the kernel cannot speak to, which is not `false`.
+- `Shape.splitWithFullHistory(atPlane:normal:) -> (pieces: [Shape], history: ShapeHistoryRef, cuttingFace: Shape)?`
+  (#3561): `split(atPlane:normal:)`'s pieces in the same order, with the splitter's history and the
+  bounded plane face it cut with, the one input the caller did not build.
+- `Shape.fuseAllWithFullHistory(_:) -> (result: Shape, history: ShapeHistoryRef)?` (#3562): `fuseAll(_:)`'s
+  result with the General Fuse history of every argument.
 - In the C bridge, `OCCTKernelFlavour`, `OCCTKernelOCCTVersion` and `OCCTKernelHasFix` (#3547),
   and `OCCTShapeGetEdges` and `OCCTFreeEdgeArrayOnly` (#3528), the last two with no Swift declaration
-  of their own. `OCCTBridge` is not a product.
+  of their own, and `OCCTShapeSplitByPlaneWithHistory` (#3561) and `OCCTShapeFuseMultiWithHistory` (#3562),
+  the bridge halves of the two methods above. `OCCTBridge` is not a product.
 
 **The move to OCCT 8.0.2, MINOR at most: no signature moves, and results do.** `docs/occt-upgrades.md`
 ("8.0.1 to 8.0.2") records no public OCCT header added, removed or renamed and no deprecation added.
@@ -688,8 +695,10 @@ superseded by the repin to `kernel-8.0.2-c1` (#3532, #3547), and the plan, the u
 policy pages under `okf/` record the move to 8.0.2 and the state of the upstream pull requests (#3513,
 #3515, #3542, #3546). None of it changes anything a consumer compiles against.
 
-**Pending, not merged when this section was assembled.** Each is read here against its diff, and
-anything that merges before the tag is assessed at that point.
+**Merged after this section was first assembled, on 2026-11-26.** #3550, #3552, #3553, #3556 and #3557
+were read here against their diffs before they merged, and the code that merged is the code that was
+read (compared by patch id over `Sources` and `Tests`). #3561 and #3562 merged without that read and were
+read afterwards, against what merged. Anything that merges before the tag is assessed at that point.
 
 - #3550 states NONE. Its diff touches no declaration: doc comments on `FilletBuilder.simulate(contour:)`,
   `simulatedSurfaceCount(contour:)` and `Surface.extrema`, a bridge comment and a new test. What it
@@ -712,6 +721,19 @@ anything that merges before the tag is assessed at that point.
 - #3557 (#3529) states PATCH. No declaration changes: its Swift edits are doc comments and it touches
   no header. Fifteen STEP reader entry points skip a leading UTF-8 byte order mark, so a file that was
   refused is read. It is in the break table below.
+- #3561 (#3559) states MINOR. Read against its diff, the statement holds, and it names the one behaviour
+  change. One method is new, `Shape.splitWithFullHistory(atPlane:normal:)`. `split(atPlane:normal:)`
+  keeps its declaration and its piece gathering (solids, else shells, else the result, as before), but
+  its cutting face is now centred on the projection of the shape's bounding-box centre onto the plane,
+  where it was centred on the point passed in. A shape whose projection lay farther from that point than
+  twice its bounding-box diagonal came back whole and is now cut. The PR measured 23 inputs, every
+  existing caller's fixture among them: 21 identical, and the two that change are the two the old face
+  could not reach. Recorded MINOR for the method, and as a PATCH-grade behaviour row for the answer it
+  changes, in the break table below.
+- #3562 (#3560) states MINOR. Read against its diff, the statement holds: one new static method,
+  `Shape.fuseAllWithFullHistory(_:)`. `fuseAll(_:)` now calls the helper the new method calls, with the
+  same builder, arguments and options, so it answers as before; the diff moves that code and changes a
+  sentence dash in a comment. No behaviour row.
 
 **How the rc.1 set was checked.** Every `## SemVer impact` statement was read, and every statement
 of anything above NONE was read against its diff. Then the public API was compared mechanically, in
@@ -730,7 +752,8 @@ of default value under an unchanged signature, in five functions (`Shape.distanc
 `Shape.encodingRegularity`, `Shape.isBooleanValidWith`, `EdgeAnalysis.checkVerticesWithCurve3d` and
 `checkVerticesWithPCurve`), two tuple labels that moved (already registered under #2901), and 672
 symbols added; against `v4.0.0-beta.6` it found none gone, none changed and 14 added, all of them
-`Kernel`. This is a screen over declarations and cannot see a
+`Kernel`. (That run was taken before #3561 and #3562 merged; each adds one method and changes no
+signature, and the run is repeated on the tagged tree.) This is a screen over declarations and cannot see a
 changed value behind an unchanged signature: those are the pull requests' own statements, read
 against their diffs.
 
@@ -744,8 +767,8 @@ against their diffs.
   an easy mistake the old code answered with contour 1's value.
 - #3517 states PATCH and names its one behaviour change beyond the fault: after a completed build and
   a `reset()`, `surfaceCount` answered the stale count and now answers `0`. It is in the same row.
-- #3553 and #3556 (pending) state PATCH. They are recorded PATCH for the crashes they stop and as
-  behaviour rows for the answers they change, as #3521 is. #3557 (pending) states PATCH and is a
+- #3553 and #3556 state PATCH. They are recorded PATCH for the crashes they stop and as
+  behaviour rows for the answers they change, as #3521 is. #3557 states PATCH and is a
   behaviour row, since a refusal becomes a success, with no signature change.
 - #3520 and #3528 state PATCH and stay PATCH. #3547 states MINOR, which holds for `Kernel`; the kernel
   move it mentions is the table above.
@@ -1314,10 +1337,11 @@ paragraph above that records it.
 | `FilletBuilder`'s contour accessors answer a refusal for an index of `0` or below, where they read or wrote contour 1; its three radius setters answer `false` for a write that did not happen; `surfaceCount` answers `0` after a completed build and `reset()` | different result, no signature change | [#3518, #3516](#v400-filletbuilder-answers-a-refusal-for-an-index-or-a-state-it-used-to-misread-3518-3516) |
 | `FilletBuilder.simulate(contour:)` for a simulation OCCT declines partway keeps the surfaces it computed and sets `stripeStatus(contour:)` to `3`, where it read `0` | different result, no signature change | [#3550](#v400-a-simulation-occt-declines-partway-keeps-its-surfaces-3550-occt1708) |
 | Mesh triangle counts, HLR edge counts and volumes that depend on an approximated curve move with OCCT 8.0.2 | different result, no signature change | "The move to OCCT 8.0.2" above, measured in #3552 |
-| `ChamferBuilder`'s eighteen contour accessors and setters refuse an index outside their range, where they faulted or read contour 1, and `setDistance`, `setDistances` and `setDistAngle` answer `false` for a write that never happened (pending, #3553) | different result, no signature change | [#3523](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-pending-3553-3556-3557) |
-| `FilletBuilder.setRadius(_:contour:vertex:)`, `setTwoRadii` and `addEdge` for an edge already in a contour answer `false` once the fillet is done or the contour holds surfaces, where they faulted or, for a non-analytic blend, succeeded (pending, #3553) | different result, no signature change | [#3524](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-pending-3553-3556-3557) |
-| `ChamferBuilder.simulatedSurfaceCount(contour:)` answers `0` for an index past `contourCount`, where it read a corner stripe as a contour (pending, #3556) | different result, no signature change | [#3522](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-pending-3553-3556-3557) |
-| A STEP file that starts with a UTF-8 byte order mark loads in every STEP reader, where it was refused (pending, #3557) | different result, no signature change | [#3529](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-pending-3553-3556-3557) |
+| `ChamferBuilder`'s eighteen contour accessors and setters refuse an index outside their range, where they faulted or read contour 1, and `setDistance`, `setDistances` and `setDistAngle` answer `false` for a write that never happened (#3553) | different result, no signature change | [#3523](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-3553-3556-3557) |
+| `FilletBuilder.setRadius(_:contour:vertex:)`, `setTwoRadii` and `addEdge` for an edge already in a contour answer `false` once the fillet is done or the contour holds surfaces, where they faulted or, for a non-analytic blend, succeeded (#3553) | different result, no signature change | [#3524](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-3553-3556-3557) |
+| `ChamferBuilder.simulatedSurfaceCount(contour:)` answers `0` for an index past `contourCount`, where it read a corner stripe as a contour (#3556) | different result, no signature change | [#3522](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-3553-3556-3557) |
+| A STEP file that starts with a UTF-8 byte order mark loads in every STEP reader, where it was refused (#3557) | different result, no signature change | [#3529](#v400-blend-builder-indices-radii-on-a-built-contour-and-a-step-byte-order-mark-3553-3556-3557) |
+| `Shape.split(atPlane:normal:)` cuts a shape whose projection onto the plane lies farther than twice its bounding-box diagonal from the point passed in, where it returned the shape whole (#3561) | different result, no signature change | [#3559](#v400-splitatplanenormal-cuts-a-shape-far-from-the-planes-point-3559) |
 
 ##### v4.0.0: `FilletBuilder` answers a refusal for an index or a state it used to misread (#3518, #3516)
 
@@ -1353,7 +1377,7 @@ for a declined edge answered contour 1's radius and now answers `-1`. v4.0.0 is 
 does not move the version number, and a reader who disagrees can downgrade the row to a note without
 touching a signature.
 
-**Pending.** The same refusal reaches `ChamferBuilder` and the radius setters (#3553), and the chamfer's
+**See also.** The same refusal reaches `ChamferBuilder` and the radius setters (#3553), and the chamfer's
 simulated-surface count (#3556): see the section after #3550's, below.
 
 **Migration.** Pass a 1-based contour index within `1...contourCount`, and an edge index within
@@ -1381,13 +1405,14 @@ probed.
 means the simulation was declined and the count is partial. A caller that treated a nonzero
 `simulatedSurfaceCount(contour:)` as a completed simulation should test the status as well.
 
-##### v4.0.0: blend-builder indices, radii on a built contour and a STEP byte order mark (pending #3553, #3556, #3557)
+##### v4.0.0: blend-builder indices, radii on a built contour and a STEP byte order mark (#3553, #3556, #3557)
 
-Three open pull requests carry behaviour changes under a PATCH statement. None changes a Swift or C
+Three pull requests carry behaviour changes under a PATCH statement. None changes a Swift or C
 declaration: their Swift edits are doc comments, `Int32(clamping:)` conversions and one reformatted
 `guard`, and their header edits are comments. Read here from their diffs at the heads of 2026-11-26
-(#3553 at `90a9e8f6`, #3556 at `168a3eb9`, #3557 at `96979464`), and to be read again if they change
-before they merge.
+(#3553 at `90a9e8f6`, #3556 at `168a3eb9`, #3557 at `96979464`). They merged as `e4bcd4ea8`, `5a7ef3c21`
+and `42b93b55e`, and the code each carried at merge is the code read here (compared by patch id over
+`Sources` and `Tests`).
 
 **`ChamferBuilder`, #3553 (#3523).** Eighteen bridge functions are gated on `1 <= IC <= NbContours()`,
 and `Edge` also on `1 <= J <= NbEdges(IC)`, and answer the value the header documents for each: `0`
@@ -1438,6 +1463,24 @@ behaviour row and not a compile error.
 the index range. A caller that strips a byte order mark before loading a STEP file can stop, and
 nothing breaks if it does not; a caller that relied on a thrown `ImportError` as the sign of a
 marked file will see it load.
+
+##### v4.0.0: `split(atPlane:normal:)` cuts a shape far from the plane's point (#3559)
+
+`Shape.split(atPlane:normal:)` trimmed its cutting face to a square reaching twice the shape's bounding-box
+diagonal each way around the point passed in. The point only fixes the plane, so a shape whose projection
+onto it lay farther than that reach from the point was never touched by the face and came back whole: a
+4 x 4 x 4 box at X = 100 against the plane z = 0.5 through the origin returned one piece. The face is now
+centred on the projection of the bounding-box centre onto the plane, with the same reach, so the same call
+returns two. The plane keeps the caller's point as its origin, so a cap face's surface and UV
+parametrisation are unchanged. A shape the old face already reached splits as before: on the PR's 23
+measured inputs, 21 are identical in every face's bounds, UV range and normal, in order.
+
+The signature is unchanged and the result is not, for a shape in that far region only. It is a defect
+fix, graded PATCH-grade in a major release, so it does not move the version number.
+
+**Migration.** None is needed. A caller that passed a point near the shape to work around the old reach
+gets the same pieces. A caller that relied on a far plane point returning the shape whole is relying on
+the defect.
 
 ##### Found by the mechanical API comparison (#3539): breaks the register did not list
 
