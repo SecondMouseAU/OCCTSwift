@@ -509,6 +509,16 @@ Scripts/tsan-stress.sh all     # build if the instrumented kernel does not match
 Scripts/tsan-stress.sh self-test  # prove the per-scenario timeout on stub scenarios; no build needed
 ```
 
+**What a good tree reports.** `run` does not exit 0 on a good tree today: the four
+`occt_1157_stress` data-exchange scenarios (`step_write_independent`, `step_read_independent`,
+`iges_write_independent`, `iges_read_independent`) are #1403's expected-fail baseline, so a good
+tree is "30 of 34 scenarios clean, and the four failures are exactly those". Any other failing
+scenario, or a fifth, is a finding. `all` stops after `run` fails, so run `swift` on its own as
+well. Its one known failure is `ChamferParallelSpineTangentTests.everyEdgeAnswersInsteadOfCrashing`,
+which relaunches the test runner as a child that aborts under `--sanitize=thread`; the same body
+passes in-process. Both are tracked in #3566, which proposes making the baseline explicit so the
+gate can exit 0.
+
 **Every `run` scenario has a time limit**, `TSAN_SCENARIO_TIMEOUT` seconds (default 300, a positive
 integer). A scenario that outlives it has its whole process group killed, prints
 `TIMEOUT (killed after Ns; ran Ms)`, is named again under "TIMED OUT" in the summary, and counts as
