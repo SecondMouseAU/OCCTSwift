@@ -697,10 +697,19 @@ jobs:
       # (the whole point of this job, see the header comment), and about once in forty runs it
       # dies from an uncatchable SIGSEGV/SIGBUS before a single test finishes. `tee`ing to a file
       # rather than only letting `swift test` print to the step's own log is what lets the
-      # detection step below grep it; the default macOS/Linux `run:` shell already invokes
-      # `bash --noprofile --norc -eo pipefail {0}`, so this step still fails on `swift test`'s own
-      # exit code, `tee` does not hide it.
+      # detection step below grep it.
+      #
+      # `shell: bash` is what makes this step fail on `swift test`'s own exit code. The default
+      # `run:` shell on macOS and Linux is `bash -e {0}`, with no `pipefail`, so without it the
+      # step's status is `tee`'s and a `swift test` that fails or dies reads green. #3563 measured
+      # it: run 45534250761 ended `Test run with 7125 tests in 1677 suites failed` and this step
+      # passed, and a probe job running `false 2>&1 | tee x.log` passed under the default shell and
+      # failed under `shell: bash`. This comment used to say the default already had `pipefail`;
+      # the log's own `shell: /bin/bash -e {0}` line says it does not. The step has been blind to
+      # test failures since the `tee` went in (#2714, 2026-09-25), so a green job before this
+      # change is not evidence the suite passed: read its `Test run with ... passed` line.
       - name: swift test
+        shell: bash
         run: swift test 2>&1 | tee swift-test-output.log
 
       # #2714 step 1: "the evidence that has been missing since #922." The log above carries no
