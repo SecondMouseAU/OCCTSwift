@@ -7,19 +7,23 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v3.0.0
+## Current: v4.0.0
 
-**macOS / iOS (device + simulator) | OCCT 8.0.1 (+ the seventeen carried patches `0010`-`0012` and
-`0014`-`0027`; ten earlier patches were absorbed by 8.0.1 itself and retired)**
+**macOS / iOS (device + simulator) | OCCT 8.0.2 (`V8_0_2`, plus the fifty-one carried patches `0010` to
+`0080`, retired numbers absent) | kernel `kernel-8.0.2-c1`**
 
-A correctness and consolidation release. The kernel does not move, but it is rebuilt: the v2.0.0
-asset was missing two carried patches (#905, #913) that no CI job exercised. Two breaking changes,
-each named with its migration in [`SEMVER.md`](SEMVER.md#v300), an enum rename (#844), and six
-bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0,0)-(0,0,0)` (#943).
+A major by SemVer Rule 2, and a correctness release. The kernel moves from OCCT 8.0.1 to 8.0.2 and is
+the hardened one: the carried patches keep a process alive on damaged input, serialise the shared
+state that raced, and make some answers true where upstream's stand. The breaks since v3.0.0 are
+tabulated in [`SEMVER.md`](SEMVER.md#v400) with their migrations; the API digester reports 190 against
+v3.0.0 and the register lists every one. The vanilla kernel, OCCT 8.0.2 with no carried patch, is a
+separate pre-release, `v4.0.0-lts.1`, and is not part of this release.
 
 ---
 
 ## Unreleased
+
+## v4.0.0
 
 ### `Shape.fuseAllWithFullHistory(_:)`: `fuseAll` with the history of every argument (#3560)
 
