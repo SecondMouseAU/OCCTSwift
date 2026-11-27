@@ -61,11 +61,11 @@ figure (interactive 3D where it helps). The **[Cookbook index](guides/cookbook/)
   proven, what is not, and the Phase 0 memo, whose verdict is GO with four conditions (#2175).
 - [WASI guard sites](WASI_GUARD_SITES.md), the `std` names the wasip1 libc++ removes, the files
   that use them, and why they are answered by a shim rather than by a patch.
-- [v4.0.0 Release Plan](v4.0.0-plan.md), scope, order, and beta/RC criteria for the in-flight major.
+- [v4.0.0 Release Plan](v4.0.0-plan.md), scope, order, and RC criteria for the v4.0.0 major; what follows it (the LTS flavour, v5) is still open there.
 - [v2.0.0 Release Plan](v2.0.0-plan.md), scope, clusters, and the census-once rule the previous
   major shipped under.
 
 ## Project
 
 - Source & issues: [github.com/gsdali/OCCTSwift](https://github.com/gsdali/OCCTSwift)
-- Install via Swift Package Manager, pin `from: "3.0.0"` (SemVer-stable since v1.0.0; `from: "1.0.0"` resolves to the 1.x line and never reaches 3.x).
+- Install via Swift Package Manager, pin `from: "4.0.0"` (SemVer-stable since v1.0.0; `from: "1.0.0"` resolves to the 1.x line and never reaches 4.x).

@@ -7,7 +7,7 @@
 
 📖 **Documentation & cookbook:** <https://secondmouseau.github.io/OCCTSwift/>
 
-A comprehensive Swift wrapper for [OpenCASCADE Technology (OCCT)](https://www.opencascade.com/) 8.0.2, providing B-Rep solid modeling for macOS and iOS. **v3.0.0. SemVer-stable; see [SEMVER.md](docs/SEMVER.md#v300) before upgrading from v2.x.**
+A comprehensive Swift wrapper for [OpenCASCADE Technology (OCCT)](https://www.opencascade.com/) 8.0.2, providing B-Rep solid modeling for macOS and iOS. **v4.0.0. SemVer-stable; see [SEMVER.md](docs/SEMVER.md#v400) before upgrading from v3.x.**
 
 **4,408 wrapped operations** | macOS 12+ / iOS 15+ (arm64), visionOS and tvOS untested | OCCT 8.0.2
 ## Quick Start
@@ -18,7 +18,7 @@ Add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/SecondMouseAU/OCCTSwift.git", from: "3.0.0")
+    .package(url: "https://github.com/SecondMouseAU/OCCTSwift.git", from: "4.0.0")
 ]
 ```
 

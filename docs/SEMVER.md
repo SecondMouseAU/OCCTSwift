@@ -48,7 +48,7 @@ The cohort moved to v1.0.0 on 2026-05-07 alongside [OCCT 8.0.0 GA](https://githu
 and to v2.0.0 under Rule 2, on the accumulated breaks recorded below. v3.0.0 is a further
 Rule 2 major on a much smaller set: the kernel does not move, and the breaks are listed
 below. v4.0.0 is a third Rule 2 major, on the breaks tabulated under it below, and is assembled
-here for the release candidate `v4.0.0-rc.1`.
+here; `v4.0.0-rc.1` was its release candidate.
 
 #### v4.0.0
 
