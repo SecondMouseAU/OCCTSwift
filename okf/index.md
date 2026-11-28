@@ -67,6 +67,7 @@ and the [injection sweep mechanics](references/injection-sweep-mechanics.md).
 - [Required status checks on main](policies/required-status-checks.md)
 - [Issue labels and project-board tracking](policies/issue-tracking.md)
 - [Lifting work off v5.0.0-766-execution](policies/v5-lift-and-shift.md)
+- [v5 is speculative until OCCT 8.1 exists and has been read](policies/v5-is-speculative.md): no v5 scope, plan or work
 - [Code structure](policies/code-structure.md)
 - [CHANGELOG entries are written in the PR, not the diff](policies/changelog-on-merge.md)
 - [SemVer is assessed at release, not per PR](policies/semver-at-release.md)

@@ -8,7 +8,7 @@ timestamp: 2026-11-24
 
 # The kernel-fix ledger
 
-OCCTSwift ships two kernel flavours (`docs/v4.0.0-plan.md`, family E). **Carry**, the default, is OCCT
+OCCTSwift ships two kernel flavours (`docs/occt-upgrades.md`, "Kernel flavours"). **Carry**, the default, is OCCT
 plus the patches in `Scripts/patches/`. **Vanilla**, the opt-in LTS flavour, is OCCT exactly as
 tagged (plus, on wasm only, the WASI port patches). They hold different sets of fixes, so "is this
 defect fixed in the kernel?" has two answers, and a bridge guard written for a defect is needed on
