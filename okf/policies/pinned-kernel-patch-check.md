@@ -258,8 +258,7 @@ PR itself:
    git grep -nE "kernel\.<old K>\b|<old count in words>|<old count as a number> patches" -- . ':!docs/CHANGELOG.md' ':!Scripts/repro'
    ```
 
-   Then read every comment that explains a bridge mitigation the repin retired (the list above), and
-   `docs/v4.0.0-plan.md`'s release table, which names the next tag and the next beta.
+   Then read every comment that explains a bridge mitigation the repin retired (the list above).
 
 A sentence that is history stays, and says so in its tense ("was unpinned until `v4.0.0-kernel.4`",
 "measured on `kernel.2`"); the checks read that tense, so writing it correctly is also what silences

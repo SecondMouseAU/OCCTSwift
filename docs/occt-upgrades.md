@@ -24,7 +24,7 @@ Documents breaking changes and migration steps for each OCCT version upgrade.
 
 ---
 
-## 8.0.1 to 8.0.2 (surveyed, not yet the pin)
+## 8.0.1 to 8.0.2 (surveyed before the repin)
 
 [OCCT 8.0.2](https://github.com/Open-Cascade-SAS/OCCT/releases/tag/V8_0_2) (tag `V8_0_2`, 2026-11-21,
 a lightweight tag on `83f9abe947`) is the second 8.0 maintenance release. `V8_0_1` is an ancestor
@@ -33,9 +33,10 @@ requests were taken in part (#1470, #1472, #1512, #1514, #1611, #1620, #1634, #1
 #1653, #1741), so a pull request number in the release notes does not say which files reached the
 tag. Every verdict below was taken from the files, not from the notes.
 
-This section is the survey that [`v4.0.0-plan.md`](v4.0.0-plan.md) family E requires before any
-build. The kernel is still `V8_0_1`; nothing here has been built yet, apart from the two
-translation units measured under "Upstream's forms, measured".
+This section is the survey taken before the 8.0.2 kernel was built, kept as the record of each
+carried patch's verdict. It is dated: it calls `V8_0_1` the kernel and says nothing was built, and
+the shipped kernel is `kernel-8.0.2-c1`. Only the two translation units measured under "Upstream's
+forms, measured" had been built when it was written.
 
 ### No API or ABI break
 
@@ -93,7 +94,8 @@ between the two tags.
 in #1620 with a different contract for a plate built from point constraints alone (zero, where
 `0028` reports the measured deviation). No OCCTSwift entry point builds such a plate: the
 deviations reach the Swift API only through `BRepFill_Filling`, which always has a curve
-constraint, so the two forms answer the same for every caller. It retires with the move to 8.1.
+constraint, so the two forms answer the same for every caller. It would retire only if the kernel moved to a
+release that has OCCT#1620; no such move is planned ([`v5-is-speculative`](../okf/policies/v5-is-speculative.md)).
 
 `Scripts/lib/apply-patches.sh` treats a patch that reverse-applies as already applied, so leaving an
 absorbed patch in place would not fail the build. The retirements are therefore recorded here and
@@ -136,12 +138,12 @@ expectation moves against both kernels.
 | #1786 | Long reals in BREP text, readers stop on a failed stream | the BREP readers; the bridge's #3487 stream guards stay, since #1786 bounds only `GetReal` |
 | #1470, #1514, #1611, #1647, #1644 (parts) | STEP writer field kinds, cyclic oriented edges, PMI units, tessellated vertex order | STEP read and write |
 
-### Kernel flavours (planned for v4.0.0)
+### Kernel flavours
 
-Decided 2026-11-24, and not shipped yet: the carry kernel is #3535, the vanilla kernel #3544 and the
-trait that selects it #3545. The plan is in [`v4.0.0-plan.md`](v4.0.0-plan.md) family E. This table is
-the contract skeleton; once the fix ledger exists (#3543) it is generated from the ledger rather
-than written by hand, so it cannot go stale.
+Decided 2026-11-24. The hardened carry kernel shipped with v4.0.0 (#3535), the vanilla kernel is
+published as `kernel-8.0.2` (#3544), and the fix ledger exists (#3543). What is **not** decided is how
+a consumer selects the vanilla kernel after v4.0.0: the `UpstreamKernel` trait is #3545, open and
+parked. This table is the contract skeleton, written by hand until it is generated from the ledger.
 
 | Flavour | Kernel | Selected |
 |---|---|---|

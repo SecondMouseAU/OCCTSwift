@@ -324,7 +324,7 @@ open branches, until OCCT 8.0.2 shipped and `master` absorbed `IR`. The user **c
 rebasing are against `IR`, whose churn is daily, and `master` only absorbs it in batches, so there
 was never a settled tree to wait for and the milestone had already slipped (due 2026-10-02, no
 release branch on 2026-10-03). A repin onto 8.0.2 is a separate matter, covered in
-`docs/v4.0.0-plan.md`.
+`docs/occt-upgrades.md` ("8.0.1 to 8.0.2").
 
 The one lesson from that period that still holds: OCCT#1548 and #1549 both failed CI on 2026-09-21
 and neither failure was staleness. Both patches were authored against the pinned `V8_0_1` and

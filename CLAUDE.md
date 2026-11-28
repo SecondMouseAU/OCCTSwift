@@ -694,8 +694,12 @@ whole investigation.
 policy that owns each piece.
 
 A release is a correctness release now, not "~100 new operations": that described the wrapping
-phase. See [`docs/v4.0.0-plan.md`](docs/v4.0.0-plan.md) for the current scope; the operation count
-is derived, never chosen: `python3 Scripts/count-operations.py`.
+phase. The operation count is derived, never chosen: `python3 Scripts/count-operations.py`.
+
+v4.0.0 is released and its plan document is retired: the scope is in `docs/CHANGELOG.md` and
+`docs/SEMVER.md`. **There is no plan for a next major, and no v5 work.** v5 is speculative until
+OCCT 8.1 has a tag and has been read; see
+[`v5-is-speculative`](okf/policies/v5-is-speculative.md).
 
 1. **Every PR is already merged and its docs already current**, per
    [`docs-current`](okf/policies/docs-current.md). If you are writing docs at release time, a PR
